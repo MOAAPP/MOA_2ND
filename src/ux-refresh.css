@@ -1,0 +1,195 @@
+/* 평행통장 UX 리디자인 — 실제 금융 서비스처럼 여백, 정보 순서, 진입점을 정리 */
+:root {
+ --bg:#f8faff;--surface-2:#f5f7fc;--ink:#182238;--ink-2:#63708a;--ink-3:#919cb0;
+ --blue:#3865f4;--blue-press:#2854e0;--blue-weak:#eef3ff;--real:#f36a77;--real-weak:#fff3f4;
+ --line:#edf0f6;--shadow:0 2px 16px rgba(33,54,95,.045);
+ --radius:20px;
+}
+.page {padding-left:20px;padding-right:20px}
+.topbar {background:rgba(248,250,255,.95);min-height:62px}
+.topbar h1 {font-size:18px;letter-spacing:-.035em}
+.card,.blk {box-shadow:var(--shadow)}
+.bottom-nav {height:calc(74px + var(--safe-b));--nav-h:74px;border-color:#eef0f6;box-shadow:0 -5px 24px rgba(36,57,102,.04);background:#fff}
+.bottom-nav button {font-size:11px;letter-spacing:-.035em;gap:6px;min-width:0}
+.bottom-nav button svg {width:23px;height:23px;stroke-width:1.8}
+.bottom-nav button[aria-current='page']{font-weight:800}
+.page:not(.no-nav){padding-bottom:calc(95px + var(--safe-b))}
+.btn.primary {background:#3865f4;box-shadow:0 9px 20px rgba(52,98,234,.15)}
+.btn.primary:focus-visible {outline:2px solid #3865f4}
+
+/* 홈 - 목표가 메뉴 깊숙이 숨지 않게, 바로가기 카드 */
+.home-goal-entrance {display:flex;width:100%;align-items:center;gap:13px;text-align:left;border:1px solid #e8edff;background:linear-gradient(115deg,#fff 20%,#f1f5ff 100%);padding:10px 16px 10px 7px;border-radius:20px;margin:16px 0 19px;box-shadow:0 5px 20px rgba(36,77,159,.04)}
+.home-goal-art {width:80px;height:78px;display:grid;place-items:center;overflow:hidden;flex:none}
+.home-goal-art img{width:93px;height:90px;object-fit:contain;filter:drop-shadow(0 5px 7px rgba(40,60,150,.11))}
+.home-goal-copy {display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.home-goal-copy small{color:#5576df;font-size:11px;font-weight:800}
+.home-goal-copy b{font-size:15px;letter-spacing:-.035em;line-height:1.35}
+.home-goal-copy em{font-style:normal;font-size:12px;color:#8993a9}
+.home-goal-entrance>svg{color:#929bb1;flex:none}
+.home-comparison-section .vs {margin-top:12px}
+.home-comparison-section .vs-cell {border-radius:16px}
+.home-comparison-section .vs-v {font-size:19px;letter-spacing:-.05em}
+.home-detail-chart {margin-top:15px;padding:0;background:#f5f7fc;border-radius:14px}
+.home-detail-chart summary {padding:14px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:#606d86;font-size:13px;font-weight:700;list-style:none}
+.home-detail-chart summary::-webkit-details-marker{display:none}
+.home-detail-chart summary span{color:#456cf3;font-size:12px}
+.home-detail-chart[open] summary span{font-size:0}
+.home-detail-chart[open] summary span:after{content:'접기 −';font-size:12px}
+.home-detail-chart-body{padding:4px 10px 16px}
+.home-risk-summary{margin-top:16px}
+.home-comparison-section .insight{margin-top:15px}
+
+/* 비교 1 / 2: 휴대폰 한 화면에서 바로 입력 */
+.decision-input-page,.decision-result-page {background:#f8faff;min-height:100dvh}
+.decision-step-indicator{display:flex;align-items:center;gap:7px;margin:14px 0 25px}
+.decision-step-indicator>span:not(:last-child){height:5px;border-radius:99px;width:36px;background:#e2e8f6}
+.decision-step-indicator>span.active{background:#3865f4}
+.decision-step-indicator>span:last-child{font-size:12px;color:#a0aabd;margin-left:auto;font-weight:700}
+.decision-input-heading h1,.decision-result-head h1 {font-size:30px;font-weight:800;letter-spacing:-.055em;line-height:1.33;margin:8px 0 9px}
+.decision-input-heading p{font-size:14px;color:#7b879e;margin:0;line-height:1.65}
+.decision-eyebrow{color:#4771ef;font-size:12px;font-weight:800;letter-spacing:-.015em}
+.decision-input-art{height:154px;position:relative;display:flex;justify-content:center;align-items:center;overflow:hidden;margin:15px 0 18px;background:radial-gradient(ellipse at center,rgba(204,219,255,.52),rgba(245,248,255,0) 68%);border-radius:22px}
+.decision-input-art img{width:163px;height:150px;object-fit:contain;position:relative;z-index:2;filter:drop-shadow(0 9px 18px rgba(74,96,170,.09))}
+.decision-art-glow{width:190px;height:118px;border-radius:50%;background:linear-gradient(120deg,#e7edff,#fff5f1);position:absolute;filter:blur(6px)}
+.decision-art-bubble{position:absolute;right:4px;top:19px;z-index:3;display:flex;flex-direction:column;gap:1px;background:#fff;border:1px solid #e8edfa;box-shadow:0 8px 22px rgba(62,77,128,.075);padding:9px 11px;border-radius:14px;transform:rotate(4deg)}
+.decision-art-bubble span{font-size:10px;color:#8491a7}.decision-art-bubble b{font-size:11px;letter-spacing:-.03em}
+.decision-input-form{border-radius:24px;background:#fff;padding:20px;box-shadow:0 2px 18px rgba(38,60,100,.035);border:1px solid #eef1f7}
+.decision-field-title{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800;margin-bottom:10px}
+.decision-field-title span{font-size:11px;font-weight:600;color:#9ca6b8}.decision-field-title .required{color:#3865f4}
+.decision-input-form>.input{width:100%;min-height:50px;background:#f8faff;border:1px solid #eef0f8;border-radius:13px;padding-left:15px}
+.decision-amount-wrap{padding:0 10px 4px;background:#f8faff;border:1px solid #eef0f8;border-radius:13px}
+.decision-amount-wrap .amount-input{margin:0}.decision-amount-wrap .amount-input input{background:transparent}
+.decision-input-form .photo-btn{margin-top:11px;box-shadow:none;background:transparent;border-color:#e8edf9;color:#526dbe;font-size:12px;padding:6px 12px}
+.decision-option-block{margin-top:15px;border-top:1px solid #f0f1f5;padding-top:5px}
+.decision-option-toggle{background:none;border:0;display:flex;width:100%;justify-content:space-between;align-items:center;padding:10px 0;text-align:left}
+.decision-option-toggle>span:first-child{display:flex;flex-direction:column;gap:2px}.decision-option-toggle b{font-size:14px}.decision-option-toggle small{font-size:12px;color:#9aa4b8}.decision-option-toggle>span:last-child{font-size:12px;color:#5271eb;font-weight:700}
+.decision-category{margin-top:10px;display:flex;gap:12px;align-items:center}.decision-category>span{font-size:12px;color:#8d98aa}
+.decision-primary {border-radius:16px;font-size:16px;min-height:56px;justify-content:center}
+.decision-primary>span{font-size:22px;margin-left:3px;font-weight:400}
+/* 비교 2 / 2: 결론 → 결과 → 막대 → 상세 보기 */
+.decision-result-indicator{margin:13px 0 19px}
+.decision-result-head h1{font-size:28px;margin-bottom:18px}.decision-result-head h1 em{font-style:normal;color:#3865f4}
+.decision-product{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #edf1f9;border-radius:17px;padding:12px;margin-bottom:21px}
+.decision-product-picture{flex:none;width:50px;height:50px;display:grid;place-items:center;background:#f1f4ff;border-radius:13px}
+.decision-product>div:nth-child(2){flex:1;min-width:0}.decision-product b{display:block;font-size:15px}.decision-product div:nth-child(2) span{display:block;color:#8f9ab0;font-size:12px;margin-top:2px}
+.decision-product>button{border:0;background:#f1f4fc;font-weight:700;font-size:12px;padding:7px 10px;border-radius:10px;color:#71809c}
+.decision-section-kicker{font-size:14px;font-weight:800;letter-spacing:-.035em;margin:0 0 11px}
+.decision-comparison{background:#fff;border:1px solid #edf1f8;border-radius:22px;padding:19px 14px;box-shadow:var(--shadow)}
+.decision-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.decision-choice-card{padding:16px 11px 14px;border-radius:16px;min-width:0}
+.decision-choice-card.buying{background:#fff4f5}.decision-choice-card.alternative{background:#eef3ff}
+.decision-choice-caption{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:800;white-space:nowrap;letter-spacing:-.04em}
+.decision-choice-caption b{border-radius:5px;padding:3px 5px;font-size:9px;background:#3865f4;color:#fff;white-space:nowrap;margin-left:auto}
+.decision-dot,.quick-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}.decision-dot.red,.quick-dot.buy{background:#f36a77}.decision-dot.blue,.quick-dot.alt{background:#3865f4}
+.decision-choice-card strong{display:block;white-space:nowrap;margin-top:16px;font-size:clamp(16px,4vw,23px);letter-spacing:-.045em}
+.decision-choice-card.alternative strong{color:#315aeb}
+.decision-choice-card p{font-size:11px;color:#8b94a9;margin:8px 0 0}
+.decision-difference{background:linear-gradient(110deg,#ecf3ff,#f5f4ff);border-radius:16px;padding:15px 12px;margin-top:12px;display:flex;align-items:center;gap:10px}
+.decision-difference-icon{flex:none}.decision-difference>div:last-child{min-width:0}
+.decision-difference span{display:block;font-size:12px;color:#5672bc;font-weight:700}
+.decision-difference strong{display:block;font-size:23px;letter-spacing:-.045em;color:#2858f1;line-height:1.5}
+.decision-difference p{margin:2px 0 0;font-size:11px;color:#7c8bae}
+.decision-alternatives{margin:24px 0 20px}
+.decision-alt-row{display:flex;gap:7px}
+.decision-alt-pill{flex:1;min-width:0;padding:11px 4px;background:#fff;border:1px solid #e9edf5;border-radius:11px;letter-spacing:-.035em;font-weight:700;font-size:12px;color:#68758d}
+.decision-alt-pill.selected{background:#eef3ff;border-color:#7594f7;color:#315ae2}
+.decision-alt-pill>span{font-weight:800;color:#3865f4}
+.decision-disclaimer{font-size:11px;line-height:1.6;color:#9aa6ba;padding:12px 4px}
+/* 비교막대: 복잡한 선 그래프 대신 2개의 막대 */
+.quick-compare{background:#fff;border:1px solid #edf1f8;padding:20px 17px 16px;border-radius:21px;box-shadow:var(--shadow)}
+.quick-compare-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:22px}
+.quick-compare-top h3{font-size:16px;letter-spacing:-.025em;margin:4px 0 0}
+.quick-compare-period{font-size:11px;color:#9aa6ba;white-space:nowrap}
+.quick-compare-bar-item{margin:0 0 19px}
+.quick-compare-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:9px;gap:8px}
+.quick-compare-row>span{display:flex;align-items:center;gap:8px}.quick-compare-row b{font-size:14px;letter-spacing:-.02em}
+.quick-bar-track{height:13px;border-radius:99px;background:#f0f2f8;overflow:hidden}
+.quick-bar-fill{display:block;height:100%;border-radius:99px;transition:width .4s ease}
+.quick-bar-fill.buy{background:linear-gradient(90deg,#ffc5c8,#ed7581)}.quick-bar-fill.alt{background:linear-gradient(90deg,#a8c0ff,#426cf4)}
+.quick-compare-note{margin-top:7px;padding:10px 12px;border-radius:10px;background:#f2f5ff;color:#3b61d3;font-size:12px;font-weight:700}
+.quick-compare-warning{font-size:11px;color:#b45309;line-height:1.5}
+.decision-advanced{margin-top:16px;background:#fff;border:1px solid #eef0f7;border-radius:19px;overflow:hidden}
+.decision-advanced summary{cursor:pointer;list-style:none;padding:18px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.decision-advanced summary::-webkit-details-marker{display:none}
+.decision-advanced summary b{display:block;font-size:14px}.decision-advanced summary small{display:block;font-size:12px;color:#9ca5b4;margin-top:5px}
+.decision-advanced-arrow{font-size:24px;color:#8996b2;transition:transform .25s}.decision-advanced[open] .decision-advanced-arrow{transform:rotate(180deg)}
+.decision-advanced-content{padding:3px 14px 18px}.decision-advanced-content .blk{margin-top:10px;box-shadow:none;background:#f9faff}
+.decision-exact-totals{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11px;padding-top:9px;color:#8894a9}
+.decision-exact-totals b{font-size:11px;color:#465678;font-weight:700}
+
+/* 모의투자: 배움 안의 하위 탭이 아니라 독립적인 목적지 */
+.invest-page .card{margin-top:10px}
+.invest-tip{border:1px solid #e3eafd;border-radius:16px;display:flex;align-items:center;gap:10px;justify-content:space-between;padding:15px 16px;margin:13px 0 15px;background:linear-gradient(110deg,#eaf0ff,#fff)}
+.invest-tip b{display:block;font-size:14px}.invest-tip span{display:block;font-size:12px;color:#73829d;margin-top:4px}
+.invest-tip button{align-self:flex-start;background:none;border:0;color:#9aa9c4;font-size:22px}
+.invest-page .index-strip{margin:0 -20px;padding:3px 20px 10px}
+.invest-page .section{margin-top:19px}.invest-page .card .num{letter-spacing:-.025em}
+/* 금융 가이드: 긴 학습 경로·게임화 요소 제거 */
+.guide-hero{position:relative;overflow:hidden;margin:10px 0 16px;border-radius:23px;background:linear-gradient(113deg,#eef3ff,#fbfaff 75%);padding:25px 18px 26px;min-height:156px;border:1px solid #e9eefe}
+.guide-hero-copy{position:relative;z-index:2}
+.guide-eyebrow{font-size:10px;color:#5177ed;letter-spacing:.1em;font-weight:800}
+.guide-hero h1{font-size:22px;line-height:1.38;letter-spacing:-.045em;margin:11px 0 8px}
+.guide-hero p{font-size:12px;color:#7e8cab;margin:0;max-width:240px}
+.guide-hero-visual{position:absolute;right:-15px;bottom:0;width:142px;height:135px;opacity:.26}
+.guide-hero-visual img{width:100%;height:100%;object-fit:contain;filter:blur(.15px)}
+.guide-progress{background:#fff;border:1px solid #edf0f7;border-radius:17px;padding:15px 16px 16px;margin:15px 0}
+.guide-progress>span:first-child,.guide-progress>span:nth-child(2){font-size:12px;color:#8390a7;font-weight:600}
+.guide-progress>span:nth-child(2){float:right}
+.guide-progress b{color:#2948a0}.guide-progress-track{height:6px;background:#edf1fc;border-radius:99px;margin-top:13px;overflow:hidden}.guide-progress-track span{display:block;height:100%;background:linear-gradient(90deg,#87a4ff,#3865f4);border-radius:99px}
+.guide-recommend{margin:12px 0 27px;background:linear-gradient(115deg,#fff,#f5f8ff);border:1px solid #e5ecff;border-radius:16px;padding:14px;display:flex;gap:12px;text-align:left;align-items:center;width:100%}
+.guide-recommend>span:nth-child(2){flex:1}.guide-recommend b{display:block;font-size:14px}.guide-recommend small{display:block;font-size:12px;color:#8c98ae;margin-top:4px}.guide-recommend>svg{color:#9cabc8}
+.guide-section-heading{display:flex;justify-content:space-between;align-items:center;margin:26px 3px 12px}.guide-section-heading h2{font-size:18px;letter-spacing:-.035em;margin:0}.guide-section-heading>span{font-size:12px;color:#8a96aa}
+.guide-topics{display:flex;flex-direction:column;gap:9px}
+.guide-topic{background:#fff;border:1px solid #ecf0f7;border-radius:17px;overflow:hidden}
+.guide-topic.expanded{border-color:#d9e3ff}
+.guide-topic-button{width:100%;text-align:left;background:none;border:0;padding:14px;display:flex;gap:12px;align-items:center}
+.guide-topic-button>span:nth-child(2){flex:1;min-width:0}
+.guide-topic-button b{display:block;font-size:15px;letter-spacing:-.03em}
+.guide-topic-button small{display:block;font-size:12px;color:#8f9bb0;line-height:1.4;margin:3px 0}
+.guide-topic-button em{font-style:normal;font-size:11px;color:#5878d2;font-weight:700}
+.guide-topic-arrow{font-size:22px;color:#899bb7;margin-left:4px}
+.guide-lessons{margin:0 14px 15px 74px;border-top:1px solid #edf1f8;padding-top:5px}
+.guide-lesson{width:100%;text-align:left;display:flex;align-items:center;gap:10px;background:none;border:0;padding:11px 0;border-bottom:1px solid #f2f3f8}.guide-lesson:last-child{border-bottom:0}
+.guide-lesson>span:nth-child(2){flex:1;min-width:0}.guide-lesson b{font-size:13px;font-weight:700;display:block}.guide-lesson small{font-size:11px;color:#9ba7bc;display:block;margin-top:2px}.guide-lesson svg{color:#a8b2c5}
+.guide-lesson:disabled{opacity:.48}
+.guide-lesson-status{display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:#edf2ff;color:#5578e8;font-size:9px}
+.guide-lesson-status.done{background:#eaf8f1;color:#2e9c68}
+.guide-quiz-toggle{margin-top:25px;width:100%;text-align:left;background:#fff;border:1px solid #e9edf7;border-radius:15px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:17px}
+.guide-quiz-toggle span:first-child b{display:block;font-size:14px}.guide-quiz-toggle small{display:block;font-size:12px;color:#93a0b2;margin-top:4px}.guide-quiz-toggle>span:last-child{color:#436ae8;font-size:12px;white-space:nowrap;font-weight:700}
+.guide-quiz-content{margin-top:10px}
+.guide-market-link{border:0;background:none;display:flex;justify-content:space-between;gap:6px;width:100%;text-align:left;padding:25px 0;font-size:12px;color:#8e9aaf}.guide-market-link b{color:#3f66e8}
+@media (max-width:370px){.decision-choice-card{padding:12px 7px}.decision-choice-caption{font-size:11px}.decision-choice-card strong{font-size:16px}.guide-hero h1{font-size:20px}.decision-difference strong{font-size:20px}}
+/* 소비 비교 목록: 새로운 비교가 최상단, 기록은 아래 */
+.compare-entry{position:relative;overflow:hidden;border-radius:23px;padding:23px 20px 18px;background:linear-gradient(125deg,#eaf0ff 0%,#f6f8ff 76%,#fff 100%);border:1px solid #e6ecfd;margin:10px 0 18px}
+.compare-entry-copy{position:relative;z-index:2}
+.compare-entry-copy>span{font-size:12px;font-weight:800;color:#5377e8}
+.compare-entry h1{font-size:23px;letter-spacing:-.045em;line-height:1.35;margin:5px 0 6px}
+.compare-entry p{font-size:12px;color:#7b87a0;margin:0 0 23px;max-width:240px;line-height:1.5}
+.compare-entry-art{width:140px;height:138px;position:absolute;right:-11px;top:-17px;opacity:.55}
+.compare-entry-art img{width:100%;height:100%;object-fit:contain}
+.compare-entry .btn{min-height:49px;border-radius:13px;font-size:14px;position:relative;z-index:2}
+.compare-entry .btn span{font-size:21px;line-height:1}
+.compare-history-details{border-radius:17px;background:#fff;border:1px solid #edf0f5;overflow:hidden;margin-bottom:17px}
+.compare-history-details>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px;padding:15px 17px;color:#6c7990}
+.compare-history-details>summary::-webkit-details-marker{display:none}
+.compare-history-details>summary span{font-size:12px;color:#3865f4}
+.compare-history-details[open]>summary span{font-size:0}
+.compare-history-details[open]>summary span::after{content:'접기 −';font-size:12px}
+.compare-history-details>.blk{box-shadow:none;border-radius:0;border-top:1px solid #f2f3f8;margin:0}
+.compare-history-list{margin-top:0}
+/* 읽기형 금융 가이드: 어느 주제든 열 수 있는 정보 콘텐츠 */
+.guide-article-page{background:#f8faff}
+.article-kicker{margin-top:23px;font-size:12px;font-weight:800;color:#4b70e7}
+.article-title{font-size:30px;letter-spacing:-.055em;margin:8px 0 6px;line-height:1.3}
+.article-intro{font-size:14px;color:#8190a9;margin:0 0 22px}
+.article-art{height:115px;background:linear-gradient(115deg,#e7efff,#f9faff);display:flex;align-items:center;gap:23px;padding:20px;border-radius:19px;margin:22px 0}
+.article-art>span:last-child{font-size:14px;font-weight:700;color:#5b76bc}
+.article-section{margin:16px 0;background:#fff;border:1px solid #edf0f8;padding:23px 20px;border-radius:20px;box-shadow:var(--shadow)}
+.article-step{font-size:12px;color:#4771ed;font-weight:800}
+.article-section h2{font-size:19px;letter-spacing:-.035em;margin:6px 0 16px}
+.article-section>p{font-size:14px;line-height:1.75;color:#516078;margin:11px 0}
+.article-visual{margin:14px 0 20px;border-radius:14px;overflow:hidden}
+.article-example{margin-top:18px;background:#f1f5ff;padding:16px;border-radius:13px;font-size:12px;line-height:1.6}
+.article-example b{color:#4266d3}.article-example p{margin:6px 0 0;color:#62708e}
+.article-footer-tip{font-size:11px;display:flex;align-items:center;gap:6px;color:#8f9bb0;margin-top:22px}
+.guide-level-link {border-top:1px solid #eef0f6;padding-top:13px;margin-top:-10px}

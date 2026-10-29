@@ -1,0 +1,210 @@
+/* 평행통장 v4 — 실제 핀테크 서비스의 정보 위계와 일관된 컴포넌트 토큰.
+   토스 브랜드 자산을 복제하지 않고, 금융 앱의 가독성/행동 우선순위를 적용한다. */
+:root {
+  --bg:#f7f8fa; --surface:#fff; --surface-2:#f4f5f7;
+  --ink:#191f28; --ink-2:#4e5968; --ink-3:#8b95a1; --line:#e9edf1;
+  --blue:#3182f6; --blue-press:#2173df; --blue-weak:#eff6ff;
+  --para:#3182f6; --para-weak:#eff6ff;
+  --real:#687589; --real-weak:#f5f6f8;
+  --ok:#16a67c; --warn:#c87920; --danger:#e65252;
+  --radius:20px; --radius-sm:12px;
+  --shadow:0 2px 14px rgba(25,31,40,.025);
+  --nav-h:74px;
+}
+html {scrollbar-gutter:auto}
+body{letter-spacing:-.025em;background:#eef0f3; color:var(--ink)}
+.app{background:var(--bg);box-shadow:0 0 0 1px rgba(25,31,40,.035);}
+.page{padding-left:20px;padding-right:20px}
+.page:not(.no-nav){padding-bottom:calc(104px + var(--safe-b))}
+.page.no-nav{padding-bottom:calc(36px + var(--safe-b))}
+/* 연결된 상단 앱 바: 페이지 패딩에 잘리지 않고 좌우 끝까지 연속됨 */
+.page>.topbar{
+  margin:0 -20px 0;width:calc(100% + 40px);
+  min-height:calc(60px + var(--safe-t)); padding:var(--safe-t) 20px 0;
+  background:rgba(247,248,250,.97);border-bottom:0;
+  box-shadow:none; backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);position:sticky; top:0; z-index:45;
+}
+.page>.topbar.plain{padding-left:12px}
+.topbar h1{font-size:17px;font-weight:750;letter-spacing:-.045em}
+.topbar .title-center{font-size:17px;font-weight:750}
+.brand{font-size:18px;font-weight:820;letter-spacing:-.065em;gap:8px}
+.brand svg{width:26px;height:26px}
+.icon-btn{border-radius:13px;color:#6b7684}
+.icon-btn svg{width:22px;height:22px;stroke-width:1.8}
+.icon-btn:active{background:#e9edf1}
+/* 상단에서 본문으로 읽는 흐름: 큰 배너 없애고 단정한 표면 유지 */
+.blk,.card{border:0;border-radius:20px;box-shadow:var(--shadow);background:#fff}
+.blk{padding:21px 20px;margin-top:13px}
+.block-head{margin-bottom:15px}
+.block-head h2,.section-head h2{font-size:17px;font-weight:770;letter-spacing:-.05em}
+.section{margin-top:24px}
+.muted,.small.muted{color:var(--ink-3)}
+.btn{border-radius:12px;letter-spacing:-.04em;font-weight:730;min-height:50px;font-size:15px}
+.btn.primary{background:var(--blue);box-shadow:none}
+.btn.primary:active:not(:disabled){background:var(--blue-press)}
+.btn.secondary,.btn.soft{background:#eaf3ff;color:#2273e7;border:0}
+.btn.ghost{box-shadow:none;background:#f3f5f7;color:#4e5968}
+.btn.text{color:#6b7684}
+.cta-bar{background:linear-gradient(180deg,rgba(247,248,250,0),var(--bg) 29%);padding-top:16px}
+.bottom-nav{
+  height:calc(var(--nav-h) + var(--safe-b));
+  background:rgba(255,255,255,.98);border-top:1px solid #f0f2f4;
+  box-shadow:0 -4px 18px rgba(25,31,40,.025);
+}
+.bottom-nav button{color:#9ba3ae;font-weight:650;gap:5px;font-size:11px}
+.bottom-nav button svg{width:23px;height:23px;stroke-width:1.85}
+.bottom-nav button[aria-current='page']{color:var(--blue);font-weight:800}
+/* 홈: 먼저 핵심 숫자를 보여주고, 다음 행동을 분명히 안내 */
+.home-overline{font-size:23px;font-weight:800;letter-spacing:-.06em;margin:23px 3px 12px}
+.demo-flag{background:#fff6e6!important;color:#99631d!important;border-radius:12px!important;border:0!important;margin:8px 0 14px!important;font-size:12px!important;padding:9px 12px!important}
+.demo-flag button{color:#8a5715!important;font-weight:750!important}
+.bal-card{
+  background:#fff!important; color:var(--ink)!important;
+  border:0;box-shadow:none;padding:22px 22px 20px;border-radius:22px;
+  margin-top:0!important;
+}
+.bal-card::after{display:none}
+.bal-card .balance-label{font-size:14px;color:#6b7684;letter-spacing:-.03em;font-weight:650}
+.bal-card .balance-value{font-size:33px;font-weight:820;color:#191f28;letter-spacing:-.06em;line-height:1.35;margin:3px 0 1px}
+.bal-card .balance-basis{font-size:12px;color:#98a3b1;line-height:1.6;display:inline-block}
+.bal-card .act-row{margin-top:22px;gap:9px}
+.bal-card .act-row .btn{min-height:48px;font-size:14px;font-weight:780;border-radius:12px}
+.bal-card .btn.on-blue{background:var(--blue);color:white}
+.bal-card .btn.on-blue-soft{background:#f2f4f6;color:#4e5968}
+.home-comparison-section{margin-top:22px;padding:22px 20px 17px;background:#fff;box-shadow:none}
+.home-comparison-section .block-head{margin:0}
+.home-comparison-section .block-head h2{font-size:19px;font-weight:810;letter-spacing:-.055em}
+.home-forecast-sub{margin:5px 0 17px;color:#8b95a1;font-size:12px;line-height:1.5}
+.home-comparison-section .vs{display:flex; flex-direction:column;gap:8px;margin:0}
+.home-comparison-section .vs-cell{
+  display:grid;grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto auto;
+  align-items:center;column-gap:9px;row-gap:0;
+  border-radius:14px;padding:14px 15px;min-height:74px;
+  background:#f6f7f9;color:var(--ink);border:0;
+}
+.home-comparison-section .vs-cell.para{background:#eff6ff}
+.home-comparison-section .vs-k{grid-column:1;grid-row:1;color:#4e5968;font-size:13px;font-weight:760}
+.home-comparison-section .vs-cell.para .vs-k{color:#2878e7}
+.home-comparison-section .vs-sub{grid-column:1;grid-row:2;font-size:11px;color:#99a3af;margin:2px 0 0}
+.home-comparison-section .vs-v{grid-column:2;grid-row:1 / span 2;
+  color:#333d4b;font-size:clamp(17px,4.5vw,22px)!important;font-weight:815;
+  letter-spacing:-.055em;margin:0!important;white-space:nowrap}
+.home-comparison-section .vs-cell.para .vs-v{color:#2878e7}
+.home-comparison-section .vs-s{display:none}
+.home-comparison-section .insight{
+  padding:13px 4px 5px;background:transparent;border:0;
+  gap:9px;color:#6b7684;font-size:13px;line-height:1.5;
+}
+.home-comparison-section .insight .icon-tile{width:30px!important;height:30px!important;background:#eff6ff!important;box-shadow:none!important;border-radius:10px!important}
+.home-comparison-section .insight b{color:#2276e8}
+.home-detail-chart{border-radius:13px;background:#f7f8fa;margin-top:16px}
+.home-detail-chart summary{color:#6b7684;font-weight:650;padding:13px 14px;font-size:12px}
+.home-detail-chart summary span{color:#3182f6}
+.home-risk-summary .risk{border-radius:12px;background:#f7f8fa;padding:12px}
+.risk-cta{background:#f6f7f9!important;font-size:12px!important;border-radius:13px}
+.risk-cta b{color:#3182f6}
+/* 가이드는 카드 배너가 아닌 은행 앱의 간결한 리스트 셀 */
+.home-extras-head{font-size:18px;font-weight:790;margin:27px 2px 13px;letter-spacing:-.055em}
+.home-links-group{border-radius:20px;background:#fff;padding:4px 17px;box-shadow:none}
+.home-links-group .home-intelligence-entrance,
+.home-links-group .home-goal-entrance{
+  margin:0;width:100%;display:flex;align-items:center;text-align:left;
+  background:#fff;border:0;box-shadow:none;border-radius:0;min-height:84px;
+  padding:12px 0;gap:12px;
+}
+.home-links-group .home-intelligence-entrance{border-bottom:1px solid #f1f3f5}
+.home-intelligence-symbol{flex:none;display:grid;place-items:center;width:46px;height:46px;
+  border-radius:14px;color:#3182f6;font-size:23px;background:#edf5ff;
+  box-shadow:none}
+.home-goal-art{width:46px;height:46px;flex:none;background:#f2f5ff;border-radius:14px;overflow:hidden}
+.home-goal-art img{width:56px;height:56px;filter:none;object-fit:contain}
+.home-intelligence-copy,.home-goal-copy{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.home-intelligence-copy small,.home-goal-copy small{font-size:10px;letter-spacing:0;color:#8b95a1;font-weight:650}
+.home-intelligence-copy b,.home-goal-copy b{font-size:14px;letter-spacing:-.05em;font-weight:770;line-height:1.35;color:#333d4b}
+.home-intelligence-copy em,.home-goal-copy em{color:#8b95a1;font-size:11px;line-height:1.5;font-style:normal}
+.home-links-group button>svg{color:#bac3cd;flex:none;width:18px}
+/* 거래 및 기록 리스트 */
+.rows{list-style:none;padding:0;margin:0}
+.row-item{min-height:66px;padding:12px 0;border-color:#f0f2f5}
+.row-item .ri-t{font-size:14px;font-weight:730;color:#333d4b}
+.row-item .ri-s{font-size:12px;color:#99a3ae}
+.saved-amount{color:#333d4b;font-size:24px;font-weight:800;letter-spacing:-.055em}
+/* 소비 비교 진입 / 입력 / 결과 */
+.compare-entry{
+  background:#fff;border:0;border-radius:21px;box-shadow:none;
+  margin:15px 0 18px;padding:24px 21px 20px;min-height:213px;
+}
+.compare-entry-copy>span{font-size:12px;color:#3182f6;font-weight:760}
+.compare-entry h1{font-size:23px;font-weight:820;letter-spacing:-.06em;margin:5px 0 7px}
+.compare-entry p{font-size:12px;color:#8b95a1;max-width:250px}
+.compare-entry-art{right:-12px;top:2px;opacity:.6;width:122px;height:122px}
+.compare-entry .btn{font-size:14px;min-height:48px;margin-top:5px}
+.compare-history-details{border:0;background:#fff;box-shadow:none}
+.compare-history-details>summary{font-size:13px;padding:17px 18px}
+.decision-input-page,.decision-result-page,.learning-v3-page,.insight-page,.guide-article-page{background:var(--bg)}
+.decision-step-indicator{margin-top:16px}
+.decision-input-heading h1,.decision-result-head h1{font-size:28px;font-weight:810;color:#191f28}
+.decision-input-heading p,.insight-lead p{color:#8b95a1}
+.decision-input-art{background:#f1f6ff;border-radius:17px;height:146px}
+.decision-art-glow{display:none}
+.decision-art-bubble{transform:none;border:0;box-shadow:0 3px 10px rgba(25,31,40,.05);border-radius:10px}
+.decision-input-form,.decision-comparison,.quick-compare,.ux-insight-hero,.ux-model-card{
+  border:0;box-shadow:none;border-radius:20px;background:#fff;
+}
+.decision-input-form{padding:21px}
+.decision-input-form>.input,.decision-amount-wrap{background:#f7f8fa;border:1px solid #f0f2f5}
+.decision-product{border:0;box-shadow:none}
+.decision-choice-grid{gap:8px}
+.decision-choice-card.buying{background:#f6f7f9}
+.decision-choice-card.alternative{background:#eff6ff}
+.decision-choice-card strong{color:#333d4b;font-size:clamp(16px,4.2vw,21px)}
+.decision-choice-card.alternative strong{color:#2878e7}
+.decision-difference{background:#f0f7ff}
+.decision-difference strong{color:#2878e7}
+.quick-compare{padding:21px 18px}
+.quick-bar-track{background:#eef1f4}
+/* 학습: 기존 개념 → 중간퀴즈 → 피드백을 그대로 사용하되 보조요소 줄이기 */
+.learning-v3-head{padding:24px 1px 21px}
+.learning-v3-head h1,.insight-lead h1{font-size:27px;color:#191f28;font-weight:820;line-height:1.38;letter-spacing:-.065em}
+.ux-kicker{color:#3182f6;font-size:10px;letter-spacing:.035em}
+.learn-start{background:#eaf3ff;border:0;box-shadow:none;border-radius:19px;padding:19px 17px}
+.learn-start-icon{background:#3182f6;border-radius:13px;box-shadow:none}
+.learn-start b{font-size:15px;color:#191f28}
+.learn-start-arrow{color:#3182f6}
+.learn-statline{color:#8b95a1}
+.learning-topic-item{box-shadow:none;border:0;border-radius:15px;padding:15px 13px;min-height:104px}
+.learning-topic-item.active{background:#eff6ff;border:0;box-shadow:inset 0 0 0 1.5px #95c5ff}
+.learn-lesson-container,.learn-practice-link{border:0;box-shadow:none}
+.learn-lesson-row{border-color:#f1f3f5}
+.learn-lesson-index{background:#f2f5f8;color:#4e5968}
+.learn-daily-quiz .card{border:0}
+/* 모의투자: 가상 자산임을 분명히, 배경 그림자 최소화 */
+.invest-page>.topbar+.invest-tip{margin-top:12px}
+.invest-page .card{box-shadow:none;border:0}
+.invest-page .index-strip{border-radius:14px}
+.invest-page .pill.mock{background:#eff6ff;color:#3182f6}
+.invest-page .kv dt{color:#8b95a1}
+/* 설정 + 상세 페이지 상단바는 본문과 별도의 떠있는 박스처럼 보이지 않도록 */
+.page.no-nav>.topbar{border-bottom:1px solid #f0f2f4;background:rgba(247,248,250,.98)}
+.page.no-nav>.topbar + .card{margin-top:17px}
+.page.no-nav>.topbar + .section{margin-top:18px}
+.page.no-nav .card{box-shadow:none}
+.page.no-nav .list-item{padding:16px 0}
+.page.no-nav .list-item .t{font-size:15px;font-weight:740}
+.page.no-nav .list-item .s{font-size:12px;color:#8b95a1;line-height:1.5}
+/* 온보딩도 동일한 금융 앱 타이포그래피 / 버튼 */
+.intro{background:#fff;text-align:center}
+.intro-head h1{font-size:26px;font-weight:810;letter-spacing:-.06em;color:#191f28}
+.intro-head p{color:#8b95a1;font-size:14px}
+.intro-actions .btn{border-radius:13px;min-height:53px}
+.intro .logo-hero .name{font-weight:850;letter-spacing:-.07em}
+.intro .mock-card{box-shadow:0 8px 24px rgba(25,31,40,.055);border:1px solid #eff2f5}
+@media(max-width:375px){
+ .page{padding-left:16px;padding-right:16px}
+ .page>.topbar{width:calc(100% + 32px);margin-left:-16px;margin-right:-16px;padding-right:16px;padding-left:16px}
+ .home-comparison-section .vs-v{font-size:17px!important}
+ .home-comparison-section .vs-cell{padding:13px 12px}
+ .home-extras-head{margin-top:23px}
+}
+@media(prefers-reduced-motion:reduce){.btn:active:not(:disabled){transform:none}}

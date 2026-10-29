@@ -1,0 +1,200 @@
+/* 평행통장 v5 · 금융 앱형 UI 시스템: 현재 / 과거 / 미래 중심.
+   브랜드별 고유 UI를 복제하지 않고 가독성, 일관된 정보 위계, 행동 우선순위만 차용. */
+:root{--bg:#f6f7f9;--surface:#fff;--surface-2:#f3f5f7;--ink:#191f28;--ink-2:#4e5968;--ink-3:#8b95a1;--blue:#3182f6;--blue-press:#2273db;--blue-weak:#eaf3ff;--line:#ecf0f3;--radius:20px;--shadow:none;--nav-h:72px}
+body{background:#e9edf2;color:#191f28;line-height:1.48}
+.app,.page{background:var(--bg)}
+.page{padding-left:20px;padding-right:20px}
+.page>.topbar{margin:0 -20px;width:calc(100% + 40px);height:calc(60px + var(--safe-t));min-height:calc(60px + var(--safe-t));padding:var(--safe-t) 20px 0;background:rgba(246,247,249,.98);border:0;box-shadow:none;position:sticky;top:0;z-index:30;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.page>.topbar.plain{padding-left:8px;padding-right:20px}
+.topbar h1,.topbar .title-center{font-size:18px;font-weight:800;letter-spacing:-.05em}
+.topbar h1{display:flex;align-items:center;min-width:0}
+.brand{font-size:19px;line-height:1;font-weight:850;gap:9px;display:inline-flex;align-items:center}
+.brand svg{width:27px;height:auto}
+.page.no-nav>.topbar{border-bottom:0;background:rgba(246,247,249,.98)}
+.bottom-nav{background:rgba(255,255,255,.98);border-top:1px solid #edf0f2;box-shadow:none;height:calc(var(--nav-h) + var(--safe-b))}
+.bottom-nav button{font-size:11px;color:#939ba7;font-weight:650;gap:5px;letter-spacing:-.045em}
+.bottom-nav button[aria-current='page']{color:#3182f6;font-weight:850}
+.btn,.btn.primary,.btn.secondary,.btn.ghost{border-radius:14px;box-shadow:none;font-weight:770}
+.btn.primary{background:#3182f6;color:#fff}
+.card,.blk{border-radius:20px;border:none;background:#fff;box-shadow:none}
+.page:not(.no-nav){padding-bottom:calc(105px + var(--safe-b))}
+.pb-home-v5{padding-bottom:calc(112px + var(--safe-b))}
+.pb-demo-banner{background:#f4f6f8;border-radius:12px;color:#747f90;padding:10px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;font-weight:630;margin:9px 0 4px}
+.pb-demo-banner button{background:transparent;border:0;color:#3182f6;font-size:11px;font-weight:780}
+/* 홈: 잔고를 선명하게, 과거·미래를 동등한 핵심 서비스로 */
+.pb-home-account{background:#fff;margin:14px 0 26px;padding:24px 20px 21px;border-radius:22px}
+.pb-home-account-head{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#6b7684;font-size:14px;font-weight:700}
+.pb-home-account-head button{color:#8b95a1;font-size:12px;border:0;background:transparent;padding:4px 2px;font-weight:690}
+.pb-home-amount{font-size:clamp(29px,7vw,36px);line-height:1.3;font-weight:850;letter-spacing:-.06em;white-space:nowrap;margin:7px 0 7px}
+.pb-home-account>p{color:#a0a7b2;font-size:11px;margin:0 0 22px;line-height:1.45}
+.pb-home-money-actions{display:grid;grid-template-columns:1.4fr 1fr;gap:9px}
+.pb-home-money-actions button{border:0;min-height:47px;border-radius:12px;font-size:14px;font-weight:790;display:flex;justify-content:center;align-items:center;gap:10px}
+.pb-home-money-primary{color:#fff;background:#3182f6}
+.pb-home-money-primary span{font-size:18px;font-weight:500}
+.pb-home-money-secondary{color:#4e5968;background:#f2f4f6}
+.pb-core-section{margin:0 0 27px}
+.pb-core-section-title{margin:0 3px 14px}
+.pb-core-section-title h2{font-size:20px;letter-spacing:-.065em;font-weight:840;line-height:1.4;margin:0 0 4px}
+.pb-core-section-title span{display:block;color:#8b95a1;font-size:12px}
+.pb-core-cards{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.pb-time-card{min-width:0;min-height:234px;border-radius:19px;text-align:left;padding:19px 15px 15px;display:flex;flex-direction:column;align-items:flex-start;position:relative;box-shadow:none;border:1px solid #eaeef3;transition:transform .12s ease, border-color .12s ease}
+.pb-time-card:active{transform:scale(.982)}
+.pb-time-card.past{background:#fff;border-color:#e8ecf1}
+.pb-time-card.future{background:#eaf3ff;border-color:#dceafc}
+.pb-time-icon{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;font-size:23px;line-height:1;font-weight:600}
+.past-icon{color:#566477;background:#f1f3f6}
+.future-icon{color:#fff;background:#3182f6}
+.pb-time-label{font-size:10px;letter-spacing:.045em;font-weight:830;color:#8390a0;margin:13px 0 5px}
+.pb-time-card.future .pb-time-label{color:#628dd0}
+.pb-time-card strong{font-weight:840;letter-spacing:-.065em;font-size:19px;line-height:1.37;white-space:nowrap;color:#191f28}
+.pb-time-detail{font-size:11px;line-height:1.5;color:#8b95a1;margin:9px 0 16px}
+.pb-time-card.future .pb-time-detail{color:#6985aa}
+.pb-time-action{margin-top:auto;font-size:11px;letter-spacing:-.04em;font-weight:800;color:#525e70;display:flex;align-items:center;justify-content:space-between;width:100%;gap:5px}
+.pb-time-action>span{font-size:17px;font-weight:500}
+.pb-time-card.future .pb-time-action{color:#2177ed}
+.pb-compact-title{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:0 2px 13px}
+.pb-compact-title h2{margin:0;font-size:18px;font-weight:820;letter-spacing:-.055em}
+.pb-compact-title>button{border:0;background:transparent;color:#8b95a1;font-weight:720;font-size:12px;white-space:nowrap}
+.pb-compact-title>span{font-size:12px;color:#8b95a1}
+.pb-month-section{background:#fff;border-radius:20px;padding:20px 19px 18px;margin-bottom:27px}
+.pb-month-section>.pb-compact-title{margin-bottom:17px}
+.pb-month-main,.pb-month-other{display:flex;justify-content:space-between;align-items:center;gap:5px}
+.pb-month-main>div,.pb-month-other>div{min-width:0;display:flex;flex-direction:column;gap:4px}
+.pb-month-main>div>span,.pb-month-other>div>span{font-size:12px;color:#6b7684;font-weight:690}
+.pb-month-main strong,.pb-month-other strong{font-size:25px;letter-spacing:-.055em;font-weight:850;white-space:nowrap}
+.pb-month-label{background:#f2f4f6;color:#768294;border-radius:7px;padding:6px 7px;font-size:10px;white-space:nowrap;font-weight:700}
+.pb-month-other{border-top:1px solid #f1f2f5;margin-top:16px;padding-top:15px}
+.pb-month-other strong{font-size:21px;color:#3182f6}
+.pb-month-delta{font-size:13px;white-space:nowrap;font-weight:840;color:#3182f6}
+.pb-month-delta.minus{color:#d65565}
+.pb-month-empty{margin-top:16px;border-top:1px solid #f1f2f5;padding-top:13px;color:#919aa7;font-size:12px;line-height:1.5}
+.pb-financial-caveat{margin:16px 0 0;color:#a4adb7;font-size:10px;line-height:1.6}
+.pb-home-utilities>h2{font-size:18px;font-weight:820;letter-spacing:-.06em;margin:0 2px 13px}
+.pb-utility-list{background:#fff;border-radius:20px;padding:5px 17px}
+.pb-utility-list button{width:100%;display:flex;align-items:center;gap:12px;padding:13px 0;background:transparent;border:0;text-align:left;min-height:70px}
+.pb-utility-list button+button{border-top:1px solid #f1f3f6}
+.pb-utility-list button>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.pb-utility-list b{font-size:14px;font-weight:790;letter-spacing:-.04em}
+.pb-utility-list small{font-size:11px;color:#929daa;line-height:1.35}
+.pb-utility-list button>svg{color:#bac3cb;flex:none}
+.pb-utility-list .icon-tile{box-shadow:none!important}
+/* 평행세계 탭: 과거 / 미래를 탭 한 번으로 */
+.pb-world-page{padding-bottom:calc(107px + var(--safe-b))}
+.pb-world-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#ecf0f4;padding:4px;border-radius:13px;margin:14px 0 23px}
+.pb-world-tabs button{min-width:0;border:0;border-radius:10px;min-height:43px;background:transparent;color:#89939e;font-weight:750;font-size:13px;letter-spacing:-.04em}
+.pb-world-tabs button.active{background:#fff;color:#191f28;box-shadow:0 1px 5px #19202914}
+.pb-world-heading{padding:6px 1px 0}
+.pb-eyebrow{font-size:10px;letter-spacing:.065em;font-weight:840;color:#3182f6}
+.pb-world-heading h1{font-size:25px;line-height:1.4;letter-spacing:-.065em;font-weight:860;margin:10px 0 8px}
+.pb-world-heading p{font-size:12px;color:#929ca9;margin:0 0 22px;line-height:1.6}
+.pb-world-main-action{display:flex;align-items:center;gap:15px;width:100%;border:0;border-radius:18px;background:#3182f6;color:#fff;min-height:88px;padding:16px 19px;text-align:left}
+.pb-world-main-icon{background:#ffffff29;width:43px;height:43px;border-radius:14px;display:grid;place-items:center;font-size:26px;flex:none}
+.pb-world-main-action>span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:3px}
+.pb-world-main-action strong{font-size:16px;font-weight:800;letter-spacing:-.045em}
+.pb-world-main-action small{font-size:11px;color:#e1efff}
+.pb-world-main-arrow{font-size:28px;font-weight:300}
+.pb-world-records{margin-top:28px}
+.pb-past-list{background:#fff;border-radius:20px;padding:4px 16px;overflow:hidden}
+.pb-history-item{display:flex;align-items:center;text-align:left;gap:12px;width:100%;border:0;background:#fff;padding:13px 0;min-height:70px}
+.pb-history-item+.pb-history-item{border-top:1px solid #f0f3f6}
+.pb-history-item.is-active .pb-history-text b{color:#3182f6}
+.pb-history-text{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.pb-history-text b{font-size:14px;letter-spacing:-.04em;font-weight:780;color:#333d4b}
+.pb-history-text small{font-size:11px;color:#909ba8}
+.pb-history-money{font-size:12px;display:flex;align-items:center;gap:8px;font-weight:740;white-space:nowrap;letter-spacing:-.035em}
+.pb-history-chevron,.pb-history-money>span{color:#bec6cf;font-size:20px;font-weight:450}
+.pb-world-none{border-radius:20px;background:#fff;color:#8b95a1;text-align:center;padding:38px 15px;line-height:1.7;font-size:13px}
+/* 지난 선택 회고: 과장된 차트 대신 지출 차이를 직관적으로 */
+.pb-past-page{padding-bottom:calc(30px + var(--safe-b))}
+.pb-past-title{margin:12px 0 22px}
+.pb-past-title h2{margin:9px 0 7px;font-size:24px;line-height:1.37;letter-spacing:-.065em;font-weight:850}
+.pb-past-title p{margin:0;font-size:12px;color:#919baa;line-height:1.6}
+.pb-retro-summary{background:#fff;border-radius:20px;padding:21px 19px;margin-bottom:23px}
+.pb-retro-summary>span{font-size:13px;color:#6b7684;font-weight:700}
+.pb-retro-summary strong{display:block;font-size:36px;font-weight:850;line-height:1.25;letter-spacing:-.07em;margin:4px 0}
+.pb-retro-summary strong small{font-size:17px;margin-left:3px}
+.pb-retro-summary>p{margin:7px 0 0;color:#9aa4b0;font-size:11px;line-height:1.55}
+.pb-section-title{font-size:17px;font-weight:820;letter-spacing:-.055em;margin:0 2px 12px}
+.pb-retro-detail{margin-top:23px;padding:20px 16px 17px;border-radius:20px;background:#fff}
+.pb-retro-detail-head{display:flex;justify-content:space-between;gap:7px;align-items:center}
+.pb-retro-detail-head>span{font-size:11px;font-weight:750;color:#8390a2}
+.pb-retro-detail-head>button{border:0;background:transparent;color:#3182f6;font-size:11px;font-weight:700;padding:3px 0}
+.pb-retro-detail h3{font-size:20px;letter-spacing:-.055em;margin:6px 0 17px;font-weight:830}
+.pb-retro-scenarios{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pb-retro-scene{display:flex;flex-direction:column;min-width:0;gap:4px;border:1px solid #ecf0f4;background:#f7f8fa;border-radius:14px;padding:13px 10px}
+.pb-retro-scene.alternate{border-color:#dbe9ff;background:#eff6ff}
+.pb-retro-scene>span{font-size:10px;font-weight:700;color:#8793a2;display:flex;align-items:center;gap:5px}
+.pb-dot{width:8px;height:8px;background:#7c8796;border-radius:50%;display:inline-block;flex:none}
+.pb-dot.parallel{background:#3182f6}
+.pb-retro-scene>b{font-size:13px;font-weight:800;color:#333d4b}
+.pb-retro-scene strong{font-size:clamp(15px,4.1vw,21px);white-space:nowrap;letter-spacing:-.05em;font-weight:850}
+.pb-retro-scene.alternate strong{color:#3182f6}
+.pb-retro-scene small{font-size:10px;color:#9ba5b1;line-height:1.45}
+.pb-retro-result{display:flex;gap:12px;align-items:center;justify-content:space-between;border-radius:12px;margin-top:10px;padding:15px 12px;background:#f5f7f9}
+.pb-retro-result span{font-size:11px;font-weight:680;color:#68758a;max-width:155px}
+.pb-retro-result strong{font-size:19px;white-space:nowrap;letter-spacing:-.04em;color:#333d4b}
+.pb-retro-result strong.positive{color:#3182f6}
+.pb-retro-result strong.negative{color:#d45d64}
+.pb-retro-note{font-size:10px;color:#9ca6b1;line-height:1.55;margin:13px 2px 0}
+.pb-empty-past{text-align:center;background:#fff;border-radius:18px;padding:40px 24px}
+.pb-empty-past>span{width:54px;height:54px;display:grid;place-items:center;background:#eef5ff;color:#3182f6;border-radius:15px;margin:auto;font-size:27px}
+.pb-empty-past h3{font-size:17px;font-weight:810;margin:16px 0 6px}
+.pb-empty-past p{font-size:12px;color:#8b95a1;line-height:1.65;margin:0 0 22px}
+/* 입력/결과: 배너·단계칩·중복 그래프 제거, 선택 근거는 상세에서 */
+.decision-input-page,.decision-result-page{background:var(--bg)}
+.decision-step-indicator,.decision-eyebrow,.decision-input-art,.decision-ml-context{display:none!important}
+.decision-input-heading{padding:23px 1px 17px}
+.decision-input-heading h1{font-size:25px;letter-spacing:-.062em;margin:0 0 7px;line-height:1.35}
+.decision-input-heading p{font-size:12px;color:#8b95a1;line-height:1.5}
+.decision-input-form{background:#fff;padding:21px 18px 19px;border:0;border-radius:20px;box-shadow:none}
+.decision-field-title{font-size:14px;font-weight:780;color:#333d4b}
+.decision-input-form>.input,.decision-amount-wrap{background:#f6f7f9;border:1px solid #eef0f3}
+.decision-result-shell{padding-top:19px}
+.decision-result-head h1{font-size:26px;font-weight:820;margin:0 0 17px;line-height:1.35;letter-spacing:-.06em}
+.decision-result-head h1 em{color:#3182f6}
+.decision-product,.decision-comparison,.decision-advanced,.decision-alternatives{background:#fff;border:0;box-shadow:none;border-radius:19px}
+.decision-product{padding:13px;margin-bottom:14px}
+.decision-comparison{padding:18px 13px 14px}
+.decision-choice-grid{gap:7px}
+.decision-choice-card{padding:14px 10px;border-radius:14px}
+.decision-choice-card.buying{background:#f5f6f8}
+.decision-choice-card.alternative{background:#eef5ff}
+.decision-choice-card strong{font-size:clamp(15px,4.15vw,21px)}
+.decision-choice-caption{font-size:11px}
+.decision-choice-caption b{display:none}
+.decision-difference{background:#eff6ff;border-radius:12px;margin-top:9px}
+.decision-difference strong{font-size:21px}
+.decision-alternatives{padding:17px 13px}
+.decision-advanced{margin-top:16px}
+.decision-disclaimer{font-size:10px;color:#9aa4b1;margin:12px 2px}
+.quick-compare{border:0;box-shadow:none;margin-top:12px;background:#f7f8fa}
+/* 학습과 투자: 정보 중심 UI, 간판 같은 중간 배너 최소화 */
+.learning-v3-head{padding-top:17px;padding-bottom:15px}
+.learning-v3-head h1{font-size:24px;line-height:1.35;margin:5px 0 9px}
+.learning-v3-head p{font-size:12px;color:#8b95a1;line-height:1.5}
+.learn-start{background:#fff;border:1px solid #edf0f3;padding:16px}
+.learn-start-icon{background:#eaf3ff;color:#3182f6}
+.learn-practice-link{background:#fff;border:0}
+.invest-tip{display:none!important}
+/* 좁은 모바일 화면에서도 카드 텍스트가 겹치지 않도록 */
+@media(max-width:380px){.page{padding-left:16px;padding-right:16px}.page>.topbar{width:calc(100% + 32px);margin-left:-16px;margin-right:-16px;padding-right:16px;padding-left:16px}.pb-time-card{padding:16px 12px;min-height:230px}.pb-time-card strong{font-size:17px}.pb-time-detail{font-size:10px}.pb-time-action{font-size:10px}.pb-retro-scene strong{font-size:15px}.pb-history-money{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.pb-time-card{transition:none}}
+/* 온보딩 3장: 과거 회고를 앱 핵심 기능으로 직접 소개 */
+.intro-past-preview{text-align:left;padding:18px 15px 15px;background:#fff;border:1px solid #eef0f4;box-shadow:0 8px 22px #191f280b;border-radius:20px;max-width:355px;margin:2px auto 0}
+.intro-past-kicker{font-size:11px;font-weight:800;color:#3182f6;margin:0 0 12px}
+.intro-past-product{display:flex;align-items:center;gap:9px;padding:9px 0 16px;border-bottom:1px solid #f1f3f5}
+.intro-past-product .intro-past-emoji{font-size:23px;background:#eef3fa;border-radius:13px;width:45px;height:45px;display:grid;place-items:center}
+.intro-past-product>span:nth-child(2){display:flex;flex-direction:column;gap:3px}
+.intro-past-product b{font-size:15px;color:#191f28}
+.intro-past-product small{font-size:11px;color:#8b95a1}
+.intro-past-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.intro-past-choices>div{display:flex;flex-direction:column;gap:7px;padding:13px 9px;border-radius:12px;background:#f5f6f8}
+.intro-past-choices>div+div{background:#eff6ff}
+.intro-past-choices small{font-size:10px;color:#8b95a1}
+.intro-past-choices b{font-size:12px;color:#333d4b}
+.intro-past-choices strong{font-size:clamp(14px,4vw,17px);white-space:nowrap;letter-spacing:-.045em;color:#333d4b}
+.intro-past-choices>div+div strong{color:#3182f6}
+.intro-past-conclusion{padding:13px 4px 2px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.intro-past-conclusion span{font-size:11px;color:#6b7684}
+.intro-past-conclusion b{font-size:16px;color:#3182f6}
+.intro-past-preview>p{font-size:9px;color:#a4acb9;margin:10px 0 0}
