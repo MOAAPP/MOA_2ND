@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-export type Tab = 'home' | 'forks' | 'save' | 'invest' | 'learn';
+export type Tab = 'home' | 'ledger' | 'forks' | 'save' | 'invest' | 'learn';
 
 export type Screen =
   | { name: 'lab'; mode?: 'past' | 'future' }
@@ -21,19 +21,21 @@ export type Screen =
   | { name: 'cardnews'; tradeId: string; jobId?: string }
   | { name: 'cards' }
   | { name: 'portfolio' }
-  | { name: 'ledger' }
   | { name: 'newChoice' }
   | { name: 'product'; id: string }
   | { name: 'join'; id: string; amount?: number }
   | { name: 'choose' }
   | { name: 'account'; id: string }
   | { name: 'research' }
-  | { name: 'report' };
+  | { name: 'report' }
+  | { name: 'ask'; q?: string };
 
 interface Nav {
   tab: Tab;
   stack: Screen[];
   setTab: (t: Tab) => void;
+  /** 쌓인 화면을 닫고 탭으로 이동 */
+  goTab: (t: Tab) => void;
   push: (s: Screen) => void;
   replace: (s: Screen) => void;
   pop: () => void;
@@ -86,7 +88,8 @@ export function NavProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const value = useMemo(() => ({ tab, stack, setTab, push, replace, pop, reset }), [tab, stack, setTab, push, replace, pop, reset]);
+  const goTab = useCallback((t: Tab) => { reset(); setTab(t); }, [reset, setTab]);
+  const value = useMemo(() => ({ tab, stack, setTab, goTab, push, replace, pop, reset }), [tab, stack, setTab, goTab, push, replace, pop, reset]);
   return <NavCtx.Provider value={value}>{children}</NavCtx.Provider>;
 }
 

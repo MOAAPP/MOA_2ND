@@ -3,7 +3,6 @@ import { currentStreak, dailyQuizFor, nextLesson } from '../../shared/curriculum
 import { formatKDate, formatKDateTime, todayKST } from '../../shared/dates';
 import { won, shares } from '../../shared/format';
 import { LEVEL_LABEL, type Level } from '../../shared/knowledge';
-import { formatSourceLabel } from '../../shared/sources';
 import type { QuoteSource } from '../../shared/market';
 import { DiscordPanel } from '../components/DiscordPanel';
 import { IconRefresh, IconImage, IconChevron, IconSend } from '../components/Icons';
@@ -108,7 +107,7 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
           <Notice kind="danger">
             <b>{job.stage === 'send' ? 'Discord 전송에 실패했어요.' : '카드뉴스를 만들지 못했어요.'}</b> {job.error}
             {job.stage === 'send' && job.kind === 'trade' && <div className="small">모의 거래는 그대로 유지돼요. 알림만 실패했어요.</div>}
-            {job.kind === 'daily' && <div className="small">데일리 카드는 10분 뒤 서버가 자동으로 다시 시도해요(하루 3번).</div>}
+            {job.kind === 'daily' && <div className="small">잠시 뒤 다시 만들어 볼게요.</div>}
           </Notice>
           <div className="row" style={{ gap: 8, marginTop: 10 }}>
             {job.stage === 'send' ? (
@@ -137,7 +136,7 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
       <section className="section">
         <div className="section-head"><h2>출처와 기준</h2></div>
         <div className="card small">
-          {job.quoteMeta && <p style={{ marginTop: 0 }}>시세: {formatSourceLabel(job.quoteMeta.source, job.quoteMeta.live)} · {formatKDateTime(job.quoteMeta.time)} 기준</p>}
+          {job.quoteMeta && <p style={{ marginTop: 0 }}>{formatKDateTime(job.quoteMeta.time)} 기준 시세</p>}
           <div className="bold">사진</div>
           {job.noPhoto ? <p className="ink2" style={{ marginTop: 2 }}>사진 없이 만들었어요.</p> : job.photos.length ? (
             <ul style={{ margin: '4px 0 10px', paddingLeft: 18 }} className="ink2">

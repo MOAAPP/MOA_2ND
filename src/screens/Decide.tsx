@@ -266,7 +266,7 @@ export function Decide({ recordId }: { recordId?: string }) {
         </div>
         <button className="decision-ml-context" onClick={() => nav.push({name:'insights'})}>
           <span className="decision-ml-symbol">✦</span>
-          <span><b>내 생활비까지 고려한 분석</b><small>{forecast.engine === 'local' ? '최근 지출을 학습한 개인화 모델이 적용 중이에요' : forecast.engine === 'model' ? '연결된 예측 모델이 적용 중이에요' : '현재는 입력값·지출 기록으로 추정하고 있어요'} · 자세히 보기 →</small></span>
+          <span><b>내 생활비까지 고려한 분석</b><small>최근 지출 기록으로 앞으로의 생활비를 예측해요 · 자세히 보기 →</small></span>
         </button>
 
         <div className="decision-disclaimer">입력한 잔고와 예정된 수입·지출을 바탕으로 한 추정치예요. 실제 잔고와는 차이가 날 수 있어요.</div>

@@ -23,7 +23,7 @@ export function Insights() {
   const mean = next7.length ? Math.round(next7.reduce((s, d) => s + d.p50, 0) / next7.length) : 0;
   const max = Math.max(1, ...next7.map(d => d.p50));
   const labels = ['일', '월', '화', '수', '목', '금', '토'];
-  const mode = report.status === 'active' ? '개인화 모델 사용 중' : report.status === 'baseline' ? '검증 후 기본 예측 사용' : '기록 모으는 중';
+  const mode = report.status === 'active' ? '내 기록으로 예측' : report.status === 'baseline' ? '평균으로 예측' : '기록 모으는 중';
   return <div className="page no-nav insight-page">
     <TopBar title="내 소비 분석" center onBack={nav.pop}/>
     <div className="insight-lead"><span className="ux-kicker">MY MONEY PATTERN</span><h1>내가 돈을 더 쓰는 날,<br/>다음 선택을 바꿔 볼까요?</h1><p>입력한 기록을 바탕으로 생활비를 추정하고, 소비하기 전 다른 세계를 비교해 볼 수 있어요.</p></div>

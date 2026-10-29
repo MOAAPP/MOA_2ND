@@ -118,7 +118,7 @@ export function StockDetail({ code }: { code: string }) {
           <div className="card" style={{ marginTop: 14 }}>
             <Spark q={quote} />
             <div className="row between" style={{ marginTop: 6 }}>
-              <span className="xs muted">{quote.delayNote}</span>
+              {quote.source === 'yahoo' && <span className="xs muted">시세가 20분쯤 늦을 수 있어요</span>}
               <button className="icon-btn" onClick={load} aria-label="시세 새로고침" disabled={loading}>{loading ? <Spinner label="" /> : <IconRefresh />}</button>
             </div>
           </div>

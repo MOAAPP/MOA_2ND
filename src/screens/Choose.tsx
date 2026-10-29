@@ -20,6 +20,10 @@ import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type World
 import { useBank } from '../state/bank';
 import { useNav } from '../state/nav';
 import { useStore, withEvent } from '../state/store';
+import { AiCard } from '../components/Ai';
+import { useAi } from '../lib/ai';
+import { coachInput } from '../lib/ai/context';
+import { useSpending } from './Ledger';
 
 type Phase = 'input' | 'preview' | 'done';
 type Pick = 'hold' | 'alt' | 'buy';
@@ -176,6 +180,7 @@ export function Choose() {
       </header>
 
       {!control && <>
+      <Coach item={title} price={price} freq={freq} usableNow={fc.now.usable} usableAfter={fc.buy.usable} afterBills={fc.buy.afterBills} yearGap={fc.year.net} memory={state.categoryMemory} />
 
       <section className="c-fork" aria-label="1년 동안 두 세계의 차이">
         <ForkChart spend={fc.yearSpend} keep={yearGap} holdName={holdName} />
@@ -246,6 +251,18 @@ export function Choose() {
         />
       )}
     </div>
+  );
+}
+
+function Coach({ item, price, freq, usableNow, usableAfter, afterBills, yearGap, memory }: { item: string; price: number; freq: Frequency; usableNow: number; usableAfter: number; afterBills: number; yearGap: number; memory: Record<string, string> }) {
+  const { all, today } = useSpending();
+  const category = ruleClassify(item, memory)?.category ?? '기타';
+  const input = useMemo(() => coachInput({ item, category, price, frequency: freq, usableNow, usableAfter, afterBills, yearGap }, all, today), [item, category, price, freq, usableNow, usableAfter, afterBills, yearGap, all, today]);
+  const ai = useAi('coach', input, JSON.stringify(input));
+  return (
+    <AiCard title="AI 코치" loading={ai.loading} source={ai.source} tone={ai.data?.tone} className="c-coach">
+      {ai.data && <><p className="ai-body">{ai.data.message}</p>{ai.data.tip && <p className="ai-tip">{ai.data.tip}</p>}</>}
+    </AiCard>
   );
 }
 
@@ -335,7 +352,7 @@ function Done({ o, yearNet, yearProduct, yearLabel }: { o: Outcome; yearNet: num
           {yearNet > 0 && <div className="c-done-kv"><span>대신 참았다면 1년 뒤</span><b className="num">{fmt(yearNet)}</b></div>}
           <p className="c-done-note">잘 산 소비였는지는 일주일 뒤 평행세계 탭에서 돌아볼 수 있어요.</p>
         </Card>
-        <CtaBar><ButtonRow><Button tone="ghost" onClick={() => nav.replace({ name: 'ledger' })}>가계부 보기</Button><Button onClick={home}>홈으로</Button></ButtonRow></CtaBar>
+        <CtaBar><ButtonRow><Button tone="ghost" onClick={() => nav.goTab('ledger')}>가계부 보기</Button><Button onClick={home}>홈으로</Button></ButtonRow></CtaBar>
       </div>
     );
   }

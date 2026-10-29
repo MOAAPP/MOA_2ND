@@ -39,3 +39,33 @@ export async function aiSummary(name: string, e: Explanation, level: 1 | 2 | 3):
     return null;
   }
 }
+
+/* ───────── 모아 AI 작업 (shared/aiPrompts.ts · docs/AI.md) ───────── */
+import { AI_PROMPTS, buildUserMessage, numbersGrounded, type AiTask } from '../../shared/aiPrompts';
+
+export const AI_TASKS = Object.keys(AI_PROMPTS) as AiTask[];
+
+/**
+ * 작업 하나를 실제 모델로 실행한다. 키가 없거나, JSON이 아니거나, 입력에 없는 금액을 지어내면 null.
+ * 클라이언트는 null(503)을 받으면 예시 응답을 쓴다.
+ */
+export async function runAiTask(task: AiTask, input: unknown): Promise<unknown | null> {
+  if (!aiConfigured()) return null;
+  const p = AI_PROMPTS[task];
+  try {
+    const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL ?? 'claude-haiku-5-5', max_tokens: p.maxTokens, system: p.system, messages: [{ role: 'user', content: buildUserMessage(task, input as never) }] }),
+    }, 20000);
+    if (!res.ok) return null;
+    const j = (await res.json()) as { content?: { type: string; text?: string }[] };
+    const text = j.content?.find((c) => c.type === 'text')?.text ?? '';
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    const out = JSON.parse(m[0]) as unknown;
+    return numbersGrounded(task, input, out) ? out : null;
+  } catch {
+    return null;
+  }
+}

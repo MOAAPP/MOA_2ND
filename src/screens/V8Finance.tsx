@@ -11,6 +11,9 @@ import { worldHistory } from '../lib/worldHistory';
 import { useWallet } from '../state/wallet';
 import { Row, useSpending } from './Ledger';
 import { INSTRUMENT_BY_CODE } from '../../shared/instruments';
+import { AiCard, AiMark } from '../components/Ai';
+import { useAi } from '../lib/ai';
+import { briefInput } from '../lib/ai/context';
 
 const fmt = (n: number) => won(Math.max(0, Math.round(n)));
 const pct = (n: number, t: number) => (t > 0 ? (100 * n) / t : 0);
@@ -52,6 +55,28 @@ function AssetRow({ kind, title, detail, amount, onClick }: { kind: AvatarKind; 
   );
 }
 
+/** 오늘의 AI 브리핑 + 물어보기 */
+function HomeBrief() {
+  const { state } = useStore();
+  const nav = useNav();
+  const { all, today } = useSpending();
+  const input = useMemo(() => briefInput(state.worldWallet, all, today), [state.worldWallet, all, today]);
+  const ai = useAi('brief', input, JSON.stringify(input));
+  const go = (to: 'choose' | 'ledger' | 'save' | 'forks') => (to === 'choose' ? nav.push({ name: 'choose' }) : nav.setTab(to));
+  return (
+    <AiCard title="오늘의 브리핑" loading={ai.loading} source={ai.source} tone="dark" className="t-brief" foot={false}>
+      {ai.data && <>
+        <strong className="ai-headline">{ai.data.headline}</strong>
+        <p className="ai-body">{ai.data.body}</p>
+        <div className="ai-row">
+          {ai.data.action && <button type="button" className="ai-btn" onClick={() => go(ai.data!.action!.to)}>{ai.data.action.label}</button>}
+          <button type="button" className="ai-btn ghost" onClick={() => nav.push({ name: 'ask' })}><AiMark label="" />물어보기</button>
+        </div>
+      </>}
+    </AiCard>
+  );
+}
+
 function HomeSpend() {
   const nav = useNav();
   const { all, today } = useSpending();
@@ -62,12 +87,12 @@ function HomeSpend() {
   const max = Math.max(1, ...perDay);
   return (
     <section className="t-card">
-      <button className="t-card-head as-link" onClick={() => nav.push({ name: 'ledger' })}>
+      <button className="t-card-head as-link" onClick={() => nav.setTab('ledger')}>
         <h2>가계부</h2><span className="t-more">전체 보기<IconChevron /></span>
       </button>
       {all.length ? (
         <>
-          <button className="t-spend-top" onClick={() => nav.push({ name: 'ledger' })}>
+          <button className="t-spend-top" onClick={() => nav.setTab('ledger')}>
             <span>
               <small>{parseISO(today).m}월에 쓴 돈</small>
               <strong className="num">{won(total)}</strong>
@@ -110,7 +135,9 @@ export function V8Home() {
 
   return (
     <div className="page t-page t-home">
-      <TopHeader title="평행통장" logo />
+      <TopHeader title="모아" logo />
+
+      <HomeBrief />
 
       {/* ── 이번 달 쓸 수 있는 돈 ── */}
       <section className="t-card t-hero">

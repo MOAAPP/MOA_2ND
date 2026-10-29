@@ -3,7 +3,7 @@ import { formatKDateTime } from '../../shared/dates';
 import { api, errorMessage } from '../lib/api';
 import { useMarket } from '../state/market';
 import { useStore } from '../state/store';
-import { Notice, Sheet, Spinner, Switch, useToast } from './ui';
+import { Notice, Sheet, Switch, useToast } from './ui';
 
 export const DISCORD_INVITE = 'https://discord.gg/NSCE4wxsD';
 
@@ -78,10 +78,10 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
   const { state, update } = useStore();
   const m = useMarket();
   const toast = useToast();
-  const { status, error, reload, setStatus } = useDiscordStatus();
+  const { reload, setStatus } = useDiscordStatus();
   const [sub, setSub] = useState<DailySubStatus | null>(null);
   const [serverPhotos, setServerPhotos] = useState<boolean | null>(null);
-  const [testing, setTesting] = useState(false);
+  const [, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [consent, setConsent] = useState<null | 'daily' | 'trade' | 'test'>(null);
   const d = state.daily;
@@ -120,9 +120,7 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
   };
 
   const setDaily = (p: Partial<typeof d>) => update((s) => ({ ...s, daily: { ...s.daily, ...p } }));
-  const connected = status?.configured && status.lastSuccessAt;
   const on = d.enabled && state.settings.discordConsent;
-  const lr = sub?.lastRun;
 
   return (
     <div className="card">
@@ -145,69 +143,32 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
       {on && (
         <>
           <label className="field" style={{ marginTop: 14 }}>
-            <span className="lab">받는 시각 (한국 시간)</span>
+            <span className="lab">받는 시각</span>
             <select className="select" value={d.time} onChange={(e) => setDaily({ time: e.target.value })}>
               {TIMES.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}
             </select>
           </label>
           {!compact && (
             <label className="field">
-              <span className="lab">Discord에 표시할 닉네임 (선택)</span>
+              <span className="lab">카드에 표시할 닉네임 (선택)</span>
               <input className="input" value={d.nickname} maxLength={12} onChange={(e) => setDaily({ nickname: e.target.value })} placeholder="예: 지현" />
-              <div className="hint">공용 채널이라 누구의 카드인지 구분할 때 써요. 실명은 피하세요.</div>
+              <div className="hint">여러 사람이 보는 채널이라 실명은 피하세요.</div>
             </label>
           )}
+          {sub?.nextRunAt && <p className="small muted" style={{ margin: '10px 0 0' }}>다음 카드 {formatKDateTime(sub.nextRunAt)}</p>}
           <div className="row between" style={{ marginTop: 14 }}>
             <div>
-              <div className="bold" style={{ fontSize: 15 }}>자료 사진 넣기</div>
-              <div className="small muted">{serverPhotos === false ? '서버에 사진 키가 없어 사진 없이 보내요.' : '내용에 맞는 자료 사진(Pixabay·Pexels)을 골라 넣어요.'}</div>
-            </div>
-            <Switch label="자료 사진" checked={d.includePhotos && serverPhotos !== false} onChange={(v) => setDaily({ includePhotos: v })} />
-          </div>
-          <div className="notice neutral" style={{ marginTop: 14 }}>
-            <div className="small">
-              {sub?.nextRunAt ? <>다음 전송 예정 <b>{formatKDateTime(sub.nextRunAt)}</b></> : m.dailySync.error ? '서버와 동기화하지 못했어요.' : '서버에 설정을 저장하는 중…'}
-              {lr && (
-                <div style={{ marginTop: 4 }}>
-                  마지막 실행 {lr.date} · {lr.status === 'ok' ? '전송 완료' : lr.status === 'running' ? '진행 중' : `실패${lr.error ? ` (${lr.error})` : ''}${lr.attempts < 3 ? ' · 10분 뒤 자동 재시도' : ' · 오늘 재시도 끝'}`}
-                </div>
-              )}
-              {m.dailySync.error && <div className="up" style={{ marginTop: 4 }}>{m.dailySync.error}</div>}
-            </div>
-          </div>
-          <div className="row between" style={{ marginTop: 14 }}>
-            <div>
-              <div className="bold" style={{ fontSize: 15 }}>모의 체결 카드뉴스도 보내기</div>
-              <div className="small muted">매수·매도가 체결되면 그 거래 카드 4장도 바로 보내요.</div>
+              <div className="bold" style={{ fontSize: 15 }}>모의투자 체결 카드도 받기</div>
+              <div className="small muted">사고팔면 그 거래 카드도 바로 와요.</div>
             </div>
             <Switch label="체결 카드 자동 전송" checked={state.settings.autoSendDiscord} onChange={(v) => update((s) => ({ ...s, settings: { ...s.settings, autoSendDiscord: v } }))} />
           </div>
         </>
       )}
-
-      <hr className="divider" />
-      <div className="row between">
-        <div>
-          <div className="bold" style={{ fontSize: 15 }}>Discord 연결</div>
-          <div className="small muted">{status?.destination ?? '카드뉴스 공유 채널'}</div>
-        </div>
-        {!status && !error ? <Spinner label="" /> : (
-          <span className={`pill ${connected ? 'ok' : status?.configured ? 'blue' : 'danger'}`}>
-            {connected ? '전송 확인됨' : status?.configured ? '서버 설정됨 · 전송 기록 없음' : status?.misconfigured ? '주소 형식 오류' : '서버 미설정'}
-          </span>
-        )}
+      {testResult && !testResult.ok && <div style={{ marginTop: 10 }}><Notice kind="danger">{testResult.msg}</Notice></div>}
+      <div className="row" style={{ gap: 8, marginTop: 14 }}>
+        <a className="btn secondary flex sm" href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>Discord 채널 들어가기</a>
       </div>
-      {error && <div style={{ marginTop: 10 }}><Notice kind="danger">상태를 확인하지 못했어요. {error}</Notice></div>}
-      {status?.lastError && <p className="xs up" style={{ margin: '6px 0 0' }}>마지막 오류: {status.lastError}{status.lastErrorAt ? ` (${formatKDateTime(status.lastErrorAt)})` : ''}</p>}
-      {status?.lastSuccessAt && <p className="xs muted" style={{ margin: '4px 0 0' }}>마지막 전송 성공 {formatKDateTime(status.lastSuccessAt)}</p>}
-      {testResult && <div style={{ marginTop: 10 }}><Notice kind={testResult.ok ? 'ok' : 'danger'}>{testResult.msg}</Notice></div>}
-      <div className="row" style={{ gap: 8, marginTop: 12 }}>
-        <button className="btn ghost flex sm" disabled={!status?.configured || testing} onClick={() => (state.settings.discordConsent ? test() : setConsent('test'))}>{testing ? '확인 중…' : '연결 확인'}</button>
-        <a className="btn secondary flex sm" href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>서버 들어가기</a>
-      </div>
-      {state.settings.discordConsent && (
-        <button className="link-btn small" onClick={() => update((s) => ({ ...s, settings: { ...s.settings, discordConsent: false }, daily: { ...s.daily, enabled: false } }))}>전송 동의 철회 (서버 구독도 삭제)</button>
-      )}
       {consent && (
         <ConsentSheet
           onClose={() => setConsent(null)}

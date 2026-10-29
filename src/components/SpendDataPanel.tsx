@@ -45,7 +45,7 @@ export function SpendDataPanel() {
     if (r.entries.length) {
       update((s) => ({ ...s, spendLog: [...s.spendLog.filter((e) => e.from !== 'csv'), ...r.entries] }));
       toast(`지출 ${r.entries.length}건을 불러왔어요`);
-      nav.push({ name: 'ledger' });
+      nav.goTab('ledger');
     }
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -67,7 +67,7 @@ export function SpendDataPanel() {
       <div className="stack" style={{ marginTop: 14 }}>
         <input ref={fileRef} type="file" accept=".csv,text/csv" className="sr-only" id="csv-in" onChange={(e) => onFile(e.target.files?.[0])} />
         <label htmlFor="csv-in" className="btn secondary block sm">지출 CSV 불러오기</label>
-        {(csvCount > 0 || state.spendLog.length > 0) && <button className="btn block sm" onClick={() => nav.push({ name: 'ledger' })}>날짜별 지출 내역 보기 →</button>}
+        {(csvCount > 0 || state.spendLog.length > 0) && <button className="btn block sm" onClick={() => nav.goTab('ledger')}>날짜별 지출 내역 보기 →</button>}
         <div className="stack">
           <button className="btn ghost sm block" onClick={() => download('평행통장_샘플지출.csv', sampleCsv(today), 'text/csv')}>샘플 CSV 받기</button>
           <button className="btn ghost sm block" disabled={!memCount} onClick={() => download('category_corrections.json', JSON.stringify(Object.entries(state.categoryMemory).map(([name, category]) => ({ name, category })), null, 2), 'application/json')}>고친 분류 파일로 받기</button>

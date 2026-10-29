@@ -1,7 +1,6 @@
 import { formatKDateTime, formatShort } from '../../shared/dates';
 import { signedPct, signedWon, won } from '../../shared/format';
 import type { Quote } from '../../shared/market';
-import { formatSourceLabel, sourceShort } from '../../shared/sources';
 
 export function changeClass(n: number | null) {
   return n === null || n === 0 ? '' : n > 0 ? 'up' : 'down';
@@ -23,9 +22,9 @@ export function SourceBadge({ q }: { q: Quote }) {
 /** 시세 출처 배지: 실시간 체결(KIS 웹소켓)·준실시간(몇 초마다 갱신)·지연·예시를 구분 */
 export function LiveBadge({ source, live, streaming }: { source: Quote['source']; live?: boolean; streaming?: boolean }) {
   const cls = source === 'demo' ? 'demo' : source === 'yahoo' ? 'delayed' : '';
-  const label = source === 'yahoo' ? '지연 시세' : source === 'demo' ? '예시 시세' : live ? '실시간 체결' : streaming ? `${sourceShort(source)} · 자동 갱신` : sourceShort(source);
+  const label = source === 'yahoo' ? '20분 지연' : source === 'demo' ? '예시 시세' : live || streaming ? '실시간' : '시세';
   return (
-    <span className={`live-badge ${cls}`} title={formatSourceLabel(source, live)}>
+    <span className={`live-badge ${cls}`}>
       <span className="dot" aria-hidden />
       {label}
     </span>
@@ -35,8 +34,8 @@ export function LiveBadge({ source, live, streaming }: { source: Quote['source']
 export function QuoteMeta({ q }: { q: Quote }) {
   return (
     <span className="xs muted">
-      {formatKDateTime(q.time)} 기준 · {formatSourceLabel(q.source, q.live)}
-      {q.prevCloseDate ? ` · 비교 기준 ${formatShort(q.prevCloseDate)} 종가` : ''}
+      {formatKDateTime(q.time)} 기준
+      {q.prevCloseDate ? ` · ${formatShort(q.prevCloseDate)} 종가와 비교` : ''}
     </span>
   );
 }
