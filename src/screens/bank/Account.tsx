@@ -3,6 +3,7 @@ import { diffDays, formatShort } from '../../../shared/dates';
 import { BANKS, getProduct } from '../../lib/bank/products';
 import { accruedToDate, earlyQuote, maturityQuote, prefStatus, principalOf, roundDue } from '../../lib/bank/engine';
 import { ratePct } from '../../lib/bank/money';
+import { HISTORY_FILTERS, historyView, type HistoryFilter } from '../../lib/bank/history';
 import { ConfirmSheet, Sheet, TopBar, useToast } from '../../components/ui';
 import { useBank } from '../../state/bank';
 import { useNav } from '../../state/nav';
@@ -18,6 +19,7 @@ export function Account({ id }: { id: string }) {
   const [paying, setPaying] = useState(false);
   const [payAmt, setPayAmt] = useState(10_000);
   const [payErr, setPayErr] = useState('');
+  const [hf, setHf] = useState<HistoryFilter>('all');
 
   const mq = useMemo(() => (c ? maturityQuote(c, ctx, today, bank.contracts) : null), [c, ctx, today, bank.contracts]);
   if (!c || !p || !mq) return <div className="page"><TopBar onBack={nav.pop} title="계좌" /><p className="t-empty">계좌를 찾을 수 없어요.</p></div>;
@@ -31,7 +33,7 @@ export function Account({ id }: { id: string }) {
     ? prefStatus(p, ctx, { openedOn: c.openedOn, asOf: c.openedOn, maturityOn: c.maturityOn, bankHistory: bank.contracts, contract: c }).map((x) => ({ ...x, achieved: c.preferentialIds.includes(x.id) }))
     : mq.prefs;
   const early = active ? earlyQuote(c, today) : null;
-  const history = bank.log.filter((e) => e.contractId === c.id).slice().reverse();
+  const hv = historyView(bank.log.filter((e) => e.contractId === c.id), hf, c.settlement);
   const color = BANKS[p.bank]?.color ?? '#3182F6';
   const s = c.settlement;
 
@@ -114,17 +116,23 @@ export function Account({ id }: { id: string }) {
 
       <section className="t-card">
         <div className="t-card-head"><h2>거래 내역</h2></div>
-        {history.length ? (
+        <div className="t-chips b-hist-chips" role="group" aria-label="거래 내역 필터">
+          {HISTORY_FILTERS.map((f) => <button key={f.id} aria-pressed={hf === f.id} onClick={() => setHf(f.id)}>{f.label}</button>)}
+        </div>
+        {hv.count > 0 && hf !== 'all' && (
+          <p className="b-hist-total"><span>{hf === 'in' ? '넣은 돈 합계' : hf === 'out' ? '받은 돈 합계' : '세후 이자 합계'}</span><b className="num">{hf === 'in' ? fmtWon(hv.total) : `+${fmtWon(hv.total)}`}</b></p>
+        )}
+        {hv.count ? (
           <div className="b-history">
-            {history.map((e) => (
+            {hv.rows.map(({ event: e, interest }) => (
               <div key={e.id} className="b-hist-row">
                 <span className="b-hist-date num">{formatShort(e.on)}</span>
-                <span className="b-hist-memo">{e.memo}</span>
-                <span className={`num b-hist-amt ${e.type === 'missed' ? 'neg' : e.cash > 0 ? 'pos' : ''}`}>{e.type === 'missed' ? '미납' : e.cash > 0 ? `+${fmtWon(e.cash)}` : fmtWon(-e.cash)}</span>
+                <span className="b-hist-memo">{interest ? <>{e.type === 'mature' ? '만기 이자' : '중도해지 이자'}<small>세전 {fmtWon(interest.gross)} · 세금 −{fmtWon(interest.tax)}</small></> : e.memo}</span>
+                <span className={`num b-hist-amt ${interest ? 'pos' : e.type === 'missed' ? 'neg' : e.cash > 0 ? 'pos' : ''}`}>{interest ? `+${fmtWon(interest.net)}` : e.type === 'missed' ? '미납' : e.cash > 0 ? `+${fmtWon(e.cash)}` : fmtWon(-e.cash)}</span>
               </div>
             ))}
           </div>
-        ) : <p className="t-empty">거래 내역이 없어요.</p>}
+        ) : <p className="t-empty">{hf === 'interest' ? (active ? `이자는 ${dotDate(c.maturityOn)} 만기에 한 번에 들어와요.` : '받은 이자가 없어요.') : hf === 'out' ? '아직 받은 돈이 없어요.' : '거래 내역이 없어요.'}</p>}
       </section>
 
       {active && early && (
