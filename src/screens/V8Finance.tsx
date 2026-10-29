@@ -3,7 +3,7 @@ import { won } from '../../shared/format';
 import { addDays, parseISO, startOfMonth, weekdayOf } from '../../shared/dates';
 import { IconChevron, IconGear } from '../components/Icons';
 import { Logo } from '../components/Glyph';
-import { ParallelMini } from '../components/ParallelUniverse';
+import { Won } from '../components/ds';
 import { useStore } from '../state/store';
 import { useNav } from '../state/nav';
 import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldWalletAction } from '../lib/worldWallet';
@@ -101,11 +101,11 @@ export function V8Home() {
   const usable = Math.max(0, w.monthlyUsable);
   const cashBase = Math.max(1, WORLD_FIXED_BILLS + WORLD_SAFETY_BUFFER + usable);
   const assetRows = [
-    { key: 'cash', label: '현금', v: w.cash, c: 'var(--t-blue)' },
-    { key: 'save', label: '자유 저축', v: w.freeSavings, c: '#22C55E' },
-    { key: 'deposit', label: '예금', v: w.deposit, c: '#38BDF8' },
-    { key: 'install', label: '적금', v: w.installment, c: '#F59E0B' },
-    { key: 'stocks', label: 'ETF', v: w.stockValue, c: '#8B5CF6' },
+    { key: 'cash', label: '현금', v: w.cash, c: 'var(--moa)' },
+    { key: 'save', label: '자유 저축', v: w.freeSavings, c: '#9B9AFA' },
+    { key: 'deposit', label: '예금', v: w.deposit, c: '#19B6A0' },
+    { key: 'install', label: '적금', v: w.installment, c: 'var(--coin)' },
+    { key: 'stocks', label: 'ETF', v: w.stockValue, c: 'var(--ink)' },
   ].filter((r) => r.v > 0);
 
   return (
@@ -116,9 +116,9 @@ export function V8Home() {
       <section className="t-card t-hero">
         <div className="t-hero-top">
           <span className="t-label">이번 달 쓸 수 있는 돈</span>
-          <span className="t-badge">가상 체험</span>
+          <span className="t-badge">가상</span>
         </div>
-        <strong className="t-hero-num num">{fmt(usable)}</strong>
+        <strong className="t-hero-num num"><Won n={usable} /></strong>
         <div className="t-meter" role="img" aria-label={`현금 ${fmt(w.cash)} 중 결제 예정 ${fmt(WORLD_FIXED_BILLS)}, 생활비 안전선 ${fmt(WORLD_SAFETY_BUFFER)}, 쓸 수 있는 돈 ${fmt(usable)}`}>
           <span className="m-bill" style={{ width: `${pct(WORLD_FIXED_BILLS, cashBase)}%` }} />
           <span className="m-safe" style={{ width: `${pct(WORLD_SAFETY_BUFFER, cashBase)}%` }} />
@@ -136,16 +136,20 @@ export function V8Home() {
       <button className="t-portal" onClick={() => nav.setTab('forks')}>
         <span className="t-portal-text">
           <small>다르게 선택해서 지킨 돈</small>
-          <strong className="num">{gap >= 0 ? '+' : '−'}{fmt(Math.abs(gap))}</strong>
+          <strong className="num"><Won n={Math.abs(gap)} sign={gap >= 0 ? '+' : '−'} /></strong>
           <em>{choices}번의 선택 · 평행세계 보기 <IconChevron /></em>
         </span>
-        <ParallelMini />
+        <svg className="v17-mini-fork" width="96" height="56" viewBox="0 0 96 56" aria-hidden="true">
+          <path d="M4 28 C 34 28, 58 8, 88 8" fill="none" stroke="#8D8CFF" strokeWidth="3" strokeLinecap="round" />
+          <path d="M4 28 C 34 28, 58 46, 88 46" fill="none" stroke="#FF4F6E" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="4" cy="28" r="4" fill="#fff" /><circle cx="88" cy="8" r="4.5" fill="#8D8CFF" /><circle cx="88" cy="46" r="4.5" fill="#FF4F6E" />
+        </svg>
       </button>
 
       {/* ── 내 자산 ── */}
       <section className="t-card">
         <div className="t-card-head"><h2>내 가상 자산</h2></div>
-        <strong className="t-big num">{fmt(w.totalAssets)}</strong>
+        <strong className="t-big num"><Won n={w.totalAssets} /></strong>
         <div className="t-stack" role="img" aria-label={assetRows.map((r) => `${r.label} ${fmt(r.v)}`).join(', ')}>
           {assetRows.map((r) => <span key={r.key} style={{ width: `${pct(r.v, w.totalAssets)}%`, background: r.c }} />)}
         </div>

@@ -10,12 +10,12 @@ import { BetterPrice } from '../components/BetterPrice';
 import { IconCamera, IconCheck, IconChevron } from '../components/Icons';
 import { usePhotoReader } from '../components/PhotoReader';
 import { CtaBar, Sheet, TopBar } from '../components/ui';
-import { AmountText, Button, ButtonRow, Card, Chip, Chips, NumberPad } from '../components/ds';
+import { AmountText, Button, ButtonRow, Card, Chip, Chips, NumberPad, Won } from '../components/ds';
 import { ratePct } from '../lib/bank/money';
 import { getProduct } from '../lib/bank/products';
 import { FREQ_LABEL, futureCost, skipsInLast30, type Frequency } from '../lib/futureCost';
 import { ruleClassify } from '../lib/ml/classify';
-import { addAmount, koreanWon } from '../lib/numpad';
+import { addAmount } from '../lib/numpad';
 import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldDecision, type WorldWallet } from '../lib/worldWallet';
 import { useBank } from '../state/bank';
 import { useNav } from '../state/nav';
@@ -153,57 +153,49 @@ export function Choose() {
   /* ───────── 2~3. 미래 비용 미리보기 + 선택 ───────── */
   const short = fc.buy.usable < 0;
   const yearGap = fc.year.net;
-  const maxBar = Math.max(1, fc.yearSpend, yearGap);
   const p = getProduct(fc.year.productId);
 
   return (
     <div className="page t-page has-cta c-page">
-      <TopBar onBack={() => setPhase('input')} title="미래 비용" />
+      <TopBar onBack={() => setPhase('input')} title="" />
       <header className="c-head">
         <button type="button" className="c-item" onClick={() => setPhase('input')} aria-label="품목과 금액 고치기">
-          <b>{title}</b><span className="num">{fmt(price)} · {FREQ_LABEL[freq]}</span><em>고치기</em>
+          <b>{title}</b><span className="num">{fmt(price)}</span><span>{FREQ_LABEL[freq]}</span><em>고치기</em>
         </button>
-        <h1>{freq === 'once' ? '지금 사면' : `${FREQ_LABEL[freq]} 사면`}<br />이렇게 달라져요</h1>
+        <h1>{freq === 'once' ? '지금 사면,' : `${FREQ_LABEL[freq]} 사면,`}<br />1년 뒤 두 세계는<br />{yearGap > 0 ? <Won n={yearGap} /> : '같아요'}{yearGap > 0 && ' 벌어져요'}</h1>
       </header>
 
-      <Card className="c-nums">
-        <div className="c-num">
-          <span className="c-num-label">이번 달 쓸 수 있는 돈</span>
-          <div className="c-num-flow">
-            <span className="num muted">{signed(fc.now.usable)}</span>
-            <span className="c-arrow" aria-hidden="true">→</span>
-            <strong className={`num ${short ? 'neg' : ''}`}>{signed(fc.buy.usable)}</strong>
-          </div>
-          <p className="c-num-sub">
-            {freq !== 'once' ? `이번 달 남은 ${fc.timesThisMonth}번 × ${fmt(price)} = ${fmt(fc.buy.spendThisMonth)}` : `${fmt(price)}이 바로 빠져요`}
-            {short && <><br /><b className="neg">지켜둘 생활비에서 {fmt(-fc.buy.usable)}을 꺼내 써요</b></>}
-          </p>
-        </div>
-
-        <div className="c-num">
-          <span className="c-num-label">{formatKDate(fc.nextBillDate)} 고정지출 내고 남는 돈 <em>D-{fc.daysToBill}</em></span>
-          <div className="c-two">
-            <div><small>사면</small><b className={`num ${fc.buy.afterBills < 0 ? 'neg' : ''}`}>{signed(fc.buy.afterBills)}</b></div>
-            <div className="on"><small>{hasAlt ? '더 싸게 사면' : '참으면'}</small><b className="num">{signed(fc.hold.afterBills)}</b></div>
-          </div>
-          {fc.buy.afterBills < 0 && <p className="c-num-sub"><b className="neg">월세·통신비 낼 돈이 {fmt(-fc.buy.afterBills)} 모자라요</b></p>}
-        </div>
-      </Card>
-
-      <Card tone="universe" className="c-year">
-        <span className="c-year-label">1년 뒤, 두 세계의 차이</span>
-        <strong className="c-year-num num">{fmt(yearGap)}</strong>
-        <p className="c-year-read">{yearGap > 0 ? koreanWon(yearGap) : ''}</p>
-        <div className="c-bars" role="img" aria-label={`산 나는 1년 동안 ${fmt(fc.yearSpend)}을 쓰고, ${holdName}는 ${fmt(yearGap)}을 모아요`}>
-          <div><small>산 나 · 1년 동안 쓴 돈</small><span><i className="buy" style={{ width: `${(100 * fc.yearSpend) / maxBar}%` }} /></span><b className="num">{fmt(fc.yearSpend)}</b></div>
-          <div><small>{holdName} · 모은 돈</small><span><i className="hold" style={{ width: `${Math.max(2, (100 * yearGap) / maxBar)}%` }} /></span><b className="num">{fmt(yearGap)}</b></div>
-        </div>
+      <section className="c-fork" aria-label="1년 동안 두 세계의 차이">
+        <ForkChart spend={fc.yearSpend} keep={yearGap} holdName={holdName} />
+        <dl className="c-legend">
+          <div className="keep"><dt>{holdName}</dt><dd><Won n={yearGap} sign="+" /></dd></div>
+          <div className="buy"><dt>산 나</dt><dd><Won n={fc.yearSpend} sign="−" /></dd></div>
+        </dl>
         {fc.year.how !== 'none' && p ? (
-          <p className="c-year-note">{fc.year.how === 'deposit' ? `아낀 ${fmt(fc.savedOnce)}을 ` : `매달 ${fmt(fc.year.monthly ?? 0)}씩 `}{p.name}(연 {ratePct(fc.year.appliedRate)})에 1년 넣으면 세후 이자 +{fmt(fc.year.interest - fc.year.tax)}</p>
+          <p className="c-fork-note">{fc.year.how === 'deposit' ? `아낀 ${fmt(fc.savedOnce)}을 ` : `매달 ${fmt(fc.year.monthly ?? 0)}씩 `}{p.name}에 1년 넣은 값이에요. 연 {ratePct(fc.year.appliedRate)}, 세후 이자 {fmt(fc.year.interest - fc.year.tax)} 포함.</p>
         ) : fc.savedOnce > 0 ? (
-          <p className="c-year-note">이 금액으로 가입할 수 있는 가상 상품이 없어서 이자 없이 계산했어요.</p>
+          <p className="c-fork-note">이 금액으로 가입할 수 있는 가상 상품이 없어서 이자 없이 계산했어요.</p>
         ) : null}
-      </Card>
+      </section>
+
+      <section className="c-soon" aria-label="당장 달라지는 것">
+        <div className="c-soon-row">
+          <span className="c-soon-label">이번 달 쓸 수 있는 돈</span>
+          <span className="c-soon-val">
+            <s className="num">{signed(fc.now.usable)}</s>
+            <b className={`v17-num ${short ? 'neg' : ''}`}><Won n={fc.buy.usable} /></b>
+          </span>
+          <small>{freq !== 'once' ? `이번 달 남은 ${fc.timesThisMonth}번 동안 ${fmt(fc.buy.spendThisMonth)}을 써요` : `${fmt(price)}이 바로 빠져요`}{short ? `. 지켜둘 생활비에서 ${fmt(-fc.buy.usable)}을 꺼내 써요` : ''}</small>
+        </div>
+        <div className="c-soon-row">
+          <span className="c-soon-label">{formatKDate(fc.nextBillDate)} 월세·통신비 내고 남는 돈</span>
+          <div className="c-two">
+            <div className="buy"><small>사면</small><b className={fc.buy.afterBills < 0 ? 'neg' : ''}><Won n={fc.buy.afterBills} /></b></div>
+            <div className="keep"><small>{hasAlt ? '더 싸게 사면' : '참으면'}</small><b><Won n={fc.hold.afterBills} /></b></div>
+          </div>
+          <small>{fc.buy.afterBills < 0 ? `사면 ${fmt(-fc.buy.afterBills)}이 모자라요. ` : ''}{fc.daysToBill}일 뒤예요.</small>
+        </div>
+      </section>
 
       <Card title="어떻게 할래요?" className="c-pick-card">
         <div className="c-picks" role="radiogroup" aria-label="선택">
@@ -368,5 +360,37 @@ function Done({ o, yearNet, yearProduct, yearLabel }: { o: Outcome; yearNet: num
         </ButtonRow>
       </CtaBar>
     </div>
+  );
+}
+
+/**
+ * 1년 동안 두 세계가 벌어지는 모양. 오늘 한 점에서 출발해
+ * 참은 나는 위로(모은 돈), 산 나는 아래로(쓴 돈) 갈라진다. 높이는 금액에 비례.
+ */
+function ForkChart({ spend, keep, holdName }: { spend: number; keep: number; holdName: string }) {
+  const W = 320, H = 196, x0 = 18, x1 = 268, mid = H / 2;
+  const max = Math.max(1, spend, keep);
+  const amp = H / 2 - 18;
+  const up = mid - (amp * keep) / max;
+  const down = mid + (amp * spend) / max;
+  // 처음엔 붙어 가다가 점점 벌어지는 곡선
+  const curve = (y: number) => `M${x0} ${mid} C ${x0 + 90} ${mid}, ${x1 - 90} ${y}, ${x1} ${y}`;
+  return (
+    <svg className="c-fork-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`1년 뒤 ${holdName}는 ${keep.toLocaleString('ko-KR')}원을 모으고, 산 나는 ${spend.toLocaleString('ko-KR')}원을 써요`}>
+      <line x1={x0} x2={W - 8} y1={mid} y2={mid} className="axis" />
+      {[0, 0.5, 1].map((k) => <line key={k} x1={x0 + (x1 - x0) * k} x2={x0 + (x1 - x0) * k} y1={mid - 4} y2={mid + 4} className="tick" />)}
+      <text x={x0} y={mid + 22} className="lab">오늘</text>
+      <text x={x0 + (x1 - x0) / 2} y={mid + 22} className="lab" textAnchor="middle">6개월</text>
+      <text x={x1} y={mid + 22} className="lab" textAnchor="middle">1년</text>
+      <path d={`${curve(down)} L ${x1} ${mid} Z`} className="area buy" />
+      <path d={`${curve(up)} L ${x1} ${mid} Z`} className="area keep" />
+      <path d={curve(down)} className="line buy" pathLength={1} />
+      <path d={curve(up)} className="line keep" pathLength={1} />
+      <circle cx={x0} cy={mid} r={5} className="origin" />
+      <circle cx={x1} cy={up} r={6} className="end keep" />
+      <circle cx={x1} cy={down} r={6} className="end buy" />
+      <text x={x1 + 12} y={up + 5} className="end-lab keep">{holdName}</text>
+      <text x={x1 + 12} y={down + 5} className="end-lab buy">산 나</text>
+    </svg>
   );
 }

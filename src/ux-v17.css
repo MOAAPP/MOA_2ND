@@ -1,0 +1,131 @@
+/* ─────────────────────────────────────────────────────────────
+ * v17 · '두 세계' 비주얼 아이덴티티 (가장 마지막에 불러온다)
+ *
+ * 색은 뜻이 있을 때만 쓴다.
+ *   모아(참은 나, 지킨 돈, 주요 버튼)  #3D3BF3
+ *   산 나(쓴 돈, 부족)               #FF4F6E
+ *   동전(모은 순간 한 번)            #FFB020
+ *   나머지는 잉크(#15172E)와 차가운 회색 단계.
+ * 큰 금액은 Bricolage Grotesque(숫자) + Pretendard(한글 '원').
+ * 반경 위계: 히어로 32 · 카드 24 · 컨트롤 16 · 칩 999.
+ * ───────────────────────────────────────────────────────────── */
+
+:root {
+  --moa: #3D3BF3;
+  --moa-press: #2A28C9;
+  --moa-50: #EEEEFF;
+  --moa-100: #DCDCFF;
+  --bought: #FF4F6E;
+  --bought-50: #FFEEF1;
+  --coin: #FFB020;
+  --ink: #15172E;
+
+  --t-bg: #F3F4F8;
+  --t-g900: #15172E;
+  --t-g800: #2C2F48;
+  --t-g700: #474B66;
+  --t-g600: #636884;
+  --t-g500: #8288A3;
+  --t-g400: #ABB0C6;
+  --t-g300: #CDD1E0;
+  --t-g200: #E3E6F0;
+  --t-g100: #EEF0F6;
+  --t-g50: #F7F8FB;
+  --t-blue: var(--moa);
+  --t-blue-press: var(--moa-press);
+  --t-blue-50: var(--moa-50);
+  --t-red: var(--bought);
+  --t-red-50: var(--bought-50);
+  --t-up: var(--bought);
+  --t-down: var(--moa);
+  --t-radius: 24px;
+  --display: 'Bricolage Grotesque Variable', 'Pretendard Variable', Pretendard, sans-serif;
+}
+
+body, .app { background: var(--t-bg); }
+::selection { background: var(--moa-100); }
+:focus-visible { outline: 2px solid var(--moa); outline-offset: 2px; }
+
+/* ── 큰 금액: 숫자는 Bricolage, '원'은 Pretendard ── */
+.t-hero-num, .t-big, .d-amount-num, .c-num-flow strong, .c-year-num, .c-done h1 .num,
+.b-acct-main > b, .t-portal-text strong, .c-two b, .v17-num {
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums;
+  font-optical-sizing: auto;
+  letter-spacing: -0.035em;
+}
+.t-hero-num { font-size: 52px; font-weight: 750; line-height: 1.05; margin-top: 10px; }
+.t-big { font-size: 34px; font-weight: 700; line-height: 1.1; margin: -4px 0 18px; }
+.d-amount-num { font-size: 44px; font-weight: 750; }
+.d-amount-num span, .t-hero-num-unit { font-family: 'Pretendard Variable', Pretendard, sans-serif; font-weight: 700; font-size: .58em; letter-spacing: -0.02em; margin-left: 2px; }
+
+/* ── 상단 ── */
+.t-head { background: rgba(243, 244, 248, .86); }
+.t-head h1 { font-size: 22px; font-weight: 750; letter-spacing: -0.045em; }
+.topbar { background: rgba(243, 244, 248, .9) !important; }
+
+/* ── 카드: 테두리·그림자 없이 흰 면 ── */
+.t-card { border-radius: var(--t-radius); padding: 24px 20px; }
+.t-card-head h2 { font-size: 19px; font-weight: 750; letter-spacing: -0.04em; }
+.t-badge { height: 24px; padding: 0 9px; border-radius: 999px; background: var(--t-g100); color: var(--t-g600); font-size: 12px; font-weight: 650; }
+
+/* ── 버튼 ── */
+.t-btn, .d-btn { border-radius: 16px; font-weight: 650; letter-spacing: -0.025em; }
+.t-btn.primary, .d-btn.primary { background: var(--moa); }
+.t-btn.primary:active:not(:disabled), .d-btn.primary:active:not(:disabled) { background: var(--moa-press); }
+.d-btn:disabled { opacity: 1; background: var(--t-g200) !important; color: var(--t-g400) !important; }
+.cta-bar { background: linear-gradient(180deg, rgba(243,244,248,0) 0%, var(--t-bg) 32%) !important; }
+
+/* ── 아바타: 자산 종류별 색(홈 자산 막대와 같은 색) ── */
+.t-avatar.blue { background: var(--moa-50); color: var(--moa); }
+.t-avatar.green { background: #F0EFFF; color: #7472F7; }
+.t-avatar.sky { background: #E3F7F3; color: #0E9E8A; }
+.t-avatar.amber { background: #FFF4DC; color: #D98A00; }
+.t-avatar.violet { background: var(--t-g100); color: var(--ink); }
+
+/* ═════════════ 홈 ═════════════ */
+.t-home .t-hero { border-radius: 32px; padding: 26px 22px 22px; }
+.t-home .t-hero .t-label { font-size: 15px; font-weight: 600; color: var(--t-g600); }
+.t-home .t-meter { height: 8px; margin: 22px 0 14px; border-radius: 4px; gap: 3px; background: transparent; }
+.t-home .t-meter span { border-radius: 4px; }
+.t-home .t-meter .m-bill { background: var(--t-g200); }
+.t-home .t-meter .m-safe { background: var(--t-g300); }
+.t-home .t-meter .m-free { background: var(--moa); }
+.t-home .t-meter-key i.m-bill { background: var(--t-g200); }
+.t-home .t-meter-key i.m-safe { background: var(--t-g300); }
+.t-home .t-meter-key i.m-free { background: var(--moa); }
+.t-home .t-meter-key { gap: 8px; }
+.t-home .t-meter-key dt, .t-home .t-meter-key dd { font-size: 14px; }
+.t-home .t-meter-key dd.strong { color: var(--moa); }
+.t-home .t-hero .t-btn.primary { margin-top: 22px; min-height: 56px; }
+
+/* 평행세계 티저 = 앱에서 유일한 어두운 면 */
+.t-portal { background: var(--ink); color: #fff; border-radius: var(--t-radius); padding: 22px 20px; overflow: hidden; position: relative; }
+.t-portal-text small { color: rgba(255,255,255,.66); }
+.t-portal-text strong { color: #fff; font-size: 32px; font-weight: 750; }
+.t-portal-text em { color: rgba(255,255,255,.55); }
+.t-portal .pmini, .t-portal svg { filter: none; }
+
+/* ═════════════ 하단 메뉴: 떠 있는 바 ═════════════ */
+.app .bottom-nav {
+  left: 50% !important; right: auto !important; transform: translateX(-50%) !important; bottom: calc(10px + var(--safe-b)) !important;
+  width: calc(100% - 24px) !important; max-width: 456px;
+  height: 64px !important; padding: 0 6px !important; grid-template-columns: repeat(5, 1fr) !important;
+  border: 0 !important; border-radius: 22px !important;
+  background: rgba(255, 255, 255, .92) !important;
+  box-shadow: 0 10px 30px rgba(21, 23, 46, .10), 0 1px 0 rgba(21, 23, 46, .04) !important;
+}
+.app .bottom-nav button { position: relative; color: var(--t-g400) !important; font-size: 11px !important; font-weight: 650 !important; gap: 3px !important; }
+.app .bottom-nav button svg { width: 23px !important; height: 23px !important; }
+.app .bottom-nav button[aria-current='page'] { color: var(--ink) !important; }
+.app .bottom-nav button[aria-current='page'] svg { color: var(--moa); }
+
+.t-page { padding-bottom: calc(64px + 48px + var(--safe-b)); }
+
+/* ═════════════ 공통 ds ═════════════ */
+.d-chip.on { background: var(--ink); }
+.d-tabs button[aria-selected='true'] { color: var(--ink); }
+.d-card.universe { background: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 0s !important; animation-duration: 0s !important; } }
+.reduce-motion * { transition-duration: 0s !important; animation-duration: 0s !important; }
