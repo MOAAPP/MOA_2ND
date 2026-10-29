@@ -129,3 +129,9 @@ body, .app { background: var(--t-bg); }
 
 @media (prefers-reduced-motion: reduce) { * { transition-duration: 0s !important; animation-duration: 0s !important; } }
 .reduce-motion * { transition-duration: 0s !important; animation-duration: 0s !important; }
+
+/* 평행세계 스와이프: 손을 떼도 그날에 머묾 → 오늘로 돌아가기 */
+.ps-today { margin-left: auto; flex: none; height: 28px; padding: 0 11px; border: 0; border-radius: 999px; background: var(--moa-50); color: var(--moa); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; animation: ps-in .2s ease-out; }
+.ps-today:active { transform: scale(.96); }
+.t-sample-note { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--moa-50); color: var(--moa); font-size: 13px; font-weight: 600; line-height: 1.4; }
+.t-sample-note b { flex: none; padding: 2px 7px; border-radius: 6px; background: var(--moa); color: #fff; font-size: 11px; }
