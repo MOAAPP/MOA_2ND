@@ -24,7 +24,8 @@ export type Screen =
   | { name: 'ledger' }
   | { name: 'newChoice' }
   | { name: 'product'; id: string }
-  | { name: 'join'; id: string }
+  | { name: 'join'; id: string; amount?: number }
+  | { name: 'choose' }
   | { name: 'account'; id: string };
 
 interface Nav {

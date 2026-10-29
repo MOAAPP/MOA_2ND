@@ -27,6 +27,7 @@ import { WorldInvestment } from './screens/ParallelLab';
 import { WorldTimeline } from './screens/WorldTimeline';
 import { Ledger } from './screens/Ledger';
 import { NewChoice } from './screens/NewChoice';
+import { Choose } from './screens/Choose';
 import { SaveHome } from './screens/bank/SaveHome';
 import { ProductDetail } from './screens/bank/ProductDetail';
 import { Join } from './screens/bank/Join';
@@ -79,7 +80,8 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'ledger': return <Ledger />;
     case 'newChoice': return <NewChoice />;
     case 'product': return <ProductDetail key={screen.id} id={screen.id} />;
-    case 'join': return <Join key={screen.id} id={screen.id} />;
+    case 'join': return <Join key={screen.id} id={screen.id} initialAmount={screen.amount} />;
+    case 'choose': return <Choose />;
     case 'account': return <Account key={screen.id} id={screen.id} />;
   }
 }

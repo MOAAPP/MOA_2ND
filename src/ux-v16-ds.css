@@ -26,3 +26,58 @@
 
 /* 숫자패드를 쓰는 금액 화면: 패드는 CTA 바로 위에 붙는다 */
 .d-pad-dock { margin: 16px -8px 0; }
+
+/* ───────── N3 2차 ───────── */
+/* Button */
+.d-btn { height: 56px; min-height: 44px; padding: 0 20px; border: 0; border-radius: 16px; font-size: 17px; font-weight: 600; letter-spacing: -0.02em; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .12s var(--t-ease), transform .12s var(--t-ease), opacity .12s; -webkit-tap-highlight-color: transparent; }
+.d-btn.block { width: 100%; }
+.d-btn.sm { height: 44px; font-size: 15px; border-radius: 12px; padding: 0 16px; }
+.d-btn:active:not(:disabled) { transform: scale(.97); }
+.d-btn:disabled { opacity: .38; }
+.d-btn.primary { background: var(--t-blue); color: #fff; }
+.d-btn.primary:active:not(:disabled) { background: var(--t-blue-press); }
+.d-btn.secondary { background: var(--t-blue-50); color: var(--t-blue); }
+.d-btn.ghost { background: var(--t-g100); color: var(--t-g700); }
+.d-btn.danger { background: var(--t-red-50); color: var(--t-red); }
+.d-btn-row { display: flex; gap: 8px; width: 100%; }
+.d-btn-row > .d-btn:first-child:not(:only-child) { flex: 1; }
+.d-btn-row > .d-btn:last-child:not(:only-child) { flex: 1.6; }
+
+/* Card */
+.d-card { margin: 0 0 12px; padding: 22px 20px; border-radius: var(--t-radius); background: var(--t-card); }
+.d-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.d-card-head h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.035em; color: var(--t-g900); }
+.d-card.universe { background: radial-gradient(120% 90% at 85% 0%, #2b3f8f 0%, #141a33 55%, #0b0f1f 100%); color: #fff; }
+.d-card.universe .d-card-head h2 { color: #fff; }
+
+/* ListRow */
+.d-row { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 10px 0; border: 0; background: none; text-align: left; color: inherit; }
+.d-row.tap { border-radius: 14px; margin: 0 -8px; padding: 10px 8px; width: calc(100% + 16px); transition: background .12s; }
+.d-row.tap:active { background: var(--t-g100); }
+.d-row-icon { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--t-g100); font-size: 18px; }
+.d-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.d-row-main b { font-size: 16px; font-weight: 600; color: var(--t-g900); letter-spacing: -0.02em; word-break: keep-all; }
+.d-row-main small { font-size: 14px; color: var(--t-g500); line-height: 1.4; }
+.d-row-right { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.d-row-right b { font-size: 16px; font-weight: 700; color: var(--t-g900); letter-spacing: -0.03em; }
+.d-row-right b.pos { color: var(--t-blue); }
+.d-row-right b.neg { color: var(--t-red); }
+.d-row-right small { font-size: 13px; color: var(--t-g500); }
+
+/* Tabs */
+.d-tabs { display: flex; padding: 4px; border-radius: 14px; background: var(--t-g100); }
+.d-tabs button { flex: 1; height: 40px; border: 0; border-radius: 10px; background: transparent; font-size: 15px; font-weight: 600; color: var(--t-g500); transition: background .15s, color .15s; }
+.d-tabs button[aria-selected="true"] { background: #fff; color: var(--t-g900); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+
+/* EmptyState */
+.d-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 12px; text-align: center; }
+.d-empty-mark { width: 48px; height: 48px; border-radius: 50%; background: var(--t-g100); margin-bottom: 6px; }
+.d-empty b { font-size: 16px; color: var(--t-g800); }
+.d-empty p { margin: 0 0 8px; font-size: 14px; line-height: 1.5; color: var(--t-g500); word-break: keep-all; }
+
+/* Skeleton */
+.d-skel { display: flex; flex-direction: column; gap: 10px; padding: 6px 0; }
+.d-skel span { height: 14px; border-radius: 7px; background: linear-gradient(90deg, var(--t-g100) 25%, var(--t-g200) 50%, var(--t-g100) 75%); background-size: 200% 100%; animation: d-shimmer 1.2s linear infinite; }
+@keyframes d-shimmer { to { background-position: -200% 0; } }
+.reduce-motion .d-skel span { animation: none; }
+@media (prefers-reduced-motion: reduce) { .d-skel span { animation: none; } }
