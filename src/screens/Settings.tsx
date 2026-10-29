@@ -39,6 +39,10 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
           <div className="grow"><div className="t">레벨테스트 다시 보기</div><div className="s">현재 수준: {state.level ? LEVEL_LABEL[state.level] : '진단 전'}</div></div>
           <IconChevron width={18} height={18} color="var(--ink-3)" />
         </button>
+        <button className="list-item" onClick={() => nav.push({ name: 'research' })}>
+          <div className="grow"><div className="t">연구 참여</div><div className="s">{state.research.joined ? `참여 중 · ${state.research.pid}` : '소비 결정 연구 · 선택 사항'}</div></div>
+          <IconChevron width={18} height={18} color="var(--ink-3)" />
+        </button>
         <button className="list-item" onClick={onReplayIntro}>
           <div className="grow"><div className="t">서비스 소개 다시 보기</div></div>
           <IconChevron width={18} height={18} color="var(--ink-3)" />

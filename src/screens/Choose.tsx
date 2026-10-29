@@ -4,7 +4,7 @@
  * 참기·대안을 고르면 아낀 돈이 자유 저축(모아 통장)으로 옮겨지고, 바로 예금으로 굴려볼 수 있다.
  * 계산은 전부 src/lib/futureCost.ts (테스트: tests/futureCost.test.ts).
  */
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { formatKDate, todayKST } from '../../shared/dates';
 import { BetterPrice } from '../components/BetterPrice';
 import { IconCamera, IconCheck, IconChevron } from '../components/Icons';
@@ -19,7 +19,7 @@ import { addAmount } from '../lib/numpad';
 import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldDecision, type WorldWallet } from '../lib/worldWallet';
 import { useBank } from '../state/bank';
 import { useNav } from '../state/nav';
-import { useStore } from '../state/store';
+import { useStore, withEvent } from '../state/store';
 
 type Phase = 'input' | 'preview' | 'done';
 type Pick = 'hold' | 'alt' | 'buy';
@@ -53,6 +53,9 @@ export function Choose() {
   const [pick, setPick] = useState<Pick | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [error, setError] = useState('');
+  const previewAt = useRef(0);
+  // 연구 B조건: 미래 비용 숫자 없이 고르게 한다(docs/RESEARCH.md §3)
+  const control = state.research.joined && state.research.arm === 'control';
 
   const photo = usePhotoReader(({ amount, name: n }) => {
     if (amount) setPrice(Math.min(100_000_000, Math.floor(amount)));
@@ -108,12 +111,14 @@ export function Choose() {
       worldWallet: next,
       spendLog: paid > 0 ? [...s.spendLog, { date: bank.today, amount: paid, category, name: p === 'alt' && altLabel ? `${title} (${altLabel})` : title, from: 'record' as const }] : s.spendLog,
     }));
+    const dwellMs = previewAt.current ? Date.now() - previewAt.current : 0;
+    update((s) => withEvent(s, { type: 'decision_made', choice: p, price, paid, saved, freq, category, dwellMs, moved: moved > 0 }));
     setOutcome({ pick: p, title, saved, paid, moved, moveFailed: saved > 0 && moved === 0 });
     setPhase('done');
   };
 
   /* ───────── 4. 결과 ───────── */
-  if (phase === 'done' && outcome) return <Done o={outcome} yearNet={fc.year.net} yearProduct={fc.year.how === 'deposit' ? fc.year.productId : ''} yearLabel={freq === 'once' ? '이 돈을 1년 굴리면' : `${FREQ_LABEL[freq]} 참으면 1년 뒤`} />;
+  if (phase === 'done' && outcome) return <Done o={outcome} yearNet={control ? 0 : fc.year.net} yearProduct={fc.year.how === 'deposit' ? fc.year.productId : ''} yearLabel={freq === 'once' ? '이 돈을 1년 굴리면' : `${FREQ_LABEL[freq]} 참으면 1년 뒤`} />;
 
   /* ───────── 1. 입력 ───────── */
   if (phase === 'input') {
@@ -143,7 +148,10 @@ export function Choose() {
           <button type="button" className="c-lab-link" onClick={() => nav.push({ name: 'lab' })}>예시 상황으로 먼저 연습해 볼래요 <IconChevron width={14} height={14} /></button>
         </section>
         <CtaBar>
-          <Button disabled={price <= 0} onClick={() => { setPick(null); setPhase('preview'); }}>사면 어떻게 될지 보기</Button>
+          <Button disabled={price <= 0} onClick={() => {
+            setPick(null); setPhase('preview'); previewAt.current = Date.now();
+            update((s) => withEvent(s, { type: 'decision_preview', price, freq, usableBefore: fc.now.usable, yearGap: control ? 0 : fc.year.net }));
+          }}>{control ? '다음' : '사면 어떻게 될지 보기'}</Button>
         </CtaBar>
         {photo.sheet}
       </div>
@@ -162,8 +170,12 @@ export function Choose() {
         <button type="button" className="c-item" onClick={() => setPhase('input')} aria-label="품목과 금액 고치기">
           <b>{title}</b><span className="num">{fmt(price)}</span><span>{FREQ_LABEL[freq]}</span><em>고치기</em>
         </button>
-        <h1>{freq === 'once' ? '지금 사면,' : `${FREQ_LABEL[freq]} 사면,`}<br />1년 뒤 두 세계는<br />{yearGap > 0 ? <Won n={yearGap} /> : '같아요'}{yearGap > 0 && ' 벌어져요'}</h1>
+        {control
+          ? <h1>{title},<br />살까요?</h1>
+          : <h1>{freq === 'once' ? '지금 사면,' : `${FREQ_LABEL[freq]} 사면,`}<br />1년 뒤 두 세계는<br />{yearGap > 0 ? <Won n={yearGap} /> : '같아요'}{yearGap > 0 && ' 벌어져요'}</h1>}
       </header>
+
+      {!control && <>
 
       <section className="c-fork" aria-label="1년 동안 두 세계의 차이">
         <ForkChart spend={fc.yearSpend} keep={yearGap} holdName={holdName} />
@@ -196,6 +208,7 @@ export function Choose() {
           <small>{fc.buy.afterBills < 0 ? `사면 ${fmt(-fc.buy.afterBills)}이 모자라요. ` : ''}{fc.daysToBill}일 뒤예요.</small>
         </div>
       </section>
+      </>}
 
       <Card title="어떻게 할래요?" className="c-pick-card">
         <div className="c-picks" role="radiogroup" aria-label="선택">
