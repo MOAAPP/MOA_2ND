@@ -22,7 +22,10 @@ export type Screen =
   | { name: 'cards' }
   | { name: 'portfolio' }
   | { name: 'ledger' }
-  | { name: 'newChoice' };
+  | { name: 'newChoice' }
+  | { name: 'product'; id: string }
+  | { name: 'join'; id: string }
+  | { name: 'account'; id: string };
 
 interface Nav {
   tab: Tab;

@@ -2,11 +2,13 @@
 export const WORLD_START_CASH = 800_000;
 export const WORLD_FIXED_BILLS = 530_000;
 export const WORLD_SAFETY_BUFFER = 150_000;
+/** 매달 1일 들어오는 가상 월급(알바비). 고정지출을 내고 남는 27만 원이 한 달 '쓸 수 있는 돈'으로 늘어난다. */
+export const WORLD_MONTHLY_INCOME = 800_000;
 /** 예전 버전의 '연습용 가상 ETF' 고정 가격. 저장된 기록을 옮길 때만 쓴다. */
 export const LEGACY_STOCK_PRICE = 10_000;
 
 export type WorldDecision = { id:string; title:string; price:number; paid:number; choice:'buy'|'wait'|'alternative'; at:number; note:string };
-export type WorldMovement = {id:string; kind:'save'|'withdraw'|'deposit'|'redeemDeposit'|'installment'|'cancelInstallment'|'buyStock'|'sellStock'; amount:number; at:number; memo:string; code?:string; qty?:number};
+export type WorldMovement = {id:string; kind:'save'|'withdraw'|'deposit'|'redeemDeposit'|'installment'|'cancelInstallment'|'buyStock'|'sellStock'|'income'|'bills'; amount:number; at:number; memo:string; code?:string; qty?:number};
 /** 생활비로 산 ETF. 모의투자 탭과 같은 종목·같은 시세를 쓴다. cost = 산 금액 합계(평균단가 × 수량) */
 export type EtfHolding = { qty:number; cost:number };
 export type WorldWallet = {
@@ -43,7 +45,7 @@ export type WorldWalletAction=
   | {type:'spend';decision:WorldDecision}
   | {type:'undoDecision'} | {type:'reset'};
 
-const memo:Record<WorldMovement['kind'],string>={save:'자유 저축',withdraw:'자유 저축 꺼내기',deposit:'가상 예금 가입',redeemDeposit:'가상 예금 해지',installment:'가상 적금 납입',cancelInstallment:'가상 적금 해지',buyStock:'ETF 매수',sellStock:'ETF 매도'};
+const memo:Record<WorldMovement['kind'],string>={save:'자유 저축',withdraw:'자유 저축 꺼내기',deposit:'가상 예금 가입',redeemDeposit:'가상 예금 해지',installment:'가상 적금 납입',cancelInstallment:'가상 적금 해지',buyStock:'ETF 매수',sellStock:'ETF 매도',income:'월급 입금',bills:'고정지출 결제'};
 let seq=0;
 function record(w:WorldWallet,kind:WorldMovement['kind'],amount:number,patch:Partial<WorldWallet>,extra:Partial<WorldMovement>={}):WorldWallet{
   const at=Date.now();
@@ -96,4 +98,18 @@ export function migrateWorldWallet(raw:Partial<WorldWallet>|undefined):WorldWall
   }
   delete w.shares;delete w.priceRate;
   return w;
+}
+
+/**
+ * 새 달 시작: 지난달 결제 예정이던 고정지출이 빠지고 월급이 들어온다.
+ * 결과적으로 '이번 달 쓸 수 있는 돈'이 (월급 − 고정지출)만큼 늘어난다.
+ */
+export function payday(w:WorldWallet,on:string):WorldWallet{
+  const at=Date.parse(`${on}T00:00:00+09:00`);
+  const moves:WorldMovement[]=[
+    {id:`bills-${on}`,kind:'bills',amount:WORLD_FIXED_BILLS,at,memo:`${Number(on.slice(5,7))}월 고정지출 결제`},
+    {id:`income-${on}`,kind:'income',amount:WORLD_MONTHLY_INCOME,at:at+1,memo:`${Number(on.slice(5,7))}월 월급 입금`},
+  ];
+  if((w.movements||[]).some(m=>m.id===`income-${on}`))return w;
+  return {...w,cash:w.cash-WORLD_FIXED_BILLS+WORLD_MONTHLY_INCOME,movements:[...(w.movements||[]),...moves]};
 }

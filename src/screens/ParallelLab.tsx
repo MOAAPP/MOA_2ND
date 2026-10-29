@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { emptyBank } from '../lib/bank/engine';
 import { won } from '../../shared/format';
 import { TopBar } from '../components/ui';
 import { useNav } from '../state/nav';
@@ -36,7 +37,8 @@ function useWorldActions() {
     if(!next){setMessage('이번 달 사용 가능한 금액이나 보유 수량을 확인해 주세요.');return;}
     update(s=>{
       const latest=transactWorldWallet(s.worldWallet,action);
-      return latest?{...s,worldWallet:latest}:s;
+      if(!latest)return s;
+      return action.type==='reset'?{...s,worldWallet:latest,bank:emptyBank()}:{...s,worldWallet:latest};
     });
     setMessage(okMessage);
   };
