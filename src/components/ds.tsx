@@ -137,3 +137,10 @@ export function Skeleton({ lines = 3, label = '불러오는 중' }: { lines?: nu
     </div>
   );
 }
+
+/** 금액: 숫자는 디스플레이 서체, '원'은 작게. sign은 부호를 강제로 붙일 때. */
+export function Won({ n, sign }: { n: number; sign?: '+' | '−' }) {
+  const neg = n < 0;
+  const mark = sign ?? (neg ? '−' : '');
+  return <span className="d-won"><span className="d-won-n">{mark}{Math.abs(Math.round(n)).toLocaleString('ko-KR')}</span><span className="d-won-u">원</span></span>;
+}

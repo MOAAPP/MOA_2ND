@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+import '@fontsource-variable/bricolage-grotesque';
 import './styles.css';
 import './ux-refresh.css';
 import './ux-v3.css';
@@ -15,6 +17,7 @@ import './ux-v15.css';
 import './ux-v16-bank.css';
 import './ux-v16-ds.css';
 import './ux-v16-choose.css';
+import './ux-v17.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
