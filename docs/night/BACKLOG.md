@@ -10,11 +10,11 @@
 ## 항목
 - [x] N1. docs/PRODUCT_SPEC.md: IA, 전체 유저플로우, 화면 목록, 도메인 모델, 금리·세금·수수료 계산식, 엣지케이스 (이후 작업 기준)
 - [x] N2. 금융 코어 엔진: 계좌(생활비/모아계좌/예금/적금/투자예수금), 불변 거래 원장(잔액은 원장에서 계산), 원 단위 정수, 데모용 날짜 시뮬레이터 + vitest
-- [~] N3. 디자인 시스템: 토큰 + 컴포넌트(AmountText, ListRow, Card, BottomSheet, NumberPad, Tabs, Chip, Button, Toast, EmptyState, Skeleton). ux-v*.css 통합 정리 (완료: AmountText·NumberPad·Chip — `src/components/ds.tsx`, `src/ux-v16-ds.css`, 예금·적금 가입 금액 화면에 적용 / 남은 것: ListRow, Card, BottomSheet, Tabs, Button, Toast, EmptyState, Skeleton, ux-v*.css 통합)
+- [~] N3. 디자인 시스템: 토큰 + 컴포넌트(AmountText, ListRow, Card, BottomSheet, NumberPad, Tabs, Chip, Button, Toast, EmptyState, Skeleton). ux-v*.css 통합 정리 (완료: AmountText·NumberPad·Chip·Button·ButtonRow·Card·ListRow·Tabs·EmptyState·Skeleton — `src/components/ds.tsx`, `src/ux-v16-ds.css` / 남은 것: 기존 화면에 적용, BottomSheet·Toast를 ds로 이전, ux-v*.css 통합)
 - [ ] N4. 내비게이션·IA 재구성(하단 탭) + 온보딩 재설계(목표·월 수입·고정지출)
 - [ ] N5. 자산 홈(뱅크샐러드식): 총자산, 자산 구성 도넛, 이번 달 소비, 예산 진행률, 만기 임박, 오늘의 결정 카드
 - [ ] N6. 가계부 v2: 입력 바텀시트(넘버패드), 카테고리·결제수단, 달력/리스트, 월·카테고리 예산, 고정지출 자동 등록, 월간 통계
-- [ ] N7. 결제 전 결정 플로우: 기록 → 미래 비용 미리보기(1년/5년, 예금·적금·투자) → 참기/사기 → 모아계좌 이체 → 축하 화면
+- [x] N7. 결제 전 결정 플로우: 기록 → 미래 비용 미리보기(이번 달/결제일/1년 뒤) → 참기/대안/사기 → 자유 저축(모아 통장) 이체 → 결과 화면 → 예금·적금 가입 연결 (`src/screens/Choose.tsx`, `src/lib/futureCost.ts`) / 남은 것: 5년 보기, 투자 목적지 비교
 - [x] N8. 가상 예금: 가상 은행 3~4곳 상품 카탈로그(기본/우대금리, 기간별 금리표), 단리/월복리, 이자소득세 15.4% 세후, 가입 플로우(설명→약관 요약→금액·기간→확인), 중도해지 이율, 만기 처리
 - [x] N9. 가상 적금: 정액/자유적립, 자동이체 일정, 회차 캘린더, 미납 처리, 우대조건 체크, 만기 예상(세전/세후), 해지
 - [x] N10. 계좌 상세 공통: 거래내역 필터, 이자 내역, 만기 D-day, 상품 비교(정렬), 토스식 계좌 카드

@@ -13,12 +13,12 @@ import { BankMark, KV, fmtWon, kDate } from './BankUI';
 
 const STEPS = ['금액', '기간', '상품 설명', '확인'] as const;
 
-export function Join({ id }: { id: string }) {
+export function Join({ id, initialAmount }: { id: string; initialAmount?: number }) {
   const nav = useNav();
   const bank = useBank();
   const p = getProduct(id);
   const [step, setStep] = useState(0);
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number>(() => Math.max(0, Math.floor(initialAmount ?? 0)));
   const [months, setMonths] = useState(() => p?.rates[0]?.months ?? 12);
   const openDay = parseISO(bank.today).d;
   const [autoDay, setAutoDay] = useState(openDay);

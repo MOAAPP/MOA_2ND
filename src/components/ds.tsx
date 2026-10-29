@@ -57,3 +57,83 @@ export function Chips({ children, label }: { children: ReactNode; label?: string
 export function Chip({ children, on, onClick }: { children: ReactNode; on?: boolean; onClick?: () => void }) {
   return <button type="button" className={`d-chip ${on ? 'on' : ''}`} aria-pressed={on} onClick={onClick}>{children}</button>;
 }
+
+/* ───────── v16 N3 2차: 버튼·카드·리스트·탭·빈 화면·스켈레톤 ───────── */
+
+type ButtonTone = 'primary' | 'secondary' | 'ghost' | 'danger';
+
+/** 높이 56(기본)/44(sm). 한 화면에 primary는 하나만. */
+export function Button({ children, tone = 'primary', size, block = true, disabled, onClick, type = 'button', label }: {
+  children: ReactNode; tone?: ButtonTone; size?: 'sm'; block?: boolean; disabled?: boolean; onClick?: () => void; type?: 'button' | 'submit'; label?: string;
+}) {
+  return (
+    <button type={type} aria-label={label} className={`d-btn ${tone}${size === 'sm' ? ' sm' : ''}${block ? ' block' : ''}`} disabled={disabled} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+/** 버튼 두 개를 나란히(보조 1 : 주 1.6) */
+export function ButtonRow({ children }: { children: ReactNode }) {
+  return <div className="d-btn-row">{children}</div>;
+}
+
+/** 흰 카드. 카드 안에 카드를 넣지 않는다(ux-v15 원칙 2). */
+export function Card({ title, action, children, tone, className = '' }: { title?: ReactNode; action?: ReactNode; children: ReactNode; tone?: 'universe'; className?: string }) {
+  return (
+    <section className={`d-card${tone ? ` ${tone}` : ''} ${className}`.trim()}>
+      {(title || action) && <div className="d-card-head">{title && <h2>{title}</h2>}{action}</div>}
+      {children}
+    </section>
+  );
+}
+
+/** 왼쪽 아이콘 · 가운데 제목/설명 · 오른쪽 금액. onClick이 있으면 버튼. */
+export function ListRow({ icon, title, sub, right, rightSub, onClick, tone }: {
+  icon?: ReactNode; title: ReactNode; sub?: ReactNode; right?: ReactNode; rightSub?: ReactNode; onClick?: () => void; tone?: 'pos' | 'neg';
+}) {
+  const body = (
+    <>
+      {icon && <span className="d-row-icon" aria-hidden="true">{icon}</span>}
+      <span className="d-row-main"><b>{title}</b>{sub && <small>{sub}</small>}</span>
+      {(right !== undefined || rightSub) && (
+        <span className="d-row-right">
+          {right !== undefined && <b className={`num${tone ? ` ${tone}` : ''}`}>{right}</b>}
+          {rightSub && <small>{rightSub}</small>}
+        </span>
+      )}
+    </>
+  );
+  return onClick ? <button type="button" className="d-row tap" onClick={onClick}>{body}</button> : <div className="d-row">{body}</div>;
+}
+
+/** 세그먼트 탭(2~4개) */
+export function Tabs<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
+  return (
+    <div className="d-tabs" role="tablist" aria-label={label}>
+      {options.map((o) => (
+        <button key={o.value} type="button" role="tab" aria-selected={o.value === value} onClick={() => onChange(o.value)}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+
+export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="d-empty">
+      <span className="d-empty-mark" aria-hidden="true" />
+      <b>{title}</b>
+      {children && <p>{children}</p>}
+      {action}
+    </div>
+  );
+}
+
+/** 로딩 자리표시. lines 줄만큼 회색 막대. */
+export function Skeleton({ lines = 3, label = '불러오는 중' }: { lines?: number; label?: string }) {
+  return (
+    <div className="d-skel" role="status" aria-label={label}>
+      {Array.from({ length: lines }, (_, i) => <span key={i} style={{ width: `${i === lines - 1 ? 55 : 100 - i * 8}%` }} />)}
+    </div>
+  );
+}

@@ -129,7 +129,7 @@ export function V8Home() {
           <div><dt><i className="m-safe" />지켜둘 생활비</dt><dd className="num">{fmt(WORLD_SAFETY_BUFFER)}</dd></div>
           <div><dt><i className="m-free" />자유롭게 쓸 수 있는 돈</dt><dd className="num strong">{fmt(usable)}</dd></div>
         </dl>
-        <button className="t-btn primary" onClick={() => nav.push({ name: 'lab' })}>사기 전에 두 세계 비교하기</button>
+        <button className="t-btn primary" onClick={() => nav.push({ name: 'choose' })}>사기 전에 두 세계 비교하기</button>
       </section>
 
       {/* ── 평행세계 티저 ── */}

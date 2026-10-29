@@ -14,6 +14,7 @@ import './ux-v12.css';
 import './ux-v15.css';
 import './ux-v16-bank.css';
 import './ux-v16-ds.css';
+import './ux-v16-choose.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

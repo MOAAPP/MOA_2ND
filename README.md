@@ -1,3 +1,5 @@
+> **v16 N7 (2026-10-29):** 사기 전 결정 플로우 — 금액·빈도를 넣으면 이번 달 쓸 수 있는 돈, 다음 결제일 잔고, 1년 뒤 두 세계 차이(가상 예금·적금 세후)를 보여주고, 참은 돈을 자유 저축 → 예금·적금으로 이어줍니다. 계산: `src/lib/futureCost.ts`
+
 > **v16 모아 (2026-10-29):** 참은 돈을 가상 예금·적금으로 굴리는 **모으기 탭**을 추가했습니다(상품 6종, 4단계 가입, 계좌 상세·거래내역 필터, 세후 계산). 배포: https://parallel-bank.vercel.app · 기획서 [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) · 아침 요약 [.night/MORNING_SUMMARY.md](.night/MORNING_SUMMARY.md)
 
 > **v10 모의투자 API 화면 복구 (2026-10-20):** 하단 모의투자 탭이 학습용 ETF 화면을 열던 문제를 수정했습니다. 기존 한국투자증권 KIS/네이버/Yahoo 시세 연동 종목·매수·매도 화면을 다시 표시합니다. 가상 생활비 연동 ETF는 홈의 별도 계좌에서 체험할 수 있습니다. 자세한 내용: [docs/RESTORE_MARKET_V10.md](docs/RESTORE_MARKET_V10.md)
