@@ -397,7 +397,7 @@ function Done({ o, yearNet, yearProduct, yearLabel }: { o: Outcome; yearNet: num
  * 1년 동안 두 세계가 벌어지는 모양. 오늘 한 점에서 출발해
  * 참은 나는 위로(모은 돈), 산 나는 아래로(쓴 돈) 갈라진다. 높이는 금액에 비례.
  */
-function ForkChart({ spend, keep, holdName }: { spend: number; keep: number; holdName: string }) {
+export function ForkChart({ spend, keep, holdName }: { spend: number; keep: number; holdName: string }) {
   const W = 320, H = 196, x0 = 18, x1 = 268, mid = H / 2;
   const max = Math.max(1, spend, keep);
   const amp = H / 2 - 18;

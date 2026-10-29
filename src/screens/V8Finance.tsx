@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
-import { addDays, parseISO, startOfMonth, weekdayOf } from '../../shared/dates';
+import { addDays, addMonths, parseISO, startOfMonth, todayKST, weekdayOf } from '../../shared/dates';
 import { IconChevron, IconGear } from '../components/Icons';
 import { Logo } from '../components/Glyph';
 import { Won } from '../components/ds';
 import { useStore } from '../state/store';
 import { useNav } from '../state/nav';
-import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldWalletAction } from '../lib/worldWallet';
+import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldWalletAction } from '../lib/worldWallet';
+import { Sheet } from '../components/ui';
 import { worldHistory } from '../lib/worldHistory';
 import { useWallet } from '../state/wallet';
 import { Row, useSpending } from './Ledger';
@@ -123,6 +124,7 @@ export function V8Home() {
   const etfDetail = held.length ? held.map(([c, h]) => `${INSTRUMENT_BY_CODE[c]?.name ?? c} ${h.qty}주`).join(' · ') : '모의투자와 같은 ETF로 연습';
   const gap = useMemo(() => { const p = worldHistory(state.worldWallet, 30); return p[p.length - 1]?.gap ?? 0; }, [state.worldWallet]);
   const choices = state.worldWallet.decisions.length;
+  const [how, setHow] = useState(false);
   const usable = Math.max(0, w.monthlyUsable);
   const cashBase = Math.max(1, WORLD_FIXED_BILLS + WORLD_SAFETY_BUFFER + usable);
   const assetRows = [
@@ -156,8 +158,20 @@ export function V8Home() {
           <div><dt><i className="m-safe" />지켜둘 생활비</dt><dd className="num">{fmt(WORLD_SAFETY_BUFFER)}</dd></div>
           <div><dt><i className="m-free" />자유롭게 쓸 수 있는 돈</dt><dd className="num strong">{fmt(usable)}</dd></div>
         </dl>
+        <button type="button" className="t-how" onClick={() => setHow(true)}>어떻게 계산했어요?</button>
         <button className="t-btn primary" onClick={() => nav.push({ name: 'choose' })}>사기 전에 두 세계 비교하기</button>
       </section>
+      {how && (
+        <Sheet title="쓸 수 있는 돈 계산" onClose={() => setHow(false)}>
+          <dl className="ob-calc t-how-calc">
+            <div><dt>지금 가상 계좌 현금</dt><dd className="num">{fmt(w.cash)}</dd></div>
+            <div><dt>{Number(addMonths(startOfMonth(todayKST()), 1).slice(5, 7))}월 1일 나갈 월세·통신비</dt><dd className="num">−{fmt(WORLD_FIXED_BILLS)}</dd></div>
+            <div><dt>지켜둘 생활비</dt><dd className="num">−{fmt(WORLD_SAFETY_BUFFER)}</dd></div>
+            <div className="total"><dt>이번 달 쓸 수 있는 돈</dt><dd className="num">{w.monthlyUsable < 0 ? '−' : ''}{fmt(Math.abs(w.monthlyUsable))}</dd></div>
+          </dl>
+          <p className="t-how-note">저축·예금·투자로 옮긴 돈은 사라진 게 아니라 '쓸 수 있는 돈'에서만 빠져요. 매달 1일에 고정지출이 나가고 월급 {fmt(WORLD_MONTHLY_INCOME)}이 들어와요.</p>
+        </Sheet>
+      )}
 
       {/* ── 평행세계 티저 ── */}
       <button className="t-portal" onClick={() => nav.setTab('forks')}>
