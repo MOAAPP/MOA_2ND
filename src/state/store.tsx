@@ -9,6 +9,7 @@ import { emptyWorldWallet, migrateWorldWallet, type WorldWallet } from '../lib/w
 import { emptyBank, migrateLegacy, type BankState } from '../lib/bank/engine';
 import { todayKST } from '../../shared/dates';
 import { demoWorldWallet, isEmptyWorld } from '../lib/demoWorld';
+import { appendEvent, emptyResearch, migrateResearch, type ResearchEventBody, type ResearchState } from '../lib/research/log';
 
 export interface SetupDraft {
   step: number;
@@ -81,6 +82,8 @@ export interface AppState {
     discordConsent: boolean;
   };
   cardJobIds: Record<string, string>; // tradeId(fillId) → jobId
+  /** 연구 참여(동의한 경우에만 이벤트가 쌓임) — docs/RESEARCH.md */
+  research: ResearchState;
 }
 
 const KEY = 'pb.state.v3';
@@ -115,6 +118,7 @@ export function initialState(): AppState {
     daily: { enabled: false, time: '08:30', nickname: '', includePhotos: true },
     settings: { reduceMotion: false, autoSendDiscord: true, discordConsent: false },
     cardJobIds: {},
+    research: emptyResearch(),
   };
 }
 
@@ -137,6 +141,7 @@ function load(): { state: AppState; error: string | null } {
         bank: loadBank(parsed),
         learning: { ...base.learning, ...(parsed.learning ?? {}) },
         daily: { ...base.daily, ...(parsed.daily ?? {}) },
+        research: migrateResearch(parsed.research),
         version: 3,
       },
       error: null,
@@ -198,8 +203,14 @@ export function useStore() {
   return c;
 }
 
+/** 상태에 연구 이벤트 한 줄 추가(동의 안 했으면 그대로) */
+export function withEvent(s: AppState, body: ResearchEventBody, now = Date.now()): AppState {
+  const research = appendEvent(s.research, body, { now, demo: s.demo });
+  return research === s.research ? s : { ...s, research };
+}
+
 export function resetScope(s: AppState, scope: 'finance' | 'invest' | 'all'): AppState {
-  if (scope === 'all') return { ...initialState(), introSeen: true };
+  if (scope === 'all') return { ...initialState(), introSeen: true, research: { ...s.research, events: s.research.joined ? s.research.events : [] } };
   if (scope === 'finance') return { ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null };
   return { ...s, portfolio: emptyPortfolio(), cardJobIds: {}, level: null, learning: emptyLearning() };
 }

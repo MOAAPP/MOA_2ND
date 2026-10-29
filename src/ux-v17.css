@@ -135,3 +135,57 @@ body, .app { background: var(--t-bg); }
 .ps-today:active { transform: scale(.96); }
 .t-sample-note { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--moa-50); color: var(--moa); font-size: 13px; font-weight: 600; line-height: 1.4; }
 .t-sample-note b { flex: none; padding: 2px 7px; border-radius: 6px; background: var(--moa); color: #fff; font-size: 11px; }
+
+/* ── 평행세계 리포트 (wr-) ── */
+.wr-page { padding-bottom: 40px; }
+.wr-page .t-sample-note { margin: 4px 16px 12px; }
+.wr-hero { background: linear-gradient(160deg, #16163A, var(--moa)); color: #fff; }
+.wr-k { font-size: 14px; font-weight: 600; opacity: .75; }
+.wr-big { display: block; margin: 6px 0 8px; font-size: 40px; font-weight: 800; letter-spacing: -0.04em; }
+.wr-big .d-won-u { font-size: .55em; margin-left: 2px; }
+.wr-hero p { margin: 0; font-size: 15px; opacity: .9; line-height: 1.5; }
+.wr-year { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin-top: 16px; padding: 14px; border-radius: 14px; background: rgba(255,255,255,.12); }
+.wr-year span { font-size: 13px; opacity: .85; }
+.wr-year b { grid-row: span 2; align-self: center; font-size: 19px; color: #FFB020; }
+.wr-year small { font-size: 12px; opacity: .7; }
+.wr-months { display: grid; gap: 12px; }
+.wr-month { display: grid; grid-template-columns: 38px 1fr 56px; align-items: center; gap: 10px; }
+.wr-m-label { font-size: 14px; font-weight: 700; color: var(--t-g700, #333D4B); }
+.wr-bars { display: grid; gap: 4px; }
+.wr-bars i, .wr-key i { display: block; height: 10px; border-radius: 5px; min-width: 4px; }
+.wr-bars i.full, .wr-key i.full { background: #FF4F6E; opacity: .35; }
+.wr-bars i.paid, .wr-key i.paid { background: var(--moa); }
+.wr-m-saved { text-align: right; font-size: 14px; font-weight: 700; color: var(--moa); }
+.wr-key { display: flex; gap: 14px; margin-top: 2px; font-size: 12px; color: var(--t-g500, #6B7684); }
+.wr-key span { display: inline-flex; align-items: center; gap: 6px; }
+.wr-key i { width: 14px; height: 6px; }
+.wr-note { margin: 14px 0 0; font-size: 13px; color: var(--t-g600, #4E5968); }
+.wr-actions { padding: 8px 16px 0; }
+.wr-entry-icon { background: #16163A !important; color: #FFB020 !important; font-size: 20px; }
+
+/* ── 연구 참여 (rs-) ── */
+.rs-page { padding-bottom: 40px; }
+.rs-page .d-card { margin: 0 16px 12px; }
+.rs-head { padding: 8px 20px 18px; }
+.rs-head h1 { margin: 10px 0 8px; font-size: 26px; line-height: 1.3; letter-spacing: -0.03em; }
+.rs-head p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--t-g600, #4E5968); }
+.rs-badge { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--moa-50); color: var(--moa); font-size: 12px; font-weight: 700; }
+.rs-list { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--t-g700, #333D4B); }
+.rs-list.yes li::marker { color: var(--moa); }
+.rs-list.no li::marker { color: #FF4F6E; }
+.rs-agree { display: flex; gap: 10px; align-items: flex-start; margin: 4px 20px 14px; font-size: 14px; line-height: 1.5; min-height: 44px; }
+.rs-agree input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--moa); flex: none; }
+.rs-cta { padding: 0 16px; }
+.rs-kv { margin: 0; display: grid; gap: 10px; }
+.rs-kv div { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.rs-kv dt { color: var(--t-g500, #6B7684); }
+.rs-kv dd { margin: 0; font-weight: 700; text-align: right; }
+.rs-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rs-stats div { padding: 12px; border-radius: 12px; background: var(--t-g50, #F9FAFB); display: grid; gap: 4px; }
+.rs-stats small { font-size: 12px; color: var(--t-g500, #6B7684); }
+.rs-stats b { font-size: 18px; }
+.rs-p { margin: 0 0 12px; font-size: 14px; line-height: 1.5; color: var(--t-g600, #4E5968); }
+.rs-quiet { display: flex; justify-content: center; gap: 18px; padding: 8px 16px; }
+.rs-quiet button { min-height: 44px; border: 0; background: none; font: inherit; font-size: 13px; color: var(--t-g500, #6B7684); text-decoration: underline; }
+.rs-quiet button.danger { color: #FF4F6E; }
+.wr-row .t-row-main small { white-space: normal; overflow: visible; text-overflow: clip; }

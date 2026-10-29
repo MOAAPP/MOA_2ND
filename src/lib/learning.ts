@@ -3,6 +3,7 @@ import { INSTRUMENT_BY_CODE } from '../../shared/instruments';
 import { LESSON_BY_ID, XP, bumpStreak, stepsFor, type PracticeCheck, type Progress } from '../../shared/curriculum';
 import type { Level } from '../../shared/knowledge';
 import type { AppState, LessonSession } from '../state/store';
+import { appendEvent } from './research/log';
 
 export function progressOf(s: AppState): Progress {
   return { startUnit: s.learning.startUnit ?? 1, completed: s.learning.completed };
@@ -47,6 +48,7 @@ export function finishLesson(s: AppState, lessonId: string, wrong: number, pract
     state: {
       ...s,
       learning: { ...s.learning, completed: { ...s.learning.completed, [lessonId]: record }, xp: s.learning.xp + xp, streak: bumpStreak(s.learning.streak, today), session: undefined },
+      research: appendEvent(s.research, { type: 'lesson_done', lessonId }, { now: Date.now(), demo: s.demo }),
     },
     xp,
     firstTime: !prev,

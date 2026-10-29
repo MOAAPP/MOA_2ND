@@ -4,7 +4,8 @@ import { bankTotals, closeEarly, openContract, payInto, type BankResult } from '
 import type { Product } from '../lib/bank/products';
 import { appToday, applyToWallet, bankContext, catchUp, usableNow } from '../lib/bank/sync';
 import { useToast } from '../components/ui';
-import { useStore } from './store';
+import { useStore, withEvent } from './store';
+import { diffDays } from '../../shared/dates';
 
 /** 모으기(예금·적금) 화면들이 쓰는 상태와 동작 */
 export function useBank() {
@@ -32,10 +33,16 @@ export function useBank() {
       const r = openContract(bank, p, { ...input, openedOn: today }, ctx, usable);
       if ('error' in r) return { error: r.error };
       commit(r);
+      update((s) => withEvent(s, { type: 'bank_join', kind: p.kind, productId: p.id, amount: input.amount, months: input.months, fromSaved: (s.worldWallet.savings || 0) > 0 }));
       return { id: r.bank.contracts[r.bank.contracts.length - 1].id };
     },
     pay: (id: string, amount: number) => commit(payInto(bank, id, amount, today, usable)),
-    close: (id: string) => commit(closeEarly(bank, id, today)),
+    close: (id: string) => {
+      const c = bank.contracts.find((x) => x.id === id);
+      const err = commit(closeEarly(bank, id, today));
+      if (!err && c) update((s) => withEvent(s, { type: 'bank_close_early', kind: c.kind, productId: c.productId, heldDays: diffDays(c.openedOn, today), termMonths: c.termMonths }));
+      return err;
+    },
     travel(days: number) {
       update((s) => ({ ...s, bank: { ...s.bank, clockOffsetDays: (s.bank.clockOffsetDays || 0) + days } }));
     },
@@ -53,7 +60,16 @@ export function BankClock() {
     last.current = key;
     const r = catchUp(state.bank, state.worldWallet, bankContext(state));
     if (!r) return;
-    update((s) => ({ ...s, bank: r.bank, worldWallet: r.wallet }));
+    update((s) => {
+      let n = { ...s, bank: r.bank, worldWallet: r.wallet };
+      const ap = r.events.filter((e) => e.type === 'autoPay').length, miss = r.events.filter((e) => e.type === 'missed').length;
+      if (ap || miss) n = withEvent(n, { type: 'autopay', paid: ap, missed: miss });
+      for (const e of r.events.filter((x) => x.type === 'mature')) {
+        const c = r.bank.contracts.find((x) => x.id === e.contractId);
+        if (c) n = withEvent(n, { type: 'bank_mature', kind: c.kind, productId: c.productId });
+      }
+      return n;
+    });
     if (r.events.length) {
       const matured = r.events.filter((e) => e.type === 'mature');
       const missed = r.events.filter((e) => e.type === 'missed').length;

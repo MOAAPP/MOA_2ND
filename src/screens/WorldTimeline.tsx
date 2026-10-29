@@ -47,6 +47,12 @@ export function WorldTimeline() {
         <p className="t-swipe-hint"><span aria-hidden="true">↔</span> 누른 채 좌우로 밀어보세요 · 떼도 그날에 머물러요</p>
       </section>
 
+      <button className="t-cta-card wr-entry" onClick={() => nav.push({ name: 'report' })}>
+        <span className="t-cta-icon wr-entry-icon" aria-hidden="true">▤</span>
+        <span className="t-cta-text"><b>평행세계 리포트</b><small>달마다 두 세계 · 크게 지킨 선택 · 공유 카드</small></span>
+        <IconChevron className="t-chev" />
+      </button>
+
       <button className="t-cta-card" onClick={() => nav.push({ name: 'newChoice' })}>
         <span className="t-cta-icon"><IconCamera /></span>
         <span className="t-cta-text"><b>새로운 선택 기록하기</b><small>상품 캡처만 올리면 가격을 읽어드려요</small></span>

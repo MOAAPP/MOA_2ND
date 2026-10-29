@@ -26,7 +26,9 @@ export type Screen =
   | { name: 'product'; id: string }
   | { name: 'join'; id: string; amount?: number }
   | { name: 'choose' }
-  | { name: 'account'; id: string };
+  | { name: 'account'; id: string }
+  | { name: 'research' }
+  | { name: 'report' };
 
 interface Nav {
   tab: Tab;

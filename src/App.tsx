@@ -34,6 +34,9 @@ import { Join } from './screens/bank/Join';
 import { Account } from './screens/bank/Account';
 import { BankClock } from './state/bank';
 import { emptyBank } from './lib/bank/engine';
+import { Research } from './screens/Research';
+import { WorldReport } from './screens/WorldReport';
+import { startSession } from './lib/research/log';
 
 const TABS: { id: Tab; label: string; Icon: typeof IconHome }[] = [
   { id: 'home', label: '홈', Icon: IconHome },
@@ -83,8 +86,12 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'join': return <Join key={screen.id} id={screen.id} initialAmount={screen.amount} />;
     case 'choose': return <Choose />;
     case 'account': return <Account key={screen.id} id={screen.id} />;
+    case 'research': return <Research />;
+    case 'report': return <WorldReport />;
   }
 }
+
+let sessionLogged = false;
 
 function Shell() {
   const { state, update } = useStore();
@@ -98,6 +105,13 @@ function Shell() {
     setReplayIntro(false);
   };
   useKeyboardInset();
+
+  // 연구 참여자: 앱을 열 때마다 접속 1회 기록
+  useEffect(() => {
+    if (sessionLogged) return;
+    sessionLogged = true;
+    update((s) => ({ ...s, research: startSession(s.research, { now: Date.now(), demo: s.demo }) }));
+  }, [update]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('reduce-motion', state.settings.reduceMotion);
