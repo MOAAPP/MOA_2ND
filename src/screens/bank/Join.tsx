@@ -5,6 +5,8 @@ import { quoteJoin } from '../../lib/bank/engine';
 import { ratePct } from '../../lib/bank/money';
 import { CtaBar, TopBar } from '../../components/ui';
 import { IconCheck } from '../../components/Icons';
+import { AmountText, Chip, Chips, NumberPad } from '../../components/ds';
+import { addAmount } from '../../lib/numpad';
 import { useBank } from '../../state/bank';
 import { useNav } from '../../state/nav';
 import { BankMark, KV, fmtWon, kDate } from './BankUI';
@@ -72,18 +74,16 @@ export function Join({ id }: { id: string }) {
       {step === 0 && (
         <section className="b-join-body">
           <h2>{p.kind === 'deposit' ? '얼마를 맡길까요?' : fixed ? '매달 얼마씩 모을까요?' : '처음에 얼마를 넣을까요?'}</h2>
-          <div className="t-amount-input">
-            <input autoFocus inputMode="numeric" aria-label="금액" value={amount ? amount.toLocaleString('ko-KR') : ''} placeholder="0" onChange={(e) => setAmount(Math.min(100_000_000, Number(e.target.value.replace(/[^0-9]/g, '')) || 0))} />
-            <span>원</span>
-          </div>
+          <AmountText value={amount} tone={amountError ? 'error' : undefined} />
           {amountError ? <p className="t-error">{amountError}</p> : <p className="b-hint">이번 달 넣을 수 있는 돈 <b className="num">{fmtWon(bank.usable)}</b></p>}
-          <div className="t-quick">
+          <Chips label="빠른 금액">
             {(p.kind === 'deposit' ? [50_000, 100_000, 300_000] : [10_000, 30_000, 50_000]).map((v) => (
-              <button key={v} onClick={() => setAmount(Math.min(v + amount, 100_000_000))}>+{v / 10_000}만</button>
+              <Chip key={v} onClick={() => setAmount(addAmount(amount, v))}>+{v / 10_000}만</Chip>
             ))}
-            <button onClick={() => setAmount(Math.min(bank.usable, p.maxAmount))}>최대</button>
-          </div>
+            <Chip onClick={() => setAmount(Math.max(0, Math.min(bank.usable, p.maxAmount)))}>최대</Chip>
+          </Chips>
           <p className="t-note">{p.kind === 'deposit' ? `${fmtWon(p.minAmount)}부터 ${fmtWon(p.maxAmount)}까지` : free ? `1회 ${fmtWon(p.minAmount)}부터, 한 달 ${fmtWon(p.monthlyLimit ?? p.maxAmount)}까지` : `매달 ${fmtWon(p.minAmount)} ~ ${fmtWon(p.maxAmount)}`}</p>
+          <div className="d-pad-dock"><NumberPad value={amount} onChange={setAmount} /></div>
         </section>
       )}
 

@@ -7,3 +7,7 @@
   - 바꾼 것: 계좌 상세 거래내역 필터(전체/넣은 돈/받은 돈/이자, 합계, 이자는 세전·세금·세후) — `src/lib/bank/history.ts` + 테스트 6개. `.t-page` 상단바가 4px 넘쳐 가로 스크롤 생기던 것 수정.
   - README 상단에 v16 안내, `.night/MORNING_SUMMARY.md`(배포 URL·바뀐 화면·남은 일) 작성.
   - 남은 것: N3 디자인 시스템부터 위에서 차례로.
+- 10/29 11:52 N3 일부(디자인 시스템 1차).
+  - 바꾼 것: 공통 컴포넌트 `src/components/ds.tsx`(AmountText: 큰 금액 + "35만 원" 한글 읽기, NumberPad: 토스식 숫자패드 00·지우기, Chips/Chip), 스타일 `src/ux-v16-ds.css`(접두어 d-). 숫자패드 로직 `src/lib/numpad.ts`(원 단위 정수, 1억 상한) + 테스트 7개.
+  - 예금·적금 가입 1단계(금액)를 키보드 입력 → 숫자패드 + 빠른 금액 칩으로 교체. 390px에서 가로 스크롤 없음 확인.
+  - 남은 것: N3 나머지(ListRow, Card, BottomSheet, Tabs, Button, Toast, EmptyState, Skeleton, ux-v*.css 통합) → 그다음 N4.

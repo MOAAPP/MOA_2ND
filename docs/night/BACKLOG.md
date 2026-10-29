@@ -10,7 +10,7 @@
 ## 항목
 - [x] N1. docs/PRODUCT_SPEC.md: IA, 전체 유저플로우, 화면 목록, 도메인 모델, 금리·세금·수수료 계산식, 엣지케이스 (이후 작업 기준)
 - [x] N2. 금융 코어 엔진: 계좌(생활비/모아계좌/예금/적금/투자예수금), 불변 거래 원장(잔액은 원장에서 계산), 원 단위 정수, 데모용 날짜 시뮬레이터 + vitest
-- [ ] N3. 디자인 시스템: 토큰 + 컴포넌트(AmountText, ListRow, Card, BottomSheet, NumberPad, Tabs, Chip, Button, Toast, EmptyState, Skeleton). ux-v*.css 통합 정리
+- [~] N3. 디자인 시스템: 토큰 + 컴포넌트(AmountText, ListRow, Card, BottomSheet, NumberPad, Tabs, Chip, Button, Toast, EmptyState, Skeleton). ux-v*.css 통합 정리 (완료: AmountText·NumberPad·Chip — `src/components/ds.tsx`, `src/ux-v16-ds.css`, 예금·적금 가입 금액 화면에 적용 / 남은 것: ListRow, Card, BottomSheet, Tabs, Button, Toast, EmptyState, Skeleton, ux-v*.css 통합)
 - [ ] N4. 내비게이션·IA 재구성(하단 탭) + 온보딩 재설계(목표·월 수입·고정지출)
 - [ ] N5. 자산 홈(뱅크샐러드식): 총자산, 자산 구성 도넛, 이번 달 소비, 예산 진행률, 만기 임박, 오늘의 결정 카드
 - [ ] N6. 가계부 v2: 입력 바텀시트(넘버패드), 카테고리·결제수단, 달력/리스트, 월·카테고리 예산, 고정지출 자동 등록, 월간 통계

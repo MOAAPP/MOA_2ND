@@ -1,0 +1,28 @@
+/* ─────────────────────────────────────────────────────────────
+ * v16 · 디자인 시스템 공통 컴포넌트 (src/components/ds.tsx)
+ * ux-v15 토큰(--t-*) 위에 쌓는다. 접두어 d-
+ * ───────────────────────────────────────────────────────────── */
+
+/* AmountText */
+.d-amount { padding: 4px 0 0; }
+.d-amount-num { margin: 0; display: flex; align-items: baseline; gap: 4px; font-size: 34px; font-weight: 700; letter-spacing: -0.04em; color: var(--t-g900); line-height: 1.2; word-break: keep-all; }
+.d-amount-num.empty { color: var(--t-g300); }
+.d-amount-num span { font-size: 26px; font-weight: 600; }
+.d-amount-read { margin: 6px 0 0; min-height: 20px; font-size: 15px; color: var(--t-g500); }
+.d-amount.error .d-amount-num { color: var(--t-red); }
+
+/* NumberPad */
+.d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 4px 4px 0; user-select: none; -webkit-user-select: none; }
+.d-pad-key { height: 56px; min-height: 44px; border: 0; border-radius: 14px; background: transparent; font-size: 24px; font-weight: 600; color: var(--t-g800); display: grid; place-items: center; transition: background .12s var(--t-ease), transform .12s var(--t-ease); -webkit-tap-highlight-color: transparent; }
+.d-pad-key:active { background: var(--t-g200); transform: scale(.94); }
+.d-pad-key svg { color: var(--t-g600); }
+
+/* Chips */
+.d-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+.d-chips::-webkit-scrollbar { display: none; }
+.d-chip { flex: none; height: 36px; min-width: 44px; padding: 0 14px; border: 0; border-radius: 18px; background: #fff; color: var(--t-g700); font-size: 14px; box-shadow: inset 0 0 0 1px var(--t-g200); font-weight: 600; white-space: nowrap; transition: background .12s; }
+.d-chip:active { background: var(--t-g100); }
+.d-chip.on { background: var(--t-g800); color: #fff; box-shadow: none; }
+
+/* 숫자패드를 쓰는 금액 화면: 패드는 CTA 바로 위에 붙는다 */
+.d-pad-dock { margin: 16px -8px 0; }
