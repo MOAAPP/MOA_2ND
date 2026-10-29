@@ -4,7 +4,7 @@ import { ToastProvider, useKeyboardInset } from './components/ui';
 import { CardNews, CardsList, DailyScreen } from './screens/CardNews';
 import { Decide } from './screens/Decide';
 import { Future } from './screens/Future';
-import { Intro } from './screens/Intro';
+import { Onboarding } from './screens/Onboarding';
 import { ParallelLab } from './screens/ParallelLab';
 import { Insights } from './screens/Insights';
 import { Learn, Practice } from './screens/Learn';
@@ -120,7 +120,7 @@ function Shell() {
 
   if (!state.introSeen || replayIntro) {
     return (
-      <Intro
+      <Onboarding
         onDone={() => {
           finishIntroPreview();
           nav.reset();

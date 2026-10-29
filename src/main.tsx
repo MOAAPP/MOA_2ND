@@ -19,6 +19,7 @@ import './ux-v16-ds.css';
 import './ux-v16-choose.css';
 import './ux-v17.css';
 import './ux-v18.css';
+import './ux-v19.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
