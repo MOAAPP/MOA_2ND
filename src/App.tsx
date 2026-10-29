@@ -21,7 +21,7 @@ import { MarketProvider } from './state/market';
 import { NavProvider, useNav, type Screen, type Tab } from './state/nav';
 import { StoreProvider, useStore } from './state/store';
 import { demoData } from './lib/demo';
-import { emptyWorldWallet } from './lib/worldWallet';
+import { demoWorldWallet } from './lib/demoWorld';
 import { V8Home } from './screens/V8Finance';
 import { WorldInvestment } from './screens/ParallelLab';
 import { WorldTimeline } from './screens/WorldTimeline';
@@ -114,7 +114,7 @@ function Shell() {
         onDemo={() => {
           finishIntroPreview();
           nav.reset();
-          update((s) => ({ ...s, ...demoData(), worldWallet: emptyWorldWallet(), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null }));
+          update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWallet(), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null }));
           nav.setTab('home');
         }}
       />

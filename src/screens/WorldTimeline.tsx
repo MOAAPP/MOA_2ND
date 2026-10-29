@@ -5,6 +5,7 @@ import { ParallelSwipe, type SwipeHandle } from '../components/ParallelSwipe';
 import { useStore } from '../state/store';
 import { useNav } from '../state/nav';
 import { historyEvents, koreanDayLabel, worldHistory } from '../lib/worldHistory';
+import { demoWorldWallet, isEmptyWorld } from '../lib/demoWorld';
 
 const money = (n: number) => `${n < 0 ? '−' : ''}${won(Math.abs(Math.round(n)))}`;
 const RANGES = [{ d: 7, label: '1주' }, { d: 30, label: '1개월' }, { d: 90, label: '3개월' }] as const;
@@ -12,7 +13,9 @@ const RANGES = [{ d: 7, label: '1주' }, { d: 30, label: '1개월' }, { d: 90, l
 export function WorldTimeline() {
   const { state } = useStore();
   const nav = useNav();
-  const wallet = state.worldWallet;
+  // 아직 남긴 선택이 없으면 예시 기록으로 바로 두 세계를 보여준다(로그인·입력 없이 로직 확인용)
+  const sample = isEmptyWorld(state.worldWallet);
+  const wallet = useMemo(() => (sample ? demoWorldWallet() : state.worldWallet), [sample, state.worldWallet]);
   const [days, setDays] = useState<7 | 30 | 90>(30);
   const [filter, setFilter] = useState<'all' | 'consumption' | 'saving' | 'investing'>('all');
   const swipe = useRef<SwipeHandle>(null);
@@ -35,12 +38,13 @@ export function WorldTimeline() {
       </header>
 
       <section className="t-card t-swipe-card" aria-label="두 세계 비교">
+        {sample && <p className="t-sample-note"><b>예시</b>최근 90일 예시 기록이에요. 내 선택을 남기면 내 기록으로 바뀌어요.</p>}
         <ParallelSwipe ref={swipe} points={points} />
         <div className="t-slide-seg" role="group" aria-label="그래프 기간" style={{ ['--i' as string]: rangeIdx }}>
           <span className="t-slide-pill" aria-hidden="true" />
           {RANGES.map((r) => <button key={r.d} aria-pressed={days === r.d} onClick={() => setDays(r.d)}>{r.label}</button>)}
         </div>
-        <p className="t-swipe-hint"><span aria-hidden="true">↔</span> 그래프를 누른 채 좌우로 밀어보세요</p>
+        <p className="t-swipe-hint"><span aria-hidden="true">↔</span> 누른 채 좌우로 밀어보세요 · 떼도 그날에 머물러요</p>
       </section>
 
       <button className="t-cta-card" onClick={() => nav.push({ name: 'newChoice' })}>
@@ -74,7 +78,7 @@ export function WorldTimeline() {
         </div>
       </section>
 
-      <p className="t-foot">그래프는 이번 달 쓸 수 있는 가상 현금 기준이에요. 기록을 누르면 그날로 이동해요. 두 세계의 차이는 실제 자산에 더하지 않아요.</p>
+      <p className="t-foot">그래프는 이번 달 쓸 수 있는 가상 현금 기준이에요. 기록을 누르면 그날로 이동해요. 그래프를 두 번 누르거나 '오늘로'를 누르면 오늘로 돌아와요. 두 세계의 차이는 실제 자산에 더하지 않아요.</p>
     </div>
   );
 }

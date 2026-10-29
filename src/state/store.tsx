@@ -8,6 +8,7 @@ import type { DecisionRecord, Goal, Profile, ScheduleItem } from '../lib/types';
 import { emptyWorldWallet, migrateWorldWallet, type WorldWallet } from '../lib/worldWallet';
 import { emptyBank, migrateLegacy, type BankState } from '../lib/bank/engine';
 import { todayKST } from '../../shared/dates';
+import { demoWorldWallet, isEmptyWorld } from '../lib/demoWorld';
 
 export interface SetupDraft {
   step: number;
@@ -123,13 +124,16 @@ function load(): { state: AppState; error: string | null } {
     if (!raw) return { state: initialState(), error: null };
     const parsed = JSON.parse(raw) as Partial<AppState>;
     const base = initialState();
+    const world = migrateWorldWallet(parsed.worldWallet);
+    // 예전 체험 저장본은 평행세계가 비어 있었다 → 예시 기록을 채워 바로 보이게
+    const worldWallet = parsed.demo && isEmptyWorld(world) && !parsed.bank?.contracts?.length ? demoWorldWallet() : world;
     return {
       state: {
         ...base,
         ...parsed,
         settings: { ...base.settings, ...(parsed.settings ?? {}) },
         portfolio: { ...base.portfolio, ...(parsed.portfolio ?? {}) },
-        worldWallet: migrateWorldWallet(parsed.worldWallet),
+        worldWallet,
         bank: loadBank(parsed),
         learning: { ...base.learning, ...(parsed.learning ?? {}) },
         daily: { ...base.daily, ...(parsed.daily ?? {}) },

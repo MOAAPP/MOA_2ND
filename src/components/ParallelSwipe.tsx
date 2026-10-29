@@ -8,7 +8,7 @@ import { koreanDayLabel, type WorldHistoryPoint } from '../lib/worldHistory';
  * - 점은 손가락을 부드럽게 따라옴(관성 보간), 숫자는 굴러가듯 바뀜
  * - 손가락 오른쪽(미래)은 흐리게, 왼쪽(지나온 길)은 선명하게
  * - 선택이 있던 날을 지나가면 짧은 진동 + 그날 고른 것 이름이 떠오름
- * - 손을 떼면 '오늘'로 스르륵 돌아감
+ * - 손을 떼도 그날에 머묾('오늘로' 버튼이나 그래프 두 번 탭으로 돌아감)
  * - 기간을 바꾸면 선이 끊기지 않고 모양만 바뀜(모핑)
  */
 
@@ -126,9 +126,8 @@ export const ParallelSwipe = forwardRef<SwipeHandle, { points: WorldHistoryPoint
   useEffect(() => {
     if (idx === lastIdx.current) return;
     lastIdx.current = idx;
-    if (!active) return;
     const ev = p.events.find((e) => e.kind === 'consumption') ?? p.events[0];
-    if (ev) { navigator.vibrate?.(8); setFlash(ev.title); }
+    if (ev) { if (active) navigator.vibrate?.(8); setFlash(ev.title); }
     else setFlash(null);
   }, [idx, active, p]);
 
@@ -155,22 +154,21 @@ export const ParallelSwipe = forwardRef<SwipeHandle, { points: WorldHistoryPoint
   const onUp = (e: React.PointerEvent) => {
     if (!dragging.current && e.pointerType !== 'mouse') {
       // 가볍게 탭: 그 날짜로 이동했다가 잠시 머무름
-      setActive(true); goal.current = toPos(e.clientX); run();
-      window.setTimeout(() => { setActive(false); setFlash(null); goal.current = 1; run(); }, 1600);
+      goal.current = toPos(e.clientX); run();
       return;
     }
     dragging.current = false;
-    setActive(false); setFlash(null);
-    window.setTimeout(() => { if (!dragging.current) { goal.current = 1; run(); } }, 260);
+    setActive(false);
   };
+  const backToToday = () => { setFlash(null); goal.current = 1; run(); };
 
   useImperativeHandle(ref, () => ({
     focusDay: (iso: string) => {
       const i = points.findIndex((q) => q.date === iso);
       if (i < 0) return;
-      setActive(true); goal.current = i / Math.max(1, n - 1); run();
-      const ev = points[i].events[0]; if (ev) setFlash(ev.title);
-      window.setTimeout(() => { setActive(false); setFlash(null); goal.current = 1; run(); }, 2200);
+      goal.current = i / Math.max(1, n - 1); run();
+      const ev = points[i].events.find((e) => e.kind === 'consumption') ?? points[i].events[0];
+      setFlash(ev ? ev.title : null);
     },
   }), [points, n, run]);
 
@@ -184,11 +182,13 @@ export const ParallelSwipe = forwardRef<SwipeHandle, { points: WorldHistoryPoint
   const vA = useRolling(p.actual);
   const vB = useRolling(p.alternative);
   const isToday = idx === n - 1;
+  const away = goal.current < 1 && !isToday;
 
   return (
     <div className={`ps ${active ? 'is-active' : ''}`}>
       <div className="ps-head">
-        <span className="ps-date">{isToday && !active ? '지금' : koreanDayLabel(p.date)}{flash && <em className="ps-flash" key={flash}>{flash}</em>}</span>
+        <span className="ps-date">{isToday && !active ? '지금' : koreanDayLabel(p.date)}{flash && <em className="ps-flash" key={flash}>{flash}</em>}
+          {away && !active && <button type="button" className="ps-today" onClick={backToToday}>오늘로 ↺</button>}</span>
         <strong className={`ps-num num ${gap < 0 ? 'neg' : ''}`}>{Math.round(gap) > 0 ? '+' : ''}{money(gap)}</strong>
         <span className="ps-cap">다르게 선택해서 지킨 돈</span>
       </div>
@@ -202,7 +202,8 @@ export const ParallelSwipe = forwardRef<SwipeHandle, { points: WorldHistoryPoint
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
-        onPointerCancel={() => { dragging.current = false; setActive(false); setFlash(null); goal.current = 1; run(); }}
+        onPointerCancel={() => { dragging.current = false; setActive(false); }}
+        onDoubleClick={backToToday}
       >
         <defs>
           <linearGradient id="psGap" x1="0" x2="0" y1="0" y2="1">
@@ -229,7 +230,7 @@ export const ParallelSwipe = forwardRef<SwipeHandle, { points: WorldHistoryPoint
         <line x1={dotX} x2={dotX} y1={Math.min(dotA, dotB) + 7} y2={Math.max(dotA, dotB) - 7} className="ps-span" />
         <circle cx={dotX} cy={dotB} r="5" className="ps-dot-alt" />
         <circle cx={dotX} cy={dotA} r={active ? 8 : 6.5} className="ps-dot-act" />
-        {!active && <circle cx={dotX} cy={dotA} r="6.5" className="ps-ping" />}
+        {!active && isToday && <circle cx={dotX} cy={dotA} r="6.5" className="ps-ping" />}
 
         <text x="0" y={H - 4} className="ps-axis">{koreanDayLabel(points[0].date)}</text>
         <text x={W} y={H - 4} textAnchor="end" className="ps-axis">오늘</text>
