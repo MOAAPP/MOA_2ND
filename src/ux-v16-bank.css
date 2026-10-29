@@ -164,3 +164,10 @@
   .b-rounds { grid-template-columns: repeat(4, 1fr); }
   .b-detail-rates b { font-size: 19px; }
 }
+/* 거래내역 필터 */
+.b-hist-chips { margin: 0 0 4px; }
+.b-hist-chips button { min-height: 36px; }
+.b-hist-total { display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 4px; padding: 12px 14px; border-radius: 12px; background: var(--t-g50, #F9FAFB); color: var(--t-g600); font-size: 14px; }
+.b-hist-total b { color: var(--t-g900); font-size: 17px; font-weight: 700; }
+.b-hist-memo small { display: block; margin-top: 2px; color: var(--t-g500); font-size: 13px; }
+.t-page > .topbar { margin: 0 -16px; width: calc(100% + 32px); }
