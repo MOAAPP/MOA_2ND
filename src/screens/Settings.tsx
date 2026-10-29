@@ -5,7 +5,6 @@ import { LEVEL_LABEL } from '../../shared/knowledge';
 import { DiscordPanel } from '../components/DiscordPanel';
 import { IconChevron } from '../components/Icons';
 import { ScheduleList } from '../components/ScheduleEditor';
-import { SpendDataPanel } from '../components/SpendDataPanel';
 import { AmountInput, ConfirmSheet, CtaBar, Notice, Switch, TopBar, useToast } from '../components/ui';
 import { occurrences } from '../lib/cashflow';
 import type { Profile } from '../lib/types';
@@ -13,9 +12,9 @@ import { useNav } from '../state/nav';
 import { resetScope, useStore } from '../state/store';
 
 const SCOPES = {
-  finance: { title: '생활비 정보와 소비 기록', body: '잔고·수입·지출·지켜둘 금액·목표와 갈림길의 모든 기록이 지워지고 초기 설정부터 다시 시작해요. 모의투자는 그대로예요.' },
-  invest: { title: '모의투자와 진단 결과', body: '모의 자금이 10,000,000원으로 돌아가고 보유 종목·주문·거래 내역·지식 진단 결과가 지워져요. 서버의 카드뉴스 이미지는 남아 있을 수 있어요.' },
-  all: { title: '전체 데이터', body: '이 기기에 저장된 평행통장 데이터가 모두 지워져요. 되돌릴 수 없어요.' },
+  finance: { title: '생활비 정보와 기록', body: '잔고·수입·지출·목표와 가계부·선택 기록이 지워지고 생활비 설정부터 다시 시작해요. 모의투자는 그대로예요.' },
+  invest: { title: '모의투자와 학습', body: '모의 자금이 1,000만 원으로 돌아가고 보유 종목·주문 내역·학습 기록이 지워져요.' },
+  all: { title: '전체 데이터', body: '이 기기에 저장된 모아 데이터가 모두 지워져요. 되돌릴 수 없어요.' },
 } as const;
 
 export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
@@ -31,74 +30,62 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
       {storageError && <Notice kind="danger">{storageError}</Notice>}
 
       <section className="card" style={{ padding: '4px 18px' }}>
-        <button className="list-item" onClick={() => nav.push({ name: 'finance' })}>
-          <div className="grow"><div className="t">재무 정보 수정</div><div className="s">{p ? `잔고 ${won(p.baseBalance)} · ${formatKDate(p.baseDate)} 기준` : '설정 전'}</div></div>
-          <IconChevron width={18} height={18} color="var(--ink-3)" />
-        </button>
+        {state.demo ? (
+          <button className="list-item" onClick={() => { update((s) => ({ ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null })); nav.reset(); }}>
+            <div className="grow"><div className="t">내 생활비로 시작하기</div><div className="s">지금은 예시 데이터로 체험 중이에요</div></div>
+            <IconChevron width={18} height={18} color="var(--ink-3)" />
+          </button>
+        ) : (
+          <button className="list-item" onClick={() => nav.push({ name: 'finance' })}>
+            <div className="grow"><div className="t">내 생활비 정보</div><div className="s">{p ? `잔고 ${won(p.baseBalance)} · ${formatKDate(p.baseDate)} 기준` : '설정 전'}</div></div>
+            <IconChevron width={18} height={18} color="var(--ink-3)" />
+          </button>
+        )}
         <button className="list-item" onClick={() => nav.push({ name: 'placement' })}>
-          <div className="grow"><div className="t">레벨테스트 다시 보기</div><div className="s">현재 수준: {state.level ? LEVEL_LABEL[state.level] : '진단 전'}</div></div>
+          <div className="grow"><div className="t">금융 레벨 테스트</div><div className="s">{state.level ? LEVEL_LABEL[state.level] : '아직 안 했어요'}</div></div>
           <IconChevron width={18} height={18} color="var(--ink-3)" />
         </button>
-        <button className="list-item" onClick={() => nav.push({ name: 'research' })}>
-          <div className="grow"><div className="t">연구 참여</div><div className="s">{state.research.joined ? `참여 중 · ${state.research.pid}` : '소비 결정 연구 · 선택 사항'}</div></div>
-          <IconChevron width={18} height={18} color="var(--ink-3)" />
-        </button>
+        <div className="list-item">
+          <div className="grow"><div className="t">움직임 줄이기</div><div className="s">그래프 애니메이션을 꺼요</div></div>
+          <Switch label="움직임 줄이기" checked={state.settings.reduceMotion} onChange={(v) => update((s) => ({ ...s, settings: { ...s.settings, reduceMotion: v } }))} />
+        </div>
         <button className="list-item" onClick={onReplayIntro}>
           <div className="grow"><div className="t">서비스 소개 다시 보기</div></div>
           <IconChevron width={18} height={18} color="var(--ink-3)" />
         </button>
-        <div className="list-item">
-          <div className="grow"><div className="t">움직임 줄이기</div><div className="s">그래프가 갈라지는 애니메이션을 끄고 바로 보여줘요.</div></div>
-          <Switch label="움직임 줄이기" checked={state.settings.reduceMotion} onChange={(v) => update((s) => ({ ...s, settings: { ...s.settings, reduceMotion: v } }))} />
-        </div>
       </section>
 
-      <section className="section"><DiscordPanel /></section>
+      <section className="section">
+        <div className="section-head"><h2>알림</h2></div>
+        <DiscordPanel />
+      </section>
 
       <section className="section">
         <div className="section-head"><h2>데이터</h2></div>
         <div className="card">
-          <p className="small ink2" style={{ marginTop: 0 }}>로그인 없이 이 기기 브라우저에만 저장돼요. 서버에는 카드뉴스 생성에 필요한 모의 거래 정보(종목·수량·가격)만 보내요.</p>
+          <p className="small ink2" style={{ marginTop: 0 }}>로그인 없이 이 기기에만 저장돼요. 실제 은행·카드와 연결하지 않아요.</p>
           <div className="stack">
             {(Object.keys(SCOPES) as (keyof typeof SCOPES)[]).map((k) => (
-              <button key={k} className="btn ghost block sm" style={{ color: k === 'all' ? 'var(--danger)' : undefined }} onClick={() => setReset(k)}>{SCOPES[k].title} 초기화</button>
+              <button key={k} className="btn ghost block sm" style={{ color: k === 'all' ? 'var(--danger)' : undefined }} onClick={() => setReset(k)}>{SCOPES[k].title} 지우기</button>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-head"><h2>생활비 예측 데이터</h2></div>
-        <SpendDataPanel />
-      </section>
-
-      <section className="section">
-        <div className="section-head"><h2>계산·데이터 기준</h2></div>
-        <div className="card small ink2">
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            <li>날짜별 잔고 = 전날 잔고 − 그날 지출 + 그날 수입. 같은 날은 지출을 먼저 빼요.</li>
-            <li>매월 반복 날짜가 그 달에 없으면 말일로 계산해요.</li>
-            <li>평행세계는 내가 고른 기록만, 기록마다 한 번씩 차이를 반영해요.</li>
-            <li>생활비 범위·확률: 하루 생활비를 10%·50%·90% 값으로 예측하고, 생활비 경로 1,000개를 만들어 날짜별 잔고 범위와 잔고가 바닥날 확률을 계산해요. 기록이 3건 미만이면 입력한 하루 평균만 쓰고, 기록이 쌓일수록(30일이면 100%) 내 기록 비중이 커져요.</li>
-            <li>사기 좋은 날: 바닥날 확률이 20% 이하가 되는 가장 이른 날을 추천해요.</li>
-            <li>시세: 한국투자증권 Open API(키 설정 시 실시간 체결) → 네이버 금융 → Yahoo 지연 시세 순으로 자동 선택. 화면에 실제 출처와 기준 시각을 표시해요. 장 운영 09:00~15:30, KRX 휴장일 반영.</li>
-            <li>모의투자는 수수료·세금을 반영하지 않아요.</li>
-          </ul>
-        </div>
-      </section>
+      <p className="small muted" style={{ textAlign: 'center', margin: '20px 0 32px' }}>모아 · 학습용 가상 금융 서비스</p>
 
       {reset && (
         <ConfirmSheet
-          title={`${SCOPES[reset].title}를 초기화할까요?`}
+          title={`${SCOPES[reset].title}를 지울까요?`}
           body={SCOPES[reset].body}
-          confirm="초기화"
+          confirm="지우기"
           danger
           onClose={() => setReset(null)}
           onConfirm={() => {
             const scope = reset;
             setReset(null);
             update((s) => resetScope(s, scope));
-            toast('초기화했어요');
+            toast('지웠어요');
             nav.reset();
           }}
         />

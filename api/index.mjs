@@ -27879,11 +27879,94 @@ var init_krx = __esm({
   }
 });
 
+// shared/aiPrompts.ts
+function buildUserMessage(task, input) {
+  return `\uC791\uC5C5: ${task}
+\uCD9C\uB825 \uD615\uC2DD: ${AI_PROMPTS[task].schema}
+\uC785\uB825:
+${JSON.stringify(input)}`;
+}
+function numbersGrounded(task, input, output) {
+  if (task === "parseSpend" || task === "categorize") return true;
+  const known = /* @__PURE__ */ new Set();
+  const walk = (v) => {
+    if (typeof v === "number") {
+      known.add(Math.abs(Math.round(v)));
+      return;
+    }
+    if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === "object") Object.values(v).forEach(walk);
+  };
+  walk(input);
+  const text = JSON.stringify(output);
+  const found = text.match(/\d{1,3}(,\d{3})+(?=원)|\d{4,}(?=원)/g) ?? [];
+  return found.every((s) => {
+    const n2 = Number(s.replace(/,/g, ""));
+    if (known.has(n2)) return true;
+    const ks2 = [...known];
+    return ks2.some((a) => ks2.some((b) => Math.abs(a - b) === n2 || a + b === n2));
+  });
+}
+var COMMON, AI_PROMPTS;
+var init_aiPrompts = __esm({
+  "shared/aiPrompts.ts"() {
+    "use strict";
+    COMMON = [
+      '\uB2F9\uC2E0\uC740 20\uB300\uB97C \uC704\uD55C \uC18C\uBE44 \uC758\uC0AC\uACB0\uC815 \uC571 "\uBAA8\uC544"\uC758 AI \uCF54\uCE58\uC608\uC694.',
+      "\uD55C\uAD6D\uC5B4 \uD574\uC694\uCCB4\uB85C \uC9E7\uACE0 \uB530\uB73B\uD558\uAC8C, \uD1A0\uC2A4 \uC571\uCC98\uB7FC \uC26C\uC6B4 \uB9D0\uB85C \uC368\uC694. \uC774\uBAA8\uC9C0\xB7\uB9C8\uD06C\uB2E4\uC6B4\uC740 \uC4F0\uC9C0 \uC54A\uC544\uC694.",
+      '\uC785\uB825 JSON\uC5D0 \uC788\uB294 \uC22B\uC790\uB9CC \uC4F0\uACE0, \uC0C8\uB85C\uC6B4 \uC22B\uC790\uB098 \uC0AC\uC2E4\uC744 \uC9C0\uC5B4\uB0B4\uC9C0 \uC54A\uC544\uC694. \uAE08\uC561\uC740 "12,000\uC6D0"\uCC98\uB7FC \uC368\uC694.',
+      "\uC0AC\uB77C/\uC0AC\uC9C0 \uB9C8\uB77C\uACE0 \uB2E8\uC815\uD558\uC9C0 \uC54A\uACE0, \uC0AC\uC6A9\uC790\uAC00 \uC2A4\uC2A4\uB85C \uACE0\uB97C \uC218 \uC788\uAC8C \uC120\uD0DD\uC9C0\uB97C \uBCF4\uC5EC\uC918\uC694.",
+      "\uD22C\uC790 \uC885\uBAA9 \uCD94\uCC9C, \uC218\uC775 \uC608\uCE21, \uB300\uCD9C \uAD8C\uC720\uB294 \uD558\uC9C0 \uC54A\uC544\uC694.",
+      "\uBC18\uB4DC\uC2DC \uC9C0\uC815\uD55C JSON \uD615\uC2DD \uD558\uB098\uB9CC \uCD9C\uB825\uD574\uC694."
+    ].join("\n");
+    AI_PROMPTS = {
+      brief: {
+        system: `${COMMON}
+\uD648 \uD654\uBA74 \uB9E8 \uC704\uC5D0 \uBCF4\uC77C \uC624\uB298\uC758 \uD55C \uC904 \uBE0C\uB9AC\uD551\uC744 \uC368\uC694. headline 25\uC790 \uC774\uB0B4, body 70\uC790 \uC774\uB0B4. \uAC00\uC7A5 \uB3C4\uC6C0\uC774 \uB418\uB294 \uD589\uB3D9 \uD558\uB098\uB97C action\uC73C\uB85C \uACE0\uB974\uAC70\uB098 \uC5C6\uC73C\uBA74 null.`,
+        schema: '{"headline":string,"body":string,"action":{"label":string,"to":"choose"|"ledger"|"save"|"forks"}|null}',
+        maxTokens: 200
+      },
+      coach: {
+        system: `${COMMON}
+\uC0AC\uC6A9\uC790\uAC00 \uBB3C\uAC74\uC744 \uC0AC\uAE30 \uC804\uC5D0 \uBCF4\uB294 \uD654\uBA74\uC774\uC5D0\uC694. \uACC4\uC0B0\uB41C \uBBF8\uB798 \uBE44\uC6A9\uC744 \uBCF4\uACE0 \uD55C\uB450 \uBB38\uC7A5\uC73C\uB85C \uC0C1\uD669\uC744 \uC9DA\uC5B4 \uC918\uC694. tone\uC740 usableAfter\uAC00 0 \uBBF8\uB9CC\uC774\uBA74 warn, \uAC19\uC740 \uCE74\uD14C\uACE0\uB9AC\uB97C \uC790\uC8FC \uC0C0\uC73C\uBA74 careful, \uC544\uB2C8\uBA74 ok. tip\uC740 \uB354 \uC2F8\uAC8C \uC0AC\uAC70\uB098 \uBBF8\uB8E8\uB294 \uD604\uC2E4\uC801\uC778 \uBC29\uBC95 \uD558\uB098(\uC5C6\uC73C\uBA74 null).`,
+        schema: '{"tone":"ok"|"careful"|"warn","message":string,"tip":string|null}',
+        maxTokens: 220
+      },
+      ledgerSummary: {
+        system: `${COMMON}
+\uAC00\uACC4\uBD80 \uD55C \uB2EC \uAE30\uB85D\uC744 \uC694\uC57D\uD574\uC694. title 20\uC790 \uC774\uB0B4, points\uB294 2~3\uAC1C \uBB38\uC7A5(\uAC01 50\uC790 \uC774\uB0B4). \uC9C0\uB09C\uB2EC\uACFC \uBE44\uAD50, \uAC00\uC7A5 \uD070 \uCE74\uD14C\uACE0\uB9AC, \uC2B5\uAD00 \uD558\uB098\uB97C \uC9DA\uC5B4\uC694.`,
+        schema: '{"title":string,"points":string[]}',
+        maxTokens: 260
+      },
+      parseSpend: {
+        system: `${COMMON}
+\uC0AC\uC6A9\uC790\uAC00 \uBD99\uC5EC\uB123\uC740 \uCE74\uB4DC \uC2B9\uC778 \uBB38\uC790, \uC601\uC218\uC99D, \uBA54\uBAA8\uC5D0\uC11C \uC9C0\uCD9C\uC744 \uCC3E\uC544 JSON\uC73C\uB85C \uBC14\uAFD4\uC694. \uC2B9\uC778 \uCDE8\uC18C\xB7\uC785\uAE08\uC740 \uBE7C\uC694. \uB0A0\uC9DC\uAC00 \uC5C6\uC73C\uBA74 today, \uC5F0\uB3C4\uAC00 \uC5C6\uC73C\uBA74 today\uC758 \uC5F0\uB3C4. category\uB294 \uC2DD\uBE44\xB7\uCE74\uD398\xB7\uC1FC\uD551\xB7\uD328\uC158\xB7\uAD50\uD1B5\xB7\uBB38\uD654\xB7\uC5EC\uAC00\xB7\uAD6C\uB3C5\xB7\uC0DD\uD65C\xB7\uACBD\uC870\uC0AC\xB7\uAE30\uD0C0 \uC911 \uD558\uB098. confidence\uB294 0~1.`,
+        schema: '{"items":[{"date":"YYYY-MM-DD","amount":number,"name":string,"category":string,"confidence":number}],"skipped":number}',
+        maxTokens: 600
+      },
+      categorize: {
+        system: `${COMMON}
+\uD488\uBAA9 \uC774\uB984\uC744 \uBCF4\uACE0 categories \uC911 \uD558\uB098\uB97C \uACE8\uB77C\uC694. reason\uC740 15\uC790 \uC774\uB0B4.`,
+        schema: '{"category":string,"confidence":number,"reason":string}',
+        maxTokens: 80
+      },
+      ask: {
+        system: `${COMMON}
+\uC0AC\uC6A9\uC790\uC758 \uB3C8 \uC9C8\uBB38\uC5D0 context \uC22B\uC790\uB97C \uADFC\uAC70\uB85C 3~4\uBB38\uC7A5\uC73C\uB85C \uB2F5\uD574\uC694. \uBAA8\uB974\uB294 \uAC74 \uBAA8\uB978\uB2E4\uACE0 \uD574\uC694. followUps\uB294 \uC774\uC5B4\uC11C \uBB3C\uC5B4\uBCFC \uB9CC\uD55C \uC9E7\uC740 \uC9C8\uBB38 2\uAC1C.`,
+        schema: '{"answer":string,"followUps":string[]}',
+        maxTokens: 400
+      }
+    };
+  }
+});
+
 // server/lib/ai.ts
 var ai_exports = {};
 __export(ai_exports, {
+  AI_TASKS: () => AI_TASKS,
   aiConfigured: () => aiConfigured,
-  aiSummary: () => aiSummary
+  aiSummary: () => aiSummary,
+  runAiTask: () => runAiTask
 });
 function aiConfigured() {
   return !!process.env.ANTHROPIC_API_KEY;
@@ -27917,10 +28000,33 @@ async function aiSummary(name, e, level) {
     return null;
   }
 }
+async function runAiTask(task, input) {
+  if (!aiConfigured()) return null;
+  const p = AI_PROMPTS[task];
+  try {
+    const res = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL ?? "claude-haiku-5-5", max_tokens: p.maxTokens, system: p.system, messages: [{ role: "user", content: buildUserMessage(task, input) }] })
+    }, 2e4);
+    if (!res.ok) return null;
+    const j = await res.json();
+    const text = j.content?.find((c) => c.type === "text")?.text ?? "";
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    const out = JSON.parse(m[0]);
+    return numbersGrounded(task, input, out) ? out : null;
+  } catch {
+    return null;
+  }
+}
+var AI_TASKS;
 var init_ai = __esm({
   "server/lib/ai.ts"() {
     "use strict";
     init_http();
+    init_aiPrompts();
+    AI_TASKS = Object.keys(AI_PROMPTS);
   }
 });
 
@@ -53695,7 +53801,7 @@ function ownJob(req) {
   if (!job || job.deviceHash !== hashDevice2(device)) throw new ApiError2(404, "not_found", "\uCE74\uB4DC\uB274\uC2A4\uB97C \uCC3E\uC9C0 \uBABB\uD588\uC5B4\uC694.");
   return job;
 }
-var import_express2, INSTRUMENT_BY_CODE2, ALL_LESSONS2, discordStatus2, sendToDiscord2, DiscordError2, ApiError2, errorHandler2, methodNotAllowed2, route2, sendError2, createJob2, ensureDailyJob2, getJob2, hashDevice2, isRunning2, listJobs2, runGenerate2, sendJob2, isDue2, nextRunAt2, startScheduler2, fetchNews2, photosConfigured2, getGlobal2, getIndex2, getQuote2, getQuotes2, primaryProvider2, providerChain2, providerSetting2, refreshSeconds2, kisConfigured2, realtimeStatus2, aiConfigured2, rateLimit2, purchaseRouter2, naverConfigured2, jobDir2, store2, publicJob2, todayKST2, app, DeviceId, api, quoteLimiter, slim, streamsByIp, SubSchema, TradeSchema, CreateSchema, dist, port;
+var import_express2, INSTRUMENT_BY_CODE2, ALL_LESSONS2, discordStatus2, sendToDiscord2, DiscordError2, ApiError2, errorHandler2, methodNotAllowed2, route2, sendError2, createJob2, ensureDailyJob2, getJob2, hashDevice2, isRunning2, listJobs2, runGenerate2, sendJob2, isDue2, nextRunAt2, startScheduler2, fetchNews2, photosConfigured2, getGlobal2, getIndex2, getQuote2, getQuotes2, primaryProvider2, providerChain2, providerSetting2, refreshSeconds2, kisConfigured2, realtimeStatus2, aiConfigured2, runAiTask2, AI_TASKS2, rateLimit2, purchaseRouter2, naverConfigured2, jobDir2, store2, publicJob2, todayKST2, app, DeviceId, api, aiLimiter, quoteLimiter, slim, streamsByIp, SubSchema, TradeSchema, CreateSchema, dist, port;
 var init_index = __esm({
   async "server/index.ts"() {
     "use strict";
@@ -53716,7 +53822,7 @@ var init_index = __esm({
     ({ getGlobal: getGlobal2, getIndex: getIndex2, getQuote: getQuote2, getQuotes: getQuotes2, primaryProvider: primaryProvider2, providerChain: providerChain2, providerSetting: providerSetting2, refreshSeconds: refreshSeconds2 } = await Promise.resolve().then(() => (init_quotes(), quotes_exports)));
     ({ kisConfigured: kisConfigured2 } = await Promise.resolve().then(() => (init_kis(), kis_exports)));
     ({ realtimeStatus: realtimeStatus2 } = await Promise.resolve().then(() => (init_kisRealtime(), kisRealtime_exports)));
-    ({ aiConfigured: aiConfigured2 } = await Promise.resolve().then(() => (init_ai(), ai_exports)));
+    ({ aiConfigured: aiConfigured2, runAiTask: runAiTask2, AI_TASKS: AI_TASKS2 } = await Promise.resolve().then(() => (init_ai(), ai_exports)));
     ({ rateLimit: rateLimit2 } = await Promise.resolve().then(() => (init_rateLimit(), rateLimit_exports)));
     ({ purchaseRouter: purchaseRouter2, naverConfigured: naverConfigured2 } = await Promise.resolve().then(() => (init_purchase(), purchase_exports)));
     ({ jobDir: jobDir2, store: store2 } = await Promise.resolve().then(() => (init_store(), store_exports)));
@@ -53732,6 +53838,19 @@ var init_index = __esm({
     api.route("/health").get((_req, res) => {
       res.json({ ok: true, market: marketInfo(), photos: photosConfigured2(), ai: aiConfigured2(), priceSearch: naverConfigured2(), discord: discordStatus2().configured, time: Date.now() });
     }).all(methodNotAllowed2(["GET"]));
+    aiLimiter = rateLimit2("ai", 30, 6e4);
+    api.route("/ai/:task").post(
+      aiLimiter,
+      route2(async (req, res) => {
+        const task = String(req.params.task);
+        if (!AI_TASKS2.includes(task)) throw new ApiError2(404, "unknown_task", "\uC54C \uC218 \uC5C6\uB294 AI \uC791\uC5C5\uC774\uC5D0\uC694.");
+        const input = req.body?.input;
+        if (!input || typeof input !== "object") throw new ApiError2(400, "bad_input", "\uC785\uB825\uC774 \uC5C6\uC5B4\uC694.");
+        const data = await runAiTask2(task, input);
+        if (data === null) throw new ApiError2(503, "ai_unavailable", "AI\uB97C \uC9C0\uAE08 \uC4F8 \uC218 \uC5C6\uC5B4\uC694.");
+        res.json({ data });
+      })
+    ).all(methodNotAllowed2(["POST"]));
     quoteLimiter = rateLimit2("quotes", 240, 6e4);
     slim = (q, keep = 5) => ({ ...q, candles: q.candles.slice(-keep) });
     api.route("/quotes").get(

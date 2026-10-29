@@ -4,7 +4,6 @@ import { signedWon, won, shares } from '../../shared/format';
 import { INSTRUMENT_BY_CODE } from '../../shared/instruments';
 import { roundToTick, tickSize } from '../../shared/krx';
 import type { Quote } from '../../shared/market';
-import { formatSourceLabel } from '../../shared/sources';
 import { Notice, Seg, Sheet, WorldTag } from '../components/ui';
 import { uid } from '../lib/id';
 import { availableCash, availableQty, fillWorlds, placeOrder, type Fill, type Order, type OrderType, type Side } from '../lib/trading';
@@ -126,7 +125,7 @@ export function OrderSheet({ code, side, quote, onClose }: { code: string; side:
           <dt>수량</dt><dd className="num">{shares(qty)}</dd>
           <dt>예상 금액</dt><dd className="num bold">{won(est)}</dd>
         </dl>
-        {quote && <p className="xs muted">기준 시세 {won(quote.price)} · {formatKDateTime(quote.time)} · {formatSourceLabel(quote.source, quote.live)}</p>}
+        {quote && <p className="xs muted">기준 시세 {won(quote.price)} · {formatKDateTime(quote.time)} 기준</p>}
         <Notice kind="neutral">실제 증권 계좌와 연결되지 않은 모의 주문이에요. 수수료·세금은 반영하지 않아요.</Notice>
       </Sheet>
     );

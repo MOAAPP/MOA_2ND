@@ -20,7 +20,7 @@ const { photosConfigured } = await import('./lib/photos');
 const { getGlobal, getIndex, getQuote, getQuotes, primaryProvider, providerChain, providerSetting, refreshSeconds } = await import('./lib/quotes');
 const { kisConfigured } = await import('./lib/providers/kis');
 const { realtimeStatus } = await import('./lib/providers/kisRealtime');
-const { aiConfigured } = await import('./lib/ai');
+const { aiConfigured, runAiTask, AI_TASKS } = await import('./lib/ai');
 const { rateLimit } = await import('./lib/rateLimit');
 const { purchaseRouter, naverConfigured } = await import('./lib/purchase');
 const { jobDir, store } = await import('./lib/store');
@@ -57,6 +57,24 @@ api
     res.json({ ok: true, market: marketInfo(), photos: photosConfigured(), ai: aiConfigured(), priceSearch: naverConfigured(), discord: discordStatus().configured, time: Date.now() });
   })
   .all(methodNotAllowed(['GET']));
+
+/* ── 모아 AI (실제 모델은 ANTHROPIC_API_KEY 있을 때만) ── */
+const aiLimiter = rateLimit('ai', 30, 60_000);
+api
+  .route('/ai/:task')
+  .post(
+    aiLimiter,
+    route(async (req, res) => {
+      const task = String(req.params.task) as (typeof AI_TASKS)[number];
+      if (!AI_TASKS.includes(task)) throw new ApiError(404, 'unknown_task', '알 수 없는 AI 작업이에요.');
+      const input = (req.body as { input?: unknown })?.input;
+      if (!input || typeof input !== 'object') throw new ApiError(400, 'bad_input', '입력이 없어요.');
+      const data = await runAiTask(task, input);
+      if (data === null) throw new ApiError(503, 'ai_unavailable', 'AI를 지금 쓸 수 없어요.');
+      res.json({ data });
+    }),
+  )
+  .all(methodNotAllowed(['POST']));
 
 /* ── 시세 ── */
 const quoteLimiter = rateLimit('quotes', 240, 60_000);

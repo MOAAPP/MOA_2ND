@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconBook, IconFork, IconHome, IconPiggy, IconChartBars } from './components/Icons';
+import { IconFork, IconHome, IconPiggy, IconChartBars, IconReceipt } from './components/Icons';
 import { ToastProvider, useKeyboardInset } from './components/ui';
 import { CardNews, CardsList, DailyScreen } from './screens/CardNews';
 import { Decide } from './screens/Decide';
@@ -35,15 +35,16 @@ import { Account } from './screens/bank/Account';
 import { BankClock } from './state/bank';
 import { emptyBank } from './lib/bank/engine';
 import { Research } from './screens/Research';
+import { AskAi } from './screens/AskAi';
 import { WorldReport } from './screens/WorldReport';
 import { startSession } from './lib/research/log';
 
 const TABS: { id: Tab; label: string; Icon: typeof IconHome }[] = [
   { id: 'home', label: '홈', Icon: IconHome },
+  { id: 'ledger', label: '가계부', Icon: IconReceipt },
   { id: 'forks', label: '평행세계', Icon: IconFork },
   { id: 'save', label: '모으기', Icon: IconPiggy },
-  { id: 'invest', label: '모의투자', Icon: IconChartBars },
-  { id: 'learn', label: '금융 학습', Icon: IconBook },
+  { id: 'invest', label: '투자', Icon: IconChartBars },
 ];
 
 function BottomNav() {
@@ -51,7 +52,7 @@ function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="주요 메뉴">
       {TABS.map(({ id, label, Icon }) => (
-        <button key={id} aria-current={nav.tab === id ? 'page' : undefined} onClick={() => nav.setTab(id)}>
+        <button key={id} aria-current={nav.tab === id || (id === 'invest' && nav.tab === 'learn') ? 'page' : undefined} onClick={() => nav.setTab(id)}>
           <Icon />
           {label}
         </button>
@@ -80,13 +81,13 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'cardnews': return <CardNews tradeId={screen.tradeId} jobId={screen.jobId} />;
     case 'cards': return <CardsList />;
     case 'portfolio': return <Portfolio />;
-    case 'ledger': return <Ledger />;
     case 'newChoice': return <NewChoice />;
     case 'product': return <ProductDetail key={screen.id} id={screen.id} />;
     case 'join': return <Join key={screen.id} id={screen.id} initialAmount={screen.amount} />;
     case 'choose': return <Choose />;
     case 'account': return <Account key={screen.id} id={screen.id} />;
     case 'research': return <Research />;
+    case 'ask': return <AskAi initial={screen.q} />;
     case 'report': return <WorldReport />;
   }
 }
@@ -154,6 +155,7 @@ function Shell() {
       <BankClock />
       <main>
         {nav.tab === 'home' && <V8Home />}
+        {nav.tab === 'ledger' && <Ledger />}
         {nav.tab === 'forks' && <WorldTimeline />}
         {nav.tab === 'save' && <SaveHome />}
         {nav.tab === 'invest' && <Practice />}

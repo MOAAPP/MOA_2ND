@@ -1,9 +1,10 @@
+import { InvestHead } from '../components/InvestHead';
 import { useEffect, useMemo, useState } from 'react';
 import { UNITS, dailyQuizFor, type DailyQuiz } from '../../shared/curriculum';
 import { formatKDateTime, todayKST } from '../../shared/dates';
 import { signedPct, signedWon, won } from '../../shared/format';
 import { INSTRUMENTS, searchInstruments } from '../../shared/instruments';
-import { IconChartBars, IconChevron, IconGear, IconSearch, IconStar } from '../components/Icons';
+import { IconChartBars, IconChevron, IconSearch, IconStar } from '../components/Icons';
 import { IconTile } from '../components/Glyph';
 import { ChangeText, LiveBadge } from '../components/QuoteBits';
 import { Empty, Notice, Spinner, useToast } from '../components/ui';
@@ -73,10 +74,7 @@ export function Practice() {
 
   return (
     <div className="page t-page t-invest">
-      <header className="t-head">
-        <h1>모의투자</h1>
-        <button className="t-head-icon" aria-label="설정" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
-      </header>
+      <InvestHead />
 
       <div className="t-ticker">
         <span className={`t-mkt ${m.status.state === 'open' ? 'open' : ''}`}><i />{m.status.label}</span>
@@ -121,7 +119,7 @@ export function Practice() {
         </div>
         {m.loading && !anyQuote && <div style={{ marginTop: 8 }}><Spinner label="시세 불러오는 중" /></div>}
       </section>
-      {anyQuote && <p className="t-foot">{anyQuote.delayNote}{m.lastUpdate ? ` · 마지막 갱신 ${formatKDateTime(m.lastUpdate)}` : ''}</p>}
+      {m.lastUpdate && <p className="t-foot">{formatKDateTime(m.lastUpdate)} 기준 시세</p>}
     </div>
   );
 }
@@ -179,10 +177,7 @@ export function Learn() {
   ];
   const pctDone = total ? Math.round((100 * completed) / total) : 0;
   return <div className="page t-page t-learn">
-    <header className="t-head">
-      <h1>금융 학습</h1>
-      <button className="t-head-icon" aria-label="설정" onClick={() => nav.push({name:'settings'})}><IconGear/></button>
-    </header>
+    <InvestHead />
 
     <section className="t-card t-learn-hero">
       <div className="t-learn-progress">
