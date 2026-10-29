@@ -18,11 +18,12 @@ export function historyEvents(wallet:WorldWallet):WorldHistoryEvent[]{
     cashDelta:-d.paid,referenceDelta:-d.price,difference:d.price-d.paid,
   }));
   const moves = (wallet.movements || []).map(m=>{
-    const out=['withdraw','redeemDeposit','cancelInstallment','sellStock'].includes(m.kind);
+    const out=['withdraw','redeemDeposit','cancelInstallment','sellStock','income'].includes(m.kind);
+    const flow=m.kind==='income'||m.kind==='bills';
     const investing=['buyStock','sellStock'].includes(m.kind);
     const delta=out?m.amount:-m.amount;
     return {id:m.id,at:m.at,day:koreaDay(m.at),kind:investing?'investing' as const:'saving' as const,
-      title:m.memo,detail:out?(investing?'가상 주식 → 현금':'저축 자산 → 현금'):(investing?'현금 → 가상 주식':'현금 → 저축 자산'),
+      title:m.memo,detail:flow?(m.kind==='income'?'월급 → 현금':'현금 → 고정지출'):out?(investing?'가상 주식 → 현금':'저축 자산 → 현금'):(investing?'현금 → 가상 주식':'현금 → 저축 자산'),
       cashDelta:delta,referenceDelta:delta,difference:0};
   });
   return [...decisions,...moves].sort((a,b)=>a.at-b.at);

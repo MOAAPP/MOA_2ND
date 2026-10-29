@@ -6,6 +6,8 @@ import { memoryKey } from '../lib/ml/classify';
 import type { SpendEntry } from '../lib/ml/types';
 import type { DecisionRecord, Goal, Profile, ScheduleItem } from '../lib/types';
 import { emptyWorldWallet, migrateWorldWallet, type WorldWallet } from '../lib/worldWallet';
+import { emptyBank, migrateLegacy, type BankState } from '../lib/bank/engine';
+import { todayKST } from '../../shared/dates';
 
 export interface SetupDraft {
   step: number;
@@ -54,6 +56,8 @@ export interface DailySettings {
 export interface AppState {
   version: 3;
   worldWallet: WorldWallet;
+  /** 가상 예금·적금 계약 (src/lib/bank) */
+  bank: BankState;
   introSeen: boolean;
   setupDraft: SetupDraft | null;
   profile: Profile | null;
@@ -80,6 +84,14 @@ export interface AppState {
 
 const KEY = 'pb.state.v3';
 
+/** 은행 상태 불러오기. 예전 버전의 예금·적금 잔액은 계약으로 옮긴다. */
+function loadBank(parsed: Partial<AppState>): BankState {
+  const b = parsed.bank;
+  if (b && Array.isArray(b.contracts)) return { ...emptyBank(), ...b, log: Array.isArray(b.log) ? b.log : [] };
+  const w = parsed.worldWallet;
+  return migrateLegacy(emptyBank(), { deposit: w?.deposit ?? 0, installment: w?.installment ?? 0 }, todayKST());
+}
+
 export function emptyLearning(): Learning {
   return { startUnit: null, completed: {}, xp: 0, streak: { count: 0, lastDate: null, best: 0 }, seen: {} };
 }
@@ -88,6 +100,7 @@ export function initialState(): AppState {
   return {
     version: 3,
     worldWallet: emptyWorldWallet(),
+    bank: emptyBank(),
     introSeen: false,
     setupDraft: null,
     profile: null,
@@ -117,6 +130,7 @@ function load(): { state: AppState; error: string | null } {
         settings: { ...base.settings, ...(parsed.settings ?? {}) },
         portfolio: { ...base.portfolio, ...(parsed.portfolio ?? {}) },
         worldWallet: migrateWorldWallet(parsed.worldWallet),
+        bank: loadBank(parsed),
         learning: { ...base.learning, ...(parsed.learning ?? {}) },
         daily: { ...base.daily, ...(parsed.daily ?? {}) },
         version: 3,
