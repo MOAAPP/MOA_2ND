@@ -1,0 +1,113 @@
+{
+  "detection": {
+    "S01": {
+      "events": 1,
+      "detected": 1,
+      "missed": [],
+      "falseAlarms": 1,
+      "leadDays": [
+        14
+      ],
+      "byGrade": {
+        "registered": 1,
+        "caution": 1
+      }
+    },
+    "S02": {
+      "events": 0,
+      "detected": 0,
+      "missed": [],
+      "falseAlarms": 0,
+      "leadDays": [],
+      "byGrade": {}
+    },
+    "S03": {
+      "events": 0,
+      "detected": 0,
+      "missed": [],
+      "falseAlarms": 0,
+      "leadDays": [],
+      "byGrade": {}
+    },
+    "S04": {
+      "events": 4,
+      "detected": 4,
+      "missed": [],
+      "falseAlarms": 2,
+      "leadDays": [
+        14,
+        14,
+        14,
+        14
+      ],
+      "byGrade": {
+        "caution": 6
+      }
+    },
+    "S05": {
+      "events": 1,
+      "detected": 1,
+      "missed": [],
+      "falseAlarms": 1,
+      "leadDays": [
+        14
+      ],
+      "byGrade": {
+        "caution": 2
+      }
+    },
+    "S06": {
+      "events": 2,
+      "detected": 2,
+      "missed": [],
+      "falseAlarms": 5,
+      "leadDays": [
+        0,
+        14
+      ],
+      "byGrade": {
+        "caution": 7,
+        "registered": 1
+      }
+    },
+    "S07": {
+      "events": 0,
+      "detected": 0,
+      "missed": [],
+      "falseAlarms": 5,
+      "leadDays": [],
+      "byGrade": {
+        "caution": 5
+      }
+    },
+    "S08": {
+      "events": 2,
+      "detected": 2,
+      "missed": [],
+      "falseAlarms": 3,
+      "leadDays": [
+        14,
+        14
+      ],
+      "byGrade": {
+        "caution": 5
+      }
+    },
+    "S09": {
+      "events": 0,
+      "detected": 0,
+      "missed": [],
+      "falseAlarms": 0,
+      "leadDays": [],
+      "byGrade": {}
+    },
+    "S10": {
+      "events": 0,
+      "detected": 0,
+      "missed": [],
+      "falseAlarms": 0,
+      "leadDays": [],
+      "byGrade": {}
+    }
+  }
+}
