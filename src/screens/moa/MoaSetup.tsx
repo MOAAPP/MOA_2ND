@@ -17,6 +17,7 @@ import {
   upsertSchedule,
   type MoaCard,
   type MoaSchedule,
+  type MoaState,
   type PayMethod,
 } from '../../lib/moa';
 import { useNav } from '../../state/nav';
@@ -32,6 +33,26 @@ function nextMonthly(day: number, today: string): string {
   const mk = (yy: number, mm: number) => `${yy}-${String(mm).padStart(2, '0')}-${String(Math.min(day, last(yy, mm))).padStart(2, '0')}`;
   const here = mk(y, m);
   return here >= today ? here : m === 12 ? mk(y + 1, 1) : mk(y, m + 1);
+}
+
+/** 백테스트용 내보내기: 구조화 값만 (원문 없음). 가맹점 이름은 카테고리로 바꾼다. */
+function exportForEval(m: MoaState) {
+  const id = `real_${Math.random().toString(36).slice(2, 7)}`;
+  const data = {
+    id,
+    exportedAt: new Date().toISOString(),
+    anchor: m.anchor,
+    cards: m.cards.map((c) => ({ ...c, name: c.kind === 'credit' ? '신용' : '체크' })),
+    schedule: m.schedule.map((x) => ({ ...x, name: x.direction === 'in' ? '입금' : x.essential ? '필수결제' : '출금' })),
+    txns: m.txns.map(({ name: _n, ...t }) => ({ ...t, name: t.category })),
+    dayStatus: m.dayStatus,
+  };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `moa-eval-${id}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 const dayLabel = (d?: number) => (d === 31 ? '말일' : `${d}일`);
@@ -141,6 +162,8 @@ export function MoaSetup() {
         <Switch checked={moa.confirmEveryTime} onChange={(v) => set((m) => ({ ...m, confirmEveryTime: v }))} label="AI에 보내기 전 매번 확인" />
         <p className="mo-fine">결제 문자는 계좌·카드 번호, 전화번호, 이름을 가린 뒤에만 외부 AI로 보내요. 처음 보는 문자 형식은 보낼 문장을 먼저 보여드려요(승인한 형식 {moa.trustedFormats.length}개). 원문과 가리기 전 문장은 서버·로그 어디에도 저장하지 않아요. 기록은 이 기기에만 저장돼요.</p>
         {moa.trustedFormats.length > 0 && <button className="mo-link" onClick={() => set((m) => ({ ...m, trustedFormats: [] }))}>승인한 형식 모두 지우기</button>}
+        <button className="mo-link" onClick={() => exportForEval(moa)}>평가용 기록 내보내기 (JSON)</button>
+        <p className="mo-fine">팀 백테스트(scripts/eval)에 쓰는 파일이에요. 구조화된 금액·날짜·결제 수단만 들어가고 문자 원문은 없어요.</p>
         <button className="mo-link danger" onClick={() => setSheet('wipe')}>내 기록 전체 지우기</button>
       </section>
 
