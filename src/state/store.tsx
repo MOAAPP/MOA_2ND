@@ -9,6 +9,8 @@ import { emptyWorldWallet, migrateWorldWallet, type WorldWallet } from '../lib/w
 import { emptyBank, migrateLegacy, type BankState } from '../lib/bank/engine';
 import { todayKST } from '../../shared/dates';
 import { demoWorldWallet, isEmptyWorld } from '../lib/demoWorld';
+import { emptyMoa, type MoaState } from '../lib/moa/types';
+import { moaFromProfile } from '../lib/moa/bridge';
 import { appendEvent, emptyResearch, migrateResearch, type ResearchEventBody, type ResearchState } from '../lib/research/log';
 
 export interface SetupDraft {
@@ -84,9 +86,18 @@ export interface AppState {
   cardJobIds: Record<string, string>; // tradeId(fillId) → jobId
   /** 연구 참여(동의한 경우에만 이벤트가 쌓임) — docs/RESEARCH.md */
   research: ResearchState;
+  /** 결제계좌 현금흐름 (기획서 MVP 핵심) */
+  moa: MoaState;
 }
 
 const KEY = 'pb.state.v3';
+
+/** 모아 상태 불러오기. 예전 사용자는 기존 프로필(기준 잔고·일정)로 결제계좌를 채운다. */
+function loadMoa(parsed: Partial<AppState>): MoaState {
+  const base = emptyMoa();
+  if (parsed.moa && parsed.moa.version === 1) return { ...base, ...parsed.moa };
+  return parsed.profile && !parsed.demo ? moaFromProfile(parsed.profile) : base;
+}
 
 /** 은행 상태 불러오기. 예전 버전의 예금·적금 잔액은 계약으로 옮긴다. */
 function loadBank(parsed: Partial<AppState>): BankState {
@@ -119,6 +130,7 @@ export function initialState(): AppState {
     settings: { reduceMotion: false, autoSendDiscord: true, discordConsent: false },
     cardJobIds: {},
     research: emptyResearch(),
+    moa: emptyMoa(),
   };
 }
 
@@ -142,6 +154,7 @@ function load(): { state: AppState; error: string | null } {
         learning: { ...base.learning, ...(parsed.learning ?? {}) },
         daily: { ...base.daily, ...(parsed.daily ?? {}) },
         research: migrateResearch(parsed.research),
+        moa: loadMoa(parsed),
         version: 3,
       },
       error: null,
@@ -211,7 +224,7 @@ export function withEvent(s: AppState, body: ResearchEventBody, now = Date.now()
 
 export function resetScope(s: AppState, scope: 'finance' | 'invest' | 'all'): AppState {
   if (scope === 'all') return { ...initialState(), introSeen: true, research: { ...s.research, events: s.research.joined ? s.research.events : [] } };
-  if (scope === 'finance') return { ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null };
+  if (scope === 'finance') return { ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null, moa: emptyMoa() };
   return { ...s, portfolio: emptyPortfolio(), cardJobIds: {}, level: null, learning: emptyLearning() };
 }
 

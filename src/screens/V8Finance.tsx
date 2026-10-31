@@ -1,3 +1,4 @@
+import { ShortfallCard } from './moa/parts';
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
 import { addDays, addMonths, parseISO, startOfMonth, todayKST, weekdayOf } from '../../shared/dates';
@@ -138,6 +139,8 @@ export function V8Home() {
   return (
     <div className="page t-page t-home">
       <TopHeader title="모아" logo />
+
+      <ShortfallCard />
 
       <HomeBrief />
 

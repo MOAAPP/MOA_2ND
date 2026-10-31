@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { addDays, endOfMonth, formatKDate, maxDate, todayKST } from '../../shared/dates';
-import { manShort, won } from '../../shared/format';
+import { won } from '../../shared/format';
 import { OptionList, StepHead } from '../components/flow';
 import { IconTile, type GlyphName, type Tone } from '../components/Glyph';
 import { IconPlus } from '../components/Icons';
@@ -9,7 +9,6 @@ import { ScheduleSheet, scheduleText } from '../components/ScheduleEditor';
 import { AmountInput, CtaBar, TopBar } from '../components/ui';
 import { balanceOn, buildWorlds, firstBelow, lowestFrom, occurrences } from '../lib/cashflow';
 import { demoData } from '../lib/demo';
-import { riskWords, useAppForecast, useWorldRisks } from '../lib/ml/risk';
 import type { Profile, ScheduleItem } from '../lib/types';
 import { useStore, type SetupDraft } from '../state/store';
 
@@ -299,16 +298,12 @@ function Done({ draft }: { draft: SetupDraft }) {
   const monthEnd = endOfMonth(today);
   const horizon = maxDate(monthEnd, addDays(today, 31));
   const w = useMemo(() => buildWorlds(p, [], horizon), [p, horizon]);
-  const forecast = useAppForecast(p, [], [], today, today, horizon);
-  const { data: risks } = useWorldRisks(forecast, [w.reality], today, monthEnd, p.minBalance);
   const [cursor, setCursor] = useState(monthEnd);
   const end = balanceOn(w.reality, monthEnd) ?? p.baseBalance;
   const shown = useCountUp(end);
   const low = lowestFrom(w.reality, today);
   const negative = firstBelow(w.reality, 0, today);
   const below = firstBelow(w.reality, p.minBalance, today);
-  const r = risks?.[0];
-  const band = r?.band.find((b) => b.date === monthEnd);
 
   return (
     <>
@@ -316,22 +311,16 @@ function Done({ draft }: { draft: SetupDraft }) {
       <div className="step-body" key="done" style={{ marginTop: 16 }}>
         <div className="result-big num">{won(shown)}</div>
         <div className="result-sub">
-          {band ? `밥값까지 넣으면 ${manShort(band.p10)}~${manShort(band.p90)}원` : `${formatKDate(monthEnd)} 기준, 고정 지출만 넣은 값`}
+          {`${formatKDate(monthEnd)} 기준, 고정 지출만 넣은 값`}
         </div>
         <div style={{ marginTop: 20 }}>
-          <ParallelChart real={{ days: w.reality.days, label: '지금대로', band: r?.band }} from={today} minBalance={p.minBalance} cursor={cursor} onCursor={setCursor} legend={false} height={200} />
+          <ParallelChart real={{ days: w.reality.days, label: '지금대로' }} from={today} minBalance={p.minBalance} cursor={cursor} onCursor={setCursor} legend={false} height={200} />
         </div>
         <div className="risks" style={{ marginTop: 12 }}>
           <div className={`risk ${negative ? 'danger' : below ? 'warn' : 'ok'}`}>
             <span className="rk-l">가장 적을 때</span>
             <span className="rk-v num">{won(low.amount)}<small>{formatKDate(low.date)}</small></span>
           </div>
-          {r && (
-            <div className={`risk ${r.pShort > 0.5 ? 'danger' : r.pShort > 0.2 ? 'warn' : 'ok'}`}>
-              <span className="rk-l">이번 달 잔고가 바닥날 가능성</span>
-              <span className="rk-v">{riskWords(r.pShort)}</span>
-            </div>
-          )}
         </div>
         <p className="muted-note">
           {negative

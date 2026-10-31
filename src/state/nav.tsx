@@ -28,7 +28,9 @@ export type Screen =
   | { name: 'account'; id: string }
   | { name: 'research' }
   | { name: 'report' }
-  | { name: 'ask'; q?: string };
+  | { name: 'ask'; q?: string }
+  | { name: 'shortfall' }
+  | { name: 'moaSetup' };
 
 interface Nav {
   tab: Tab;

@@ -57,18 +57,21 @@ describe('예시 AI 응답', () => {
     expect(josa('카페', '이', '가')).toBe('가');
     expect(exampleLedgerSummary(ledgerSummaryInput(LOG, '2026-10-01', TODAY)).title).toBe('10월은 패션이 제일 커요');
   });
-  it('카드 문자: 승인취소는 빼고, 누적 금액은 무시하고, 가게 이름을 찾는다', () => {
+  it('카드 문자: 승인취소는 환불로 따로 두고, 누적 금액은 무시하고, 가게 이름을 찾는다', () => {
     const text = '[Web발신]\n신한카드(1234)승인\n김*현님\n6,800원 일시불\n10/29 08:42\n메가커피 서울여대점\n누적 412,300원\n\n[Web발신]\n삼성카드 승인취소\n32,000원\n10/28\n무신사\n\n[Web발신]\n토스뱅크 체크카드\n1,450원\n10/27 07:55\n서울교통공사 지하철';
     const r = exampleParseSpend({ text, today: TODAY });
-    expect(r.items.map((x) => [x.date, x.amount, x.name, x.category])).toEqual([
+    const spends = r.items.filter((x) => x.kind === 'spend');
+    expect(spends.map((x) => [x.date, x.amount, x.name, x.category])).toEqual([
       ['2026-10-29', 6_800, '메가커피 서울여대점', '카페'],
       ['2026-10-27', 1_450, '서울교통공사 지하철', '교통'],
     ]);
-    expect(r.skipped).toBe(1);
+    expect(r.items.filter((x) => x.kind === 'refund').map((x) => x.amount)).toEqual([32_000]);
+    expect(spends.map((x) => x.method)).toEqual(['credit', 'debit']); // 일시불 → 신용
+    expect(r.skipped).toBe(0);
   });
-  it('메모 여러 줄, 미래 날짜는 작년으로', () => {
+  it('메모 여러 줄: 날짜가 없으면 비워두고, 미래 날짜는 작년으로', () => {
     const r = exampleParseSpend({ text: '스타벅스 5,600원\n12/30 올리브영 23,000원', today: TODAY });
-    expect(r.items.map((x) => [x.date, x.amount, x.name])).toEqual([[TODAY, 5_600, '스타벅스'], ['2025-12-30', 23_000, '올리브영']]);
+    expect(r.items.map((x) => [x.date, x.amount, x.name])).toEqual([[null, 5_600, '스타벅스'], ['2025-12-30', 23_000, '올리브영']]);
   });
   it('물어보기: 질문 종류에 맞게, 내 숫자로', () => {
     const ctx = { usable: 170_000, monthSpent: 121_300, topCategories: [{ name: '패션', amount: 89_000 }], savedTotal: 621_000, holdRate: 0.6, goal: null };

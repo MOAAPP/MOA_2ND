@@ -41,7 +41,17 @@ export async function aiSummary(name: string, e: Explanation, level: 1 | 2 | 3):
 }
 
 /* ───────── 모아 AI 작업 (shared/aiPrompts.ts · docs/AI.md) ───────── */
-import { AI_PROMPTS, buildUserMessage, numbersGrounded, type AiTask } from '../../shared/aiPrompts';
+import { AI_PROMPTS, buildUserMessage, extractionGrounded, numbersGrounded, type AiTask } from '../../shared/aiPrompts';
+import { maskText } from '../../shared/mask';
+
+/** 원문을 다루는 작업은 서버에서도 한 번 더 가린 뒤에만 모델에 보낸다. 요청 본문은 로그에 남기지 않는다. */
+export function sanitizeInput(task: AiTask, input: unknown): unknown {
+  if ((task === 'parseSpend' || task === 'parseSchedule') && input && typeof input === 'object' && typeof (input as { text?: unknown }).text === 'string') {
+    const i = input as { text: string };
+    return { ...i, text: maskText(i.text.slice(0, 4000)).text };
+  }
+  return input;
+}
 
 export const AI_TASKS = Object.keys(AI_PROMPTS) as AiTask[];
 
@@ -52,6 +62,7 @@ export const AI_TASKS = Object.keys(AI_PROMPTS) as AiTask[];
 export async function runAiTask(task: AiTask, input: unknown): Promise<unknown | null> {
   if (!aiConfigured()) return null;
   const p = AI_PROMPTS[task];
+  input = sanitizeInput(task, input);
   try {
     const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -64,7 +75,7 @@ export async function runAiTask(task: AiTask, input: unknown): Promise<unknown |
     const m = text.match(/\{[\s\S]*\}/);
     if (!m) return null;
     const out = JSON.parse(m[0]) as unknown;
-    return numbersGrounded(task, input, out) ? out : null;
+    return numbersGrounded(task, input, out) && extractionGrounded(task, input, out) ? out : null;
   } catch {
     return null;
   }
