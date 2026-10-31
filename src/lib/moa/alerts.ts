@@ -23,7 +23,7 @@ export function paymentSentence(p: PaymentCheck, delayDays: number): { title: st
     case 'registered':
       return { title: `${what}에 ${won(p.shortBy)}이 모자라요`, body: '지금 등록된 일정대로라면 지출을 하나도 안 해도 모자라요.' };
     case 'high': {
-      const delay = p.balances.delay < 0 ? ` 입금이 ${delayDays}일 늦어지면 ${won(-p.balances.delay)}이 모자라요.` : '';
+      const delay = p.balances.delay < p.balances.base ? ` 입금이 ${delayDays}일 늦어지면 ${won(-p.balances.delay)}이 모자라요.` : '';
       return { title: `${what} 출금일에 결제계좌 돈이 ${won(p.shortBy)} 모자랄 가능성이 높아요`, body: `평소처럼 쓰면 모자라요.${delay}` };
     }
     case 'caution': {

@@ -94,7 +94,10 @@ export function quickStart(m: MoaState, balance: number, payment: { name: string
 }
 
 /** 카드 이름으로 찾거나 새로 만든다 (문자에서 처음 보는 카드) */
-export function findCardByName(m: MoaState, name: string): MoaCard | undefined {
-  const key = name.replace(/\s|카드/g, '');
-  return m.cards.find((c) => c.name.replace(/\s|카드/g, '') === key);
+export function findCardByName(m: MoaState, name: string, kind?: MoaCard['kind']): MoaCard | undefined {
+  const norm = (s: string) => s.toUpperCase().replace(/\s|카드|체크|신용|KB|뱅크|은행/g, '');
+  const key = norm(name);
+  if (!key) return undefined;
+  const hits = m.cards.filter((c) => { const n = norm(c.name); return n === key || (n.length >= 2 && (n.includes(key) || key.includes(n))); });
+  return (kind && hits.find((c) => c.kind === kind)) || hits[0];
 }
