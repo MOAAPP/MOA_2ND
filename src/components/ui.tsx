@@ -44,10 +44,16 @@ export function CtaBar({ children }: { children: ReactNode }) {
 export function Sheet({ title, onClose, children, footer }: { title: string; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const id = useId();
+  // onClose는 부모가 렌더할 때마다 새 함수로 오는 경우가 많다. 이걸 effect 의존성에 두면
+  // 글자 하나 칠 때마다 정리→재실행되면서 포커스가 이전 버튼으로 튀고 입력이 끊긴다. 열릴 때 한 번만 실행.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.isComposing) closeRef.current();
+    };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {
@@ -55,7 +61,7 @@ export function Sheet({ title, onClose, children, footer }: { title: string; onC
       document.body.style.overflow = '';
       prev?.focus?.();
     };
-  }, [onClose]);
+  }, []);
   return (
     <>
       <div className="sheet-backdrop" onClick={onClose} />

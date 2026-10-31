@@ -22,6 +22,31 @@ describe('사진 글자에서 금액 찾기', () => {
     expect(r.name).toBe('뉴발란스 530 스틸그레이');
   });
 
+  it('영수증은 가게 이름이 아니라 품목명을 고른다', () => {
+    const text = ['스타벅스 신촌점', '서울시 서대문구 연세로 12', '2026-10-31 10:02', '아이스 아메리카노 2 9,000', '합계 9,000원'].join('\n');
+    const r = parsePurchaseText(text);
+    expect(r.name).toBe('아이스 아메리카노');
+    expect(r.store).toBe('스타벅스 신촌점');
+  });
+
+  it('품목이 여러 개면 "첫 품목 외 n건"', () => {
+    const r = parsePurchaseText(['GS25 역삼점', '삼각김밥 1 1,500', '바나나우유 1 1,700', '합계 3,200'].join('\n'));
+    expect(r.name).toBe('삼각김밥 외 1건');
+  });
+
+  it('OCR 잡음 줄(자모 낱자·기호·한 글자 조각)은 이름으로 쓰지 않는다', () => {
+    const text = ['ㅣ ㄴ ii 어 rl', '| ~ = ^^ 一 ;', '노 | 과 ㅡ', 'rtlll nnk', '에어팟 프로 2세대', '판매가 259,000원'].join('\n');
+    const r = parsePurchaseText(text);
+    expect(r.name).toBe('에어팟 프로 2세대');
+    expect(r.amount).toBe(259000);
+  });
+
+  it('읽을 만한 이름이 없으면 비워서 사용자가 직접 쓰게 한다', () => {
+    const r = parsePurchaseText(['ㅣ ㄴ ii 어', '~~ ;; ^^', '합계 12,000원'].join('\n'));
+    expect(r.name).toBeUndefined();
+    expect(r.amount).toBe(12000);
+  });
+
   it('숫자가 없으면 금액 없음', () => {
     expect(parsePurchaseText('안녕하세요').amount).toBeUndefined();
   });
