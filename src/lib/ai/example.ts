@@ -5,10 +5,11 @@
  */
 import type {
   AskIn, AskOut, BriefIn, BriefOut, CategorizeIn, CategorizeOut, CoachIn, CoachOut,
-  LedgerSummaryIn, LedgerSummaryOut, ParsedSpend, ParseSpendIn, ParseSpendOut,
+  LedgerSummaryIn, LedgerSummaryOut, ParseScheduleIn, ParseScheduleOut, ParseSpendIn, ParseSpendOut,
 } from '../../../shared/aiPrompts';
 import { CATEGORIES } from '../categories';
 import { ruleClassify } from '../ml/classify';
+import { ruleParseSchedule, ruleParseSpend } from './parseRules';
 
 const won = (n: number) => `${Math.round(Math.abs(n)).toLocaleString('ko-KR')}원`;
 const man = (n: number) => {
@@ -97,15 +98,6 @@ export function exampleLedgerSummary(i: LedgerSummaryIn): LedgerSummaryOut {
 }
 
 /* ───────── 문자·영수증 읽기 ───────── */
-const SKIP = /(취소|환불|입금|결제예정|명세서)/;
-const AMOUNT = /(\d{1,3}(?:,\d{3})+|\d{3,8})\s*원/;
-const DATE = /(?:(\d{4})[./-])?(\d{1,2})[./월-]\s?(\d{1,2})일?/;
-const NOISE = /(\[[^\]]*\]|\([^)]*\)|web발신|국외발신|승인|일시불|할부\s*\d*개?월?|체크|신용|카드|님|사용|결제|\d{1,2}:\d{2}|\d{1,3}(?:,\d{3})+\s*원|\d{3,8}\s*원|(?:\d{4}[./-])?\d{1,2}[./월-]\s?\d{1,2}일?|[*＊]+)/gi;
-const BANKS = /(카카오뱅크|토스뱅크|케이뱅크|신한|국민|kb|삼성|현대|롯데|하나|우리|농협|nh|비씨|bc|카카오|토스|씨티|ibk|기업)/gi;
-const INFO_LINE = /(누적|잔액|한도|포인트)/;
-
-function pad(n: number) { return String(n).padStart(2, '0'); }
-
 /** 받침 있으면 a, 없으면 b (이/가, 은/는, 을/를) */
 export function josa(word: string, a: string, b: string) {
   const ch = word.trim().slice(-1);
@@ -114,43 +106,13 @@ export function josa(word: string, a: string, b: string) {
   return code % 28 ? a : b;
 }
 
+/** 문자 읽기 예시 응답 = 정규식 파서 (LLM 비교군과 같은 코드) */
 export function exampleParseSpend(i: ParseSpendIn): ParseSpendOut {
-  const year = Number(i.today.slice(0, 4));
-  // 카드 문자는 보통 한 건이 여러 줄. 빈 줄이나 [Web발신] 단위로 끊고, 없으면 줄 단위.
-  const blocks = i.text.split(/\n\s*\n|(?=\[web발신\])|(?=\[Web발신\])/).map((b) => b.trim()).filter(Boolean);
-  const lineSplit = (b: string) => b.split('\n').map((l) => l.trim()).filter(Boolean);
-  // 카드 문자([Web발신])는 여러 줄이 한 건, 메모처럼 금액 있는 줄이 여러 개면 줄마다 한 건
-  const chunks = blocks.flatMap((b) => {
-    const amountLines = lineSplit(b).filter((l) => AMOUNT.test(l) && !INFO_LINE.test(l)).length;
-    return /web발신/i.test(b) || amountLines <= 1 ? [b] : lineSplit(b);
-  });
-  const items: ParsedSpend[] = [];
-  let skipped = 0;
-  for (const raw of chunks) {
-    // 누적·잔액 같은 안내 줄은 금액으로 읽지 않는다
-    const c = raw.split('\n').filter((l) => !INFO_LINE.test(l)).join('\n');
-    const a = c.match(AMOUNT);
-    if (!a || SKIP.test(c)) { skipped += 1; continue; }
-    const amount = Number(a[1].replace(/,/g, ''));
-    if (!amount) { skipped += 1; continue; }
-    const d = c.match(DATE);
-    let date = i.today;
-    if (d) {
-      const mm = Number(d[2]), dd = Number(d[3]);
-      if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
-        let y = d[1] ? Number(d[1]) : year;
-        if (!d[1] && `${y}-${pad(mm)}-${pad(dd)}` > i.today) y -= 1; // 연말 문자를 연초에 붙여넣은 경우
-        date = `${y}-${pad(mm)}-${pad(dd)}`;
-      }
-    }
-    // 가게 이름: 카드사·금액·날짜·이름(김*현님)을 지우고 남은 줄 중 마지막 줄(문자는 보통 맨 끝이 가맹점)
-    const clean = (l: string) => l.replace(/[가-힣]\*[가-힣]?님?/g, ' ').replace(NOISE, ' ').replace(BANKS, ' ').replace(/[^\p{L}\p{N}&·\s-]/gu, ' ').replace(/\s+/g, ' ').trim();
-    const lines = c.split('\n').map(clean).filter((l) => l.length >= 2);
-    const name = (lines.at(-1) ?? clean(c)) || '지출';
-    const cls = ruleClassify(name);
-    items.push({ date, amount, name: name.slice(0, 20), category: cls?.category ?? '기타', confidence: Math.round(((cls ? 0.6 + cls.confidence * 0.35 : 0.45) + (d ? 0.05 : 0)) * 100) / 100 });
-  }
-  return { items, skipped };
+  return ruleParseSpend(i);
+}
+
+export function exampleParseSchedule(i: ParseScheduleIn): ParseScheduleOut {
+  return ruleParseSchedule(i);
 }
 
 /* ───────── 카테고리 ───────── */
