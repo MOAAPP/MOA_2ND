@@ -42,6 +42,7 @@ export async function aiSummary(name: string, e: Explanation, level: 1 | 2 | 3):
 
 /* ───────── 모아 AI 작업 (shared/aiPrompts.ts · docs/AI.md) ───────── */
 import { AI_PROMPTS, buildUserMessage, numbersGrounded, type AiTask } from '../../shared/aiPrompts';
+import { maskPayment } from '../../shared/masking';
 
 export const AI_TASKS = Object.keys(AI_PROMPTS) as AiTask[];
 
@@ -52,6 +53,11 @@ export const AI_TASKS = Object.keys(AI_PROMPTS) as AiTask[];
 export async function runAiTask(task: AiTask, input: unknown): Promise<unknown | null> {
   if (!aiConfigured()) return null;
   const p = AI_PROMPTS[task];
+  // 결제 문자는 외부 LLM에 원문으로 보내지 않는다. 앱에서 사용자가 확인한 문장이 와도 서버에서 한 번 더 가린다.
+  // 요청 본문(원문)은 어디에도 로그로 남기지 않는다.
+  if (task === 'parseSpend' && input && typeof (input as { text?: unknown }).text === 'string') {
+    input = { ...(input as object), text: maskPayment((input as { text: string }).text).text };
+  }
   try {
     const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
