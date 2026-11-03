@@ -307,7 +307,7 @@ export function DailyScreen() {
         <div className="row between">
           <div>
             <div className="bold">{formatKDate(today, { weekday: true })} 카드</div>
-            <div className="small muted">{todayJob ? (todayJob.sends.some((s) => s.ok) ? 'Discord로 보냈어요' : todayJob.autoSend ? '전송 대기·진행 중' : '앱 미리보기 (Discord 전송은 정해진 시각에)') : on ? `오늘 ${state.daily.time}에 보내요` : '데일리 카드뉴스가 꺼져 있어요'}</div>
+            <div className="small muted">{todayJob ? (todayJob.sends.some((s) => s.ok) ? 'Discord로 보냈어요' : todayJob.autoSend ? '전송 대기·진행 중' : '앱 미리보기 (Discord 전송은 정해진 시각에)') : on ? `요청한 시간 ${state.daily.time} · 서버 자동 전송은 아직 미지원` : '데일리 카드뉴스가 꺼져 있어요'}</div>
           </div>
           {todayJob && statusPill(todayJob)}
         </div>
