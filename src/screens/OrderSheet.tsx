@@ -6,7 +6,8 @@ import { roundToTick, tickSize } from '../../shared/krx';
 import type { Quote } from '../../shared/market';
 import { Notice, Seg, Sheet, WorldTag } from '../components/ui';
 import { uid } from '../lib/id';
-import { availableCash, availableQty, fillWorlds, placeOrder, type Fill, type Order, type OrderType, type Side } from '../lib/trading';
+import { availableCash, availableQty, fillWorlds, type Fill, type Order, type OrderType, type Side } from '../lib/trading';
+import { fundedPortfolio, placeFundedOrder } from '../lib/fundedInvest';
 import { useMarket } from '../state/market';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
@@ -25,7 +26,7 @@ export function OrderSheet({ code, side, quote, onClose }: { code: string; side:
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ order?: Order; fill?: Fill; error?: string } | null>(null);
 
-  const p = state.portfolio;
+  const p = fundedPortfolio(state.worldWallet, state.investJournal);
   const price = type === 'market' ? quote?.price ?? 0 : limit;
   const est = qty * price;
   const avail = availableCash(p);
@@ -41,11 +42,11 @@ export function OrderSheet({ code, side, quote, onClose }: { code: string; side:
     setBusy(true);
     const ctx = { now: Date.now(), market: m.status, quote };
     const req = { id: orderId, code, name: inst.name, side, type, qty, limitPrice: type === 'limit' ? limit : undefined };
-    const r = placeOrder(state.portfolio, req, ctx);
+    const r = placeFundedOrder(state.worldWallet, state.investJournal, req, ctx);
     if (r.ok) {
       update((s) => {
-        const again = placeOrder(s.portfolio, req, ctx);
-        return again.ok ? { ...s, portfolio: again.state } : s;
+        const again = placeFundedOrder(s.worldWallet, s.investJournal, req, ctx);
+        return again.ok ? { ...s, worldWallet: again.wallet, investJournal: again.journal } : s;
       });
       setResult({ order: r.order, fill: r.fill });
       if (r.fill && !r.duplicate) {
@@ -76,7 +77,7 @@ export function OrderSheet({ code, side, quote, onClose }: { code: string; side:
               <dt>체결 금액</dt><dd className="num">{won(fill.qty * fill.price)}</dd>
               <dt>체결 근거</dt><dd>{fill.basis === 'market' ? '확인 화면의 시세' : '관측 시세'}{fill.quoteTime ? ` (${formatKDateTime(fill.quoteTime)})` : ''}</dd>
               {fill.realizedPnl !== undefined && <><dt>실현손익</dt><dd className={`num ${fill.realizedPnl > 0 ? 'up' : fill.realizedPnl < 0 ? 'down' : ''}`}>{signedWon(fill.realizedPnl)}</dd></>}
-              <dt>남은 모의 현금</dt><dd className="num">{won(fill.cashAfter)}</dd>
+              <dt>남은 평행세계 현금</dt><dd className="num">{won(fill.cashAfter)}</dd>
             </dl>
             {w && (
               <div className="world-pair" style={{ marginTop: 14 }}>
@@ -165,9 +166,10 @@ export function OrderSheet({ code, side, quote, onClose }: { code: string; side:
 
       <dl className="kv" style={{ marginTop: 20 }}>
         <dt>예상 주문 금액</dt><dd className="num bold">{price ? won(est) : '—'}</dd>
-        {side === 'buy' ? (<><dt>주문 가능 금액</dt><dd className={`num ${est > avail ? 'up' : ''}`}>{won(avail)}</dd></>) : (<><dt>매도 가능 수량</dt><dd className={`num ${qty > availQ ? 'up' : ''}`}>{shares(availQ)}</dd></>)}
+        {side === 'buy' ? (<><dt>가상 지갑 투자 가능 금액</dt><dd className={`num ${est > avail ? 'up' : ''}`}>{won(avail)}</dd></>) : (<><dt>매도 가능 수량</dt><dd className={`num ${qty > availQ ? 'up' : ''}`}>{shares(availQ)}</dd></>)}
       </dl>
       {side === 'buy' && est > avail && <p className="error small">주문 가능 금액을 넘었어요.</p>}
+      <p className="xs muted" style={{ marginTop: 14 }}>홈의 평행세계 가상 현금에서 월세·생활비를 지킨 뒤 남은 돈만 투자할 수 있어요.</p>
       <p className="xs muted" style={{ marginTop: 14 }}>
         모의 체결 규칙: 시장가는 장중에 확인 화면의 시세로 체결해요. 지정가는 주문 후 관측한 시세가 조건을 만족하면 그 시세로, 장 시작 전 주문은 그날 저가(매수)·고가(매도)가 닿으면 지정가로 체결해요. 시세는 앱이 열려 있을 때 확인해요.
       </p>
