@@ -13,7 +13,7 @@ import { AmountText, Button, Chip, Chips, NumberPad, Won } from '../components/d
 import { IconGear } from '../components/Icons';
 import { Sheet, useToast } from '../components/ui';
 import { useAi, exampleNow } from '../lib/ai';
-import { METHOD_LABEL, setDayStatus, type PayMethod } from '../lib/moa';
+import { METHOD_LABEL, type PayMethod } from '../lib/moa';
 import { useMoa } from '../state/moa';
 import { PasteFlow } from './moa/PasteFlow';
 import { ledgerSummaryInput, monthSlice } from '../lib/ai/context';
@@ -125,7 +125,6 @@ export function Ledger() {
           ? <LedgerAiSummary all={all} month={month} today={today} />
           : <p className="small muted">지출 내역을 입력하면 AI 분석을 볼 수 있어요.</p>)}
       </section>
-      <DayDone today={today} />
 
       {sheet === 'add' && <AddSheet today={today} onClose={() => setSheet(null)} />}
       {sheet === 'paste' && <PasteFlow onClose={() => setSheet(null)} />}
@@ -291,34 +290,5 @@ function AddSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
       </Chips>
       <div className="lg-pad"><NumberPad value={amount} onChange={setAmount} max={10_000_000} /></div>
     </Sheet>
-  );
-}
-
-/* ───────── 오늘 기록 완료 ───────── */
-/** '0원인 날'과 '기록 안 한 날', '일부만 적은 날'을 가르는 버튼. 지출 예측의 정답은 완료한 날만 쓴다. */
-function DayDone({ today }: { today: ISODate }) {
-  const { moa, set } = useMoa();
-  const yesterday = addDays(today, -1);
-  const st = moa.dayStatus[today];
-  const yst = moa.dayStatus[yesterday];
-  const labeled = Object.keys(moa.dayStatus).length;
-  return (
-    <section className="t-card lg-done">
-      <div>
-        <b>{st ? (st === 'reconciled' ? '오늘 은행 앱과 대조 완료' : '오늘 기록 완료') : '오늘 쓴 돈을 다 적었나요?'}</b>
-        <small>지출이 없었던 날도 눌러 주세요. 다 적은 날만 예측 학습에 써요 · 완료한 날 {labeled}일</small>
-      </div>
-      <div className="lg-done-btns">
-        {!st ? (
-          <>
-            <button className="lg-act primary" onClick={() => set((m) => setDayStatus(m, today, 'self'))}>오늘 기록 완료</button>
-            <button className="lg-act" onClick={() => set((m) => setDayStatus(m, today, 'reconciled'))}>은행 앱과 대조함</button>
-          </>
-        ) : (
-          <button className="lg-act" onClick={() => set((m) => setDayStatus(m, today, null))}>완료 취소</button>
-        )}
-        {!yst && <button className="lg-act" onClick={() => set((m) => setDayStatus(m, yesterday, 'self'))}>어제도 완료</button>}
-      </div>
-    </section>
   );
 }
