@@ -151,7 +151,7 @@ export function demoInvestmentJournal(now = Date.now()): InvestJournal {
     id: t.id + '-fill', orderId: t.id, code: t.code, name: t.stock_name,
     side: t.side, qty: t.qty, price: t.price_krw,
     time: toMs(t.at_kst), cashAfter: demoWorldWallet(toMs(t.at_kst)).cash,
-    basis: 'market',
+    basis: 'market' as const,
   })).reverse();
   return { orders, fills, watchlist: ['360750','069500'] };
 }
