@@ -64,4 +64,395 @@
         "id": "S02-rent",
         "name": "월세",
         "direction": "out",
-        "amount"���q�^
+        "amount": 380000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S02-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S02-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S03",
+    "scenario": "주말 집중 소비",
+    "start_cash_krw": 1100000,
+    "salary_delays": {},
+    "schedule": [
+      {
+        "id": "S03-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 900000,
+        "recurrence": "monthly",
+        "day": 5,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S03-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 420000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S03-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S03-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S04",
+    "scenario": "월급 입금 지연",
+    "start_cash_krw": 380000,
+    "salary_delays": {
+      "2026-10": 3,
+      "2026-11": 4
+    },
+    "schedule": [
+      {
+        "id": "S04-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 750000,
+        "recurrence": "monthly",
+        "day": 23,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S04-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 450000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S04-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S04-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S05",
+    "scenario": "식비 비중 높음",
+    "start_cash_krw": 1250000,
+    "salary_delays": {},
+    "schedule": [
+      {
+        "id": "S05-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 900000,
+        "recurrence": "monthly",
+        "day": 15,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S05-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 450000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S05-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S05-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S06",
+    "scenario": "결제일 잔액 부족",
+    "start_cash_krw": 320000,
+    "salary_delays": {
+      "2026-10": 5,
+      "2026-11": 3
+    },
+    "schedule": [
+      {
+        "id": "S06-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 720000,
+        "recurrence": "monthly",
+        "day": 28,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S06-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 500000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S06-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S06-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S07",
+    "scenario": "소비가 불규칙",
+    "start_cash_krw": 1100000,
+    "salary_delays": {},
+    "schedule": [
+      {
+        "id": "S07-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 820000,
+        "recurrence": "monthly",
+        "day": 1,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S07-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 400000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S07-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S07-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S08",
+    "scenario": "신용카드 비중 높음",
+    "start_cash_krw": 1120000,
+    "salary_delays": {},
+    "schedule": [
+      {
+        "id": "S08-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 950000,
+        "recurrence": "monthly",
+        "day": 10,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S08-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 390000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S08-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S08-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S09",
+    "scenario": "월말 지출 급증",
+    "start_cash_krw": 550000,
+    "salary_delays": {},
+    "schedule": [
+      {
+        "id": "S09-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 900000,
+        "recurrence": "monthly",
+        "day": 27,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S09-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 470000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S09-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S09-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S10",
+    "scenario": "안정적 저축형",
+    "start_cash_krw": 1350000,
+    "salary_delays": {},
+    "schedule": [
+      {
+        "id": "S10-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 1050000,
+        "recurrence": "monthly",
+        "day": 5,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S10-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 360000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true
+      },
+      {
+        "id": "S10-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 16,
+        "essential": true
+      },
+      {
+        "id": "S10-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 19000,
+        "recurrence": "monthly",
+        "day": 8,
+        "essential": true
+      }
+    ]
+  }
+]

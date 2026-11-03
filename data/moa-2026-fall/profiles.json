@@ -57,4 +57,46 @@
     "salary_krw": 720000,
     "rent_krw": 500000,
     "savings_goal_krw": 10000,
-    "missing_record_rate_assumption": 0.13���q�^
+    "missing_record_rate_assumption": 0.13
+  },
+  {
+    "user_id": "S07",
+    "scenario": "소비가 불규칙",
+    "start_cash_krw": 1100000,
+    "salary_day": 1,
+    "salary_krw": 820000,
+    "rent_krw": 400000,
+    "savings_goal_krw": 65000,
+    "missing_record_rate_assumption": 0.14
+  },
+  {
+    "user_id": "S08",
+    "scenario": "신용카드 비중 높음",
+    "start_cash_krw": 1120000,
+    "salary_day": 10,
+    "salary_krw": 950000,
+    "rent_krw": 390000,
+    "savings_goal_krw": 50000,
+    "missing_record_rate_assumption": 0.09
+  },
+  {
+    "user_id": "S09",
+    "scenario": "월말 지출 급증",
+    "start_cash_krw": 550000,
+    "salary_day": 27,
+    "salary_krw": 900000,
+    "rent_krw": 470000,
+    "savings_goal_krw": 20000,
+    "missing_record_rate_assumption": 0.11
+  },
+  {
+    "user_id": "S10",
+    "scenario": "안정적 저축형",
+    "start_cash_krw": 1350000,
+    "salary_day": 5,
+    "salary_krw": 1050000,
+    "rent_krw": 360000,
+    "savings_goal_krw": 95000,
+    "missing_record_rate_assumption": 0.04
+  }
+]

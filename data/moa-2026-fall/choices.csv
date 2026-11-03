@@ -10,4 +10,222 @@ S01-choice-008,S01,2026-10-09,2026-10-09T19:00+09:00,배달 야식,식비,23500,
 S01-choice-009,S01,2026-10-13,2026-10-13T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,historical_synthetic
 S01-choice-010,S01,2026-10-17,2026-10-17T19:00+09:00,택시,교통,14800,8140,alternative,6660,historical_synthetic
 S01-choice-011,S01,2026-10-21,2026-10-21T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,historical_synthetic
-S01-choice-012,S01,2026-10-25,2026-10-25T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,���q�^
+S01-choice-012,S01,2026-10-25,2026-10-25T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,historical_synthetic
+S01-choice-013,S01,2026-10-29,2026-10-29T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,historical_synthetic
+S01-choice-014,S01,2026-11-02,2026-11-02T19:00+09:00,디저트,카페,12000,12000,buy,0,historical_synthetic
+S01-choice-015,S01,2026-11-06,2026-11-06T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,future_scenario
+S01-choice-016,S01,2026-11-10,2026-11-10T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,future_scenario
+S01-choice-017,S01,2026-11-14,2026-11-14T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,future_scenario
+S01-choice-018,S01,2026-11-18,2026-11-18T19:00+09:00,택시,교통,14800,0,wait,14800,future_scenario
+S01-choice-019,S01,2026-11-22,2026-11-22T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,future_scenario
+S01-choice-020,S01,2026-11-26,2026-11-26T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,future_scenario
+S01-choice-021,S01,2026-11-30,2026-11-30T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,future_scenario
+S01-choice-022,S01,2026-12-04,2026-12-04T19:00+09:00,디저트,카페,12000,6600,alternative,5400,future_scenario
+S01-choice-023,S01,2026-12-08,2026-12-08T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,future_scenario
+S02-choice-001,S02,2026-09-12,2026-09-12T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,historical_synthetic
+S02-choice-002,S02,2026-09-16,2026-09-16T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,historical_synthetic
+S02-choice-003,S02,2026-09-20,2026-09-20T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,historical_synthetic
+S02-choice-004,S02,2026-09-24,2026-09-24T19:00+09:00,디저트,카페,12000,12000,buy,0,historical_synthetic
+S02-choice-005,S02,2026-09-28,2026-09-28T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,historical_synthetic
+S02-choice-006,S02,2026-10-02,2026-10-02T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,historical_synthetic
+S02-choice-007,S02,2026-10-06,2026-10-06T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,historical_synthetic
+S02-choice-008,S02,2026-10-10,2026-10-10T19:00+09:00,택시,교통,14800,0,wait,14800,historical_synthetic
+S02-choice-009,S02,2026-10-14,2026-10-14T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,historical_synthetic
+S02-choice-010,S02,2026-10-18,2026-10-18T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,historical_synthetic
+S02-choice-011,S02,2026-10-22,2026-10-22T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,historical_synthetic
+S02-choice-012,S02,2026-10-26,2026-10-26T19:00+09:00,디저트,카페,12000,6600,alternative,5400,historical_synthetic
+S02-choice-013,S02,2026-10-30,2026-10-30T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,historical_synthetic
+S02-choice-014,S02,2026-11-03,2026-11-03T19:00+09:00,배달 야식,식비,23500,0,wait,23500,historical_synthetic
+S02-choice-015,S02,2026-11-07,2026-11-07T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,future_scenario
+S02-choice-016,S02,2026-11-11,2026-11-11T19:00+09:00,택시,교통,14800,14800,buy,0,future_scenario
+S02-choice-017,S02,2026-11-15,2026-11-15T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,future_scenario
+S02-choice-018,S02,2026-11-19,2026-11-19T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,future_scenario
+S02-choice-019,S02,2026-11-23,2026-11-23T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,future_scenario
+S02-choice-020,S02,2026-11-27,2026-11-27T19:00+09:00,디저트,카페,12000,0,wait,12000,future_scenario
+S02-choice-021,S02,2026-12-01,2026-12-01T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,future_scenario
+S02-choice-022,S02,2026-12-05,2026-12-05T19:00+09:00,배달 야식,식비,23500,23500,buy,0,future_scenario
+S02-choice-023,S02,2026-12-09,2026-12-09T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,future_scenario
+S03-choice-001,S03,2026-09-13,2026-09-13T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,historical_synthetic
+S03-choice-002,S03,2026-09-17,2026-09-17T19:00+09:00,디저트,카페,12000,6600,alternative,5400,historical_synthetic
+S03-choice-003,S03,2026-09-21,2026-09-21T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,historical_synthetic
+S03-choice-004,S03,2026-09-25,2026-09-25T19:00+09:00,배달 야식,식비,23500,0,wait,23500,historical_synthetic
+S03-choice-005,S03,2026-09-29,2026-09-29T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,historical_synthetic
+S03-choice-006,S03,2026-10-03,2026-10-03T19:00+09:00,택시,교통,14800,14800,buy,0,historical_synthetic
+S03-choice-007,S03,2026-10-07,2026-10-07T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,historical_synthetic
+S03-choice-008,S03,2026-10-11,2026-10-11T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,historical_synthetic
+S03-choice-009,S03,2026-10-15,2026-10-15T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,historical_synthetic
+S03-choice-010,S03,2026-10-19,2026-10-19T19:00+09:00,디저트,카페,12000,0,wait,12000,historical_synthetic
+S03-choice-011,S03,2026-10-23,2026-10-23T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,historical_synthetic
+S03-choice-012,S03,2026-10-27,2026-10-27T19:00+09:00,배달 야식,식비,23500,23500,buy,0,historical_synthetic
+S03-choice-013,S03,2026-10-31,2026-10-31T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,historical_synthetic
+S03-choice-014,S03,2026-11-04,2026-11-04T19:00+09:00,택시,교통,14800,8140,alternative,6660,historical_synthetic
+S03-choice-015,S03,2026-11-08,2026-11-08T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,future_scenario
+S03-choice-016,S03,2026-11-12,2026-11-12T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,future_scenario
+S03-choice-017,S03,2026-11-16,2026-11-16T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,future_scenario
+S03-choice-018,S03,2026-11-20,2026-11-20T19:00+09:00,디저트,카페,12000,12000,buy,0,future_scenario
+S03-choice-019,S03,2026-11-24,2026-11-24T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,future_scenario
+S03-choice-020,S03,2026-11-28,2026-11-28T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,future_scenario
+S03-choice-021,S03,2026-12-02,2026-12-02T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,future_scenario
+S03-choice-022,S03,2026-12-06,2026-12-06T19:00+09:00,택시,교통,14800,0,wait,14800,future_scenario
+S03-choice-023,S03,2026-12-10,2026-12-10T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,future_scenario
+S04-choice-001,S04,2026-09-14,2026-09-14T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,historical_synthetic
+S04-choice-002,S04,2026-09-18,2026-09-18T19:00+09:00,배달 야식,식비,23500,23500,buy,0,historical_synthetic
+S04-choice-003,S04,2026-09-22,2026-09-22T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,historical_synthetic
+S04-choice-004,S04,2026-09-26,2026-09-26T19:00+09:00,택시,교통,14800,8140,alternative,6660,historical_synthetic
+S04-choice-005,S04,2026-09-30,2026-09-30T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,historical_synthetic
+S04-choice-006,S04,2026-10-04,2026-10-04T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,historical_synthetic
+S04-choice-007,S04,2026-10-08,2026-10-08T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,historical_synthetic
+S04-choice-008,S04,2026-10-12,2026-10-12T19:00+09:00,디저트,카페,12000,12000,buy,0,historical_synthetic
+S04-choice-009,S04,2026-10-16,2026-10-16T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,historical_synthetic
+S04-choice-010,S04,2026-10-20,2026-10-20T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,historical_synthetic
+S04-choice-011,S04,2026-10-24,2026-10-24T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,historical_synthetic
+S04-choice-012,S04,2026-10-28,2026-10-28T19:00+09:00,택시,교통,14800,0,wait,14800,historical_synthetic
+S04-choice-013,S04,2026-11-01,2026-11-01T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,historical_synthetic
+S04-choice-014,S04,2026-11-05,2026-11-05T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,future_scenario
+S04-choice-015,S04,2026-11-09,2026-11-09T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,future_scenario
+S04-choice-016,S04,2026-11-13,2026-11-13T19:00+09:00,디저트,카페,12000,6600,alternative,5400,future_scenario
+S04-choice-017,S04,2026-11-17,2026-11-17T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,future_scenario
+S04-choice-018,S04,2026-11-21,2026-11-21T19:00+09:00,배달 야식,식비,23500,0,wait,23500,future_scenario
+S04-choice-019,S04,2026-11-25,2026-11-25T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,future_scenario
+S04-choice-020,S04,2026-11-29,2026-11-29T19:00+09:00,택시,교통,14800,14800,buy,0,future_scenario
+S04-choice-021,S04,2026-12-03,2026-12-03T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,future_scenario
+S04-choice-022,S04,2026-12-07,2026-12-07T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,future_scenario
+S04-choice-023,S04,2026-12-11,2026-12-11T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,future_scenario
+S05-choice-001,S05,2026-09-11,2026-09-11T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,historical_synthetic
+S05-choice-002,S05,2026-09-15,2026-09-15T19:00+09:00,택시,교통,14800,0,wait,14800,historical_synthetic
+S05-choice-003,S05,2026-09-19,2026-09-19T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,historical_synthetic
+S05-choice-004,S05,2026-09-23,2026-09-23T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,historical_synthetic
+S05-choice-005,S05,2026-09-27,2026-09-27T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,historical_synthetic
+S05-choice-006,S05,2026-10-01,2026-10-01T19:00+09:00,디저트,카페,12000,6600,alternative,5400,historical_synthetic
+S05-choice-007,S05,2026-10-05,2026-10-05T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,historical_synthetic
+S05-choice-008,S05,2026-10-09,2026-10-09T19:00+09:00,배달 야식,식비,23500,0,wait,23500,historical_synthetic
+S05-choice-009,S05,2026-10-13,2026-10-13T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,historical_synthetic
+S05-choice-010,S05,2026-10-17,2026-10-17T19:00+09:00,택시,교통,14800,14800,buy,0,historical_synthetic
+S05-choice-011,S05,2026-10-21,2026-10-21T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,historical_synthetic
+S05-choice-012,S05,2026-10-25,2026-10-25T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,historical_synthetic
+S05-choice-013,S05,2026-10-29,2026-10-29T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,historical_synthetic
+S05-choice-014,S05,2026-11-02,2026-11-02T19:00+09:00,디저트,카페,12000,0,wait,12000,historical_synthetic
+S05-choice-015,S05,2026-11-06,2026-11-06T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,future_scenario
+S05-choice-016,S05,2026-11-10,2026-11-10T19:00+09:00,배달 야식,식비,23500,23500,buy,0,future_scenario
+S05-choice-017,S05,2026-11-14,2026-11-14T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,future_scenario
+S05-choice-018,S05,2026-11-18,2026-11-18T19:00+09:00,택시,교통,14800,8140,alternative,6660,future_scenario
+S05-choice-019,S05,2026-11-22,2026-11-22T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,future_scenario
+S05-choice-020,S05,2026-11-26,2026-11-26T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,future_scenario
+S05-choice-021,S05,2026-11-30,2026-11-30T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,future_scenario
+S05-choice-022,S05,2026-12-04,2026-12-04T19:00+09:00,디저트,카페,12000,12000,buy,0,future_scenario
+S05-choice-023,S05,2026-12-08,2026-12-08T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,future_scenario
+S06-choice-001,S06,2026-09-12,2026-09-12T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,historical_synthetic
+S06-choice-002,S06,2026-09-16,2026-09-16T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,historical_synthetic
+S06-choice-003,S06,2026-09-20,2026-09-20T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,historical_synthetic
+S06-choice-004,S06,2026-09-24,2026-09-24T19:00+09:00,디저트,카페,12000,0,wait,12000,historical_synthetic
+S06-choice-005,S06,2026-09-28,2026-09-28T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,historical_synthetic
+S06-choice-006,S06,2026-10-02,2026-10-02T19:00+09:00,배달 야식,식비,23500,23500,buy,0,historical_synthetic
+S06-choice-007,S06,2026-10-06,2026-10-06T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,historical_synthetic
+S06-choice-008,S06,2026-10-10,2026-10-10T19:00+09:00,택시,교통,14800,8140,alternative,6660,historical_synthetic
+S06-choice-009,S06,2026-10-14,2026-10-14T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,historical_synthetic
+S06-choice-010,S06,2026-10-18,2026-10-18T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,historical_synthetic
+S06-choice-011,S06,2026-10-22,2026-10-22T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,historical_synthetic
+S06-choice-012,S06,2026-10-26,2026-10-26T19:00+09:00,디저트,카페,12000,12000,buy,0,historical_synthetic
+S06-choice-013,S06,2026-10-30,2026-10-30T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,historical_synthetic
+S06-choice-014,S06,2026-11-03,2026-11-03T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,historical_synthetic
+S06-choice-015,S06,2026-11-07,2026-11-07T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,future_scenario
+S06-choice-016,S06,2026-11-11,2026-11-11T19:00+09:00,택시,교통,14800,0,wait,14800,future_scenario
+S06-choice-017,S06,2026-11-15,2026-11-15T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,future_scenario
+S06-choice-018,S06,2026-11-19,2026-11-19T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,future_scenario
+S06-choice-019,S06,2026-11-23,2026-11-23T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,future_scenario
+S06-choice-020,S06,2026-11-27,2026-11-27T19:00+09:00,디저트,카페,12000,6600,alternative,5400,future_scenario
+S06-choice-021,S06,2026-12-01,2026-12-01T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,future_scenario
+S06-choice-022,S06,2026-12-05,2026-12-05T19:00+09:00,배달 야식,식비,23500,0,wait,23500,future_scenario
+S06-choice-023,S06,2026-12-09,2026-12-09T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,future_scenario
+S07-choice-001,S07,2026-09-13,2026-09-13T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,historical_synthetic
+S07-choice-002,S07,2026-09-17,2026-09-17T19:00+09:00,디저트,카페,12000,12000,buy,0,historical_synthetic
+S07-choice-003,S07,2026-09-21,2026-09-21T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,historical_synthetic
+S07-choice-004,S07,2026-09-25,2026-09-25T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,historical_synthetic
+S07-choice-005,S07,2026-09-29,2026-09-29T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,historical_synthetic
+S07-choice-006,S07,2026-10-03,2026-10-03T19:00+09:00,택시,교통,14800,0,wait,14800,historical_synthetic
+S07-choice-007,S07,2026-10-07,2026-10-07T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,historical_synthetic
+S07-choice-008,S07,2026-10-11,2026-10-11T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,historical_synthetic
+S07-choice-009,S07,2026-10-15,2026-10-15T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,historical_synthetic
+S07-choice-010,S07,2026-10-19,2026-10-19T19:00+09:00,디저트,카페,12000,6600,alternative,5400,historical_synthetic
+S07-choice-011,S07,2026-10-23,2026-10-23T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,historical_synthetic
+S07-choice-012,S07,2026-10-27,2026-10-27T19:00+09:00,배달 야식,식비,23500,0,wait,23500,historical_synthetic
+S07-choice-013,S07,2026-10-31,2026-10-31T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,historical_synthetic
+S07-choice-014,S07,2026-11-04,2026-11-04T19:00+09:00,택시,교통,14800,14800,buy,0,historical_synthetic
+S07-choice-015,S07,2026-11-08,2026-11-08T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,future_scenario
+S07-choice-016,S07,2026-11-12,2026-11-12T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,future_scenario
+S07-choice-017,S07,2026-11-16,2026-11-16T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,future_scenario
+S07-choice-018,S07,2026-11-20,2026-11-20T19:00+09:00,디저트,카페,12000,0,wait,12000,future_scenario
+S07-choice-019,S07,2026-11-24,2026-11-24T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,future_scenario
+S07-choice-020,S07,2026-11-28,2026-11-28T19:00+09:00,배달 야식,식비,23500,23500,buy,0,future_scenario
+S07-choice-021,S07,2026-12-02,2026-12-02T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,future_scenario
+S07-choice-022,S07,2026-12-06,2026-12-06T19:00+09:00,택시,교통,14800,8140,alternative,6660,future_scenario
+S07-choice-023,S07,2026-12-10,2026-12-10T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,future_scenario
+S08-choice-001,S08,2026-09-14,2026-09-14T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,historical_synthetic
+S08-choice-002,S08,2026-09-18,2026-09-18T19:00+09:00,배달 야식,식비,23500,0,wait,23500,historical_synthetic
+S08-choice-003,S08,2026-09-22,2026-09-22T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,historical_synthetic
+S08-choice-004,S08,2026-09-26,2026-09-26T19:00+09:00,택시,교통,14800,14800,buy,0,historical_synthetic
+S08-choice-005,S08,2026-09-30,2026-09-30T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,historical_synthetic
+S08-choice-006,S08,2026-10-04,2026-10-04T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,historical_synthetic
+S08-choice-007,S08,2026-10-08,2026-10-08T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,historical_synthetic
+S08-choice-008,S08,2026-10-12,2026-10-12T19:00+09:00,디저트,카페,12000,0,wait,12000,historical_synthetic
+S08-choice-009,S08,2026-10-16,2026-10-16T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,historical_synthetic
+S08-choice-010,S08,2026-10-20,2026-10-20T19:00+09:00,배달 야식,식비,23500,23500,buy,0,historical_synthetic
+S08-choice-011,S08,2026-10-24,2026-10-24T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,historical_synthetic
+S08-choice-012,S08,2026-10-28,2026-10-28T19:00+09:00,택시,교통,14800,8140,alternative,6660,historical_synthetic
+S08-choice-013,S08,2026-11-01,2026-11-01T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,historical_synthetic
+S08-choice-014,S08,2026-11-05,2026-11-05T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,future_scenario
+S08-choice-015,S08,2026-11-09,2026-11-09T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,future_scenario
+S08-choice-016,S08,2026-11-13,2026-11-13T19:00+09:00,디저트,카페,12000,12000,buy,0,future_scenario
+S08-choice-017,S08,2026-11-17,2026-11-17T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,future_scenario
+S08-choice-018,S08,2026-11-21,2026-11-21T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,future_scenario
+S08-choice-019,S08,2026-11-25,2026-11-25T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,future_scenario
+S08-choice-020,S08,2026-11-29,2026-11-29T19:00+09:00,택시,교통,14800,0,wait,14800,future_scenario
+S08-choice-021,S08,2026-12-03,2026-12-03T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,future_scenario
+S08-choice-022,S08,2026-12-07,2026-12-07T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,future_scenario
+S08-choice-023,S08,2026-12-11,2026-12-11T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,future_scenario
+S09-choice-001,S09,2026-09-11,2026-09-11T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,historical_synthetic
+S09-choice-002,S09,2026-09-15,2026-09-15T19:00+09:00,택시,교통,14800,8140,alternative,6660,historical_synthetic
+S09-choice-003,S09,2026-09-19,2026-09-19T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,historical_synthetic
+S09-choice-004,S09,2026-09-23,2026-09-23T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,historical_synthetic
+S09-choice-005,S09,2026-09-27,2026-09-27T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,historical_synthetic
+S09-choice-006,S09,2026-10-01,2026-10-01T19:00+09:00,디저트,카페,12000,12000,buy,0,historical_synthetic
+S09-choice-007,S09,2026-10-05,2026-10-05T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,historical_synthetic
+S09-choice-008,S09,2026-10-09,2026-10-09T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,historical_synthetic
+S09-choice-009,S09,2026-10-13,2026-10-13T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,historical_synthetic
+S09-choice-010,S09,2026-10-17,2026-10-17T19:00+09:00,택시,교통,14800,0,wait,14800,historical_synthetic
+S09-choice-011,S09,2026-10-21,2026-10-21T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,historical_synthetic
+S09-choice-012,S09,2026-10-25,2026-10-25T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,historical_synthetic
+S09-choice-013,S09,2026-10-29,2026-10-29T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,historical_synthetic
+S09-choice-014,S09,2026-11-02,2026-11-02T19:00+09:00,디저트,카페,12000,6600,alternative,5400,historical_synthetic
+S09-choice-015,S09,2026-11-06,2026-11-06T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,future_scenario
+S09-choice-016,S09,2026-11-10,2026-11-10T19:00+09:00,배달 야식,식비,23500,0,wait,23500,future_scenario
+S09-choice-017,S09,2026-11-14,2026-11-14T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,future_scenario
+S09-choice-018,S09,2026-11-18,2026-11-18T19:00+09:00,택시,교통,14800,14800,buy,0,future_scenario
+S09-choice-019,S09,2026-11-22,2026-11-22T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,future_scenario
+S09-choice-020,S09,2026-11-26,2026-11-26T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,future_scenario
+S09-choice-021,S09,2026-11-30,2026-11-30T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,future_scenario
+S09-choice-022,S09,2026-12-04,2026-12-04T19:00+09:00,디저트,카페,12000,0,wait,12000,future_scenario
+S09-choice-023,S09,2026-12-08,2026-12-08T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,future_scenario
+S10-choice-001,S10,2026-09-12,2026-09-12T19:00+09:00,카페 라떼,카페,5500,3025,alternative,2475,historical_synthetic
+S10-choice-002,S10,2026-09-16,2026-09-16T19:00+09:00,러닝 스니커즈,패션,129000,129000,buy,0,historical_synthetic
+S10-choice-003,S10,2026-09-20,2026-09-20T19:00+09:00,OTT 연간권,구독,99000,0,wait,99000,historical_synthetic
+S10-choice-004,S10,2026-09-24,2026-09-24T19:00+09:00,디저트,카페,12000,6600,alternative,5400,historical_synthetic
+S10-choice-005,S10,2026-09-28,2026-09-28T19:00+09:00,친구와 저녁,식비,28000,28000,buy,0,historical_synthetic
+S10-choice-006,S10,2026-10-02,2026-10-02T19:00+09:00,배달 야식,식비,23500,0,wait,23500,historical_synthetic
+S10-choice-007,S10,2026-10-06,2026-10-06T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,historical_synthetic
+S10-choice-008,S10,2026-10-10,2026-10-10T19:00+09:00,택시,교통,14800,14800,buy,0,historical_synthetic
+S10-choice-009,S10,2026-10-14,2026-10-14T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,historical_synthetic
+S10-choice-010,S10,2026-10-18,2026-10-18T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,historical_synthetic
+S10-choice-011,S10,2026-10-22,2026-10-22T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,historical_synthetic
+S10-choice-012,S10,2026-10-26,2026-10-26T19:00+09:00,디저트,카페,12000,0,wait,12000,historical_synthetic
+S10-choice-013,S10,2026-10-30,2026-10-30T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,historical_synthetic
+S10-choice-014,S10,2026-11-03,2026-11-03T19:00+09:00,배달 야식,식비,23500,23500,buy,0,historical_synthetic
+S10-choice-015,S10,2026-11-07,2026-11-07T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,future_scenario
+S10-choice-016,S10,2026-11-11,2026-11-11T19:00+09:00,택시,교통,14800,8140,alternative,6660,future_scenario
+S10-choice-017,S10,2026-11-15,2026-11-15T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,future_scenario
+S10-choice-018,S10,2026-11-19,2026-11-19T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,future_scenario
+S10-choice-019,S10,2026-11-23,2026-11-23T19:00+09:00,OTT 연간권,구독,99000,54450,alternative,44550,future_scenario
+S10-choice-020,S10,2026-11-27,2026-11-27T19:00+09:00,디저트,카페,12000,12000,buy,0,future_scenario
+S10-choice-021,S10,2026-12-01,2026-12-01T19:00+09:00,친구와 저녁,식비,28000,0,wait,28000,future_scenario
+S10-choice-022,S10,2026-12-05,2026-12-05T19:00+09:00,배달 야식,식비,23500,12925,alternative,10575,future_scenario
+S10-choice-023,S10,2026-12-09,2026-12-09T19:00+09:00,무선 이어폰,쇼핑,159000,159000,buy,0,future_scenario
