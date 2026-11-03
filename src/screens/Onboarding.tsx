@@ -9,10 +9,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react';
 import { addDays, startOfMonth, todayKST, type ISODate } from '../../shared/dates';
-import { maskText } from '../../shared/mask';
-import { AiMark } from '../components/Ai';
-import { Logo } from '../components/Glyph';
-import { exampleNow } from '../lib/ai';
+import { exampleCoach } from '../lib/ai/example';
 import { Won } from '../components/ds';
 import { FREQ_LABEL, futureCost, type Frequency } from '../lib/futureCost';
 import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_SAFETY_BUFFER } from '../lib/worldWallet';
@@ -22,7 +19,7 @@ import { assessRisk, emptyMoa, kstMs, setAnchor, upsertCard, upsertSchedule, typ
 const fmt = (n: number) => `${Math.round(Math.abs(n)).toLocaleString('ko-KR')}원`;
 const dayOf = (d: ISODate) => `${Number(d.slice(8, 10))}일`;
 
-const STEPS = 5;
+const STEPS = 4;
 
 /** 기획서 시연 시나리오: 잔액 15만원, 10일 알바비 20만원 입금 예정, 11일 카드값 30만원 */
 function demoState(today: ISODate, month: ISODate): MoaState {
@@ -49,7 +46,6 @@ type Demo = ReturnType<typeof useDemo>;
 
 export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () => void }) {
   const [step, setStep] = useState(0);
-  const [agree, setAgree] = useState(true);
   const [start, setStart] = useState<'demo' | 'mine'>('demo');
   const demo = useDemo();
   const [itemId, setItemId] = useState(ITEMS[2].id);
@@ -60,39 +56,32 @@ export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () 
 
   const screens: { kicker: string; title: ReactNode; sub: ReactNode; body: ReactNode; cta: string }[] = [
     {
-      kicker: '20대를 위한 소비 결정 앱',
-      title: <>이번 결제일은 괜찮은지,<br />다르게 골랐다면<br />어땠을지 보여줘요</>,
-      sub: '내 결제계좌로는 다가오는 결제일을 미리 계산하고, 평행세계 가상 지갑으로는 산 나와 참은 나를 나란히 보여줘요.',
-      body: <Pledge />,
-      cta: '어떻게 계산하는지 볼게요',
-    },
-    {
-      kicker: '1 · 내 결제계좌',
-      title: <>같은 사람이어도<br />입금 날짜에 따라 달라져요</>,
-      sub: `입금이 ${demo.delayDays}일만 늦어져도 카드값 날 잔고가 모자랄 수 있어요. 아래를 눌러 비교해 보세요.`,
+      kicker: '모아 · 결제일 먼저',
+      title: <>결제일에 돈이 모자랄까?<br />미리 비교해 봐요</>,
+      sub: '입금이 조금만 늦어져도 카드값을 못 낼 수 있어요. 아래 예시에서 입금 날짜를 바꿔 보세요.',
       body: <PayDay demo={demo} />,
-      cta: '다음',
+      cta: '소비 선택도 비교해 보기',
     },
     {
-      kicker: '2 · 평행세계',
-      title: <>사고 싶은 게 생기면<br />두 세계로 나눠 봐요</>,
-      sub: '하나 골라 보세요. 산 나와 참은 나가 1년 동안 얼마나 벌어지는지 가상 지갑으로 바로 계산해요.',
+      kicker: '1 · 산 나와 안 산 나',
+      title: <>하나의 선택으로<br />두 미래를 비교해요</>,
+      sub: '구매·보류에 따라 1년 뒤 가상 자산이 얼마나 달라지는지 직접 살펴보세요.',
       body: <World itemId={itemId} setItemId={setItemId} />,
-      cta: '다음',
+      cta: '모아의 소비 분석 보기',
     },
     {
-      kicker: '3 · 모아 AI',
-      title: <>결제 문자는 AI가 정리하고,<br />계산은 앱이 해요</>,
-      sub: '번호·이름을 가린 문장만 AI가 읽어 거래로 정리해요. 잔고와 위험 등급은 AI가 아니라 계산 엔진이 정해요.',
-      body: <AiDemo />,
-      cta: '다음',
+      kicker: '2 · 소비 패턴 분석',
+      title: <>내 소비를 이해하고,<br />더 나은 선택을 찾도록</>,
+      sub: '반복 지출과 다음 결제일을 함께 살펴보고, 지금 구매할 때와 미룰 때의 차이를 설명해요.',
+      body: <AiDecisionDemo itemId={itemId} />,
+      cta: '모아 시작하기',
     },
     {
-      kicker: '시작하기',
-      title: <>어떻게 시작할까요?</>,
-      sub: '로그인도, 계좌 연결도 필요 없어요.',
-      body: <StartPick start={start} setStart={setStart} agree={agree} setAgree={setAgree} />,
-      cta: start === 'demo' ? '예시로 둘러보기' : '내 결제계좌 입력하기',
+      kicker: '이제 시작해요',
+      title: <>내 돈으로 시작할까요?</>,
+      sub: '로그인이나 은행 연결은 필요 없어요. 직접 입력하거나 예시로 둘러볼 수 있어요.',
+      body: <StartPick start={start} setStart={setStart} />,
+      cta: start === 'demo' ? '예시로 바로 둘러보기' : '내 결제계좌 입력하기',
     },
   ];
   const s = screens[step];
@@ -116,40 +105,10 @@ export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () 
         <button
           type="button"
           className="ob-btn"
-          disabled={last && start === 'mine' && !agree}
           onClick={() => (!last ? next() : start === 'demo' ? onDemo() : onDone())}
         >{s.cta}</button>
       </div>
     </div>
-  );
-}
-
-/* ───────── 0. 약속 ───────── */
-function Pledge() {
-  return (
-    <>
-      <div className="ob-hero" aria-hidden="true">
-        <div className="ob-hero-logo"><Logo size={40} /><b>모아</b></div>
-        <svg viewBox="0 0 300 140" className="ob-hero-fork">
-          <line x1="16" y1="96" x2="284" y2="96" className="ob-zero" />
-          <path d="M16 52 C 90 52, 130 70, 170 60 S 240 40, 284 30" className="k" pathLength={1} />
-          <path d="M16 52 C 90 52, 130 70, 170 84 S 240 124, 284 124" className="b" pathLength={1} />
-          <circle cx="16" cy="52" r="6" className="o" />
-          <circle cx="284" cy="30" r="7" className="k-dot" />
-          <circle cx="284" cy="124" r="7" className="b-dot" />
-          <text x="276" y="20" textAnchor="end" className="t">입금 제때</text>
-          <text x="210" y="134" textAnchor="end" className="t">입금 늦음 · 부족</text>
-          <text x="16" y="40" className="t">오늘</text>
-          <text x="284" y="90" textAnchor="end" className="t">0원</text>
-        </svg>
-      </div>
-      <ul className="ob-trust">
-        <li><span className="ob-ic">14</span><span><b>다가오는 결제일 미리 보기</b><small>월세·카드값이 빠지는 날 결제계좌에 돈이 남는지, 입금이 늦어지면 어떤지 봐요.</small></span></li>
-        <li><span className="ob-ic">⑂</span><span><b>평행세계</b><small>사거나 참은 선택마다 두 세계가 갈라지고, 참은 돈은 가상 예금·적금·투자로 굴려 봐요.</small></span></li>
-        <li><span className="ob-ic">AI</span><span><b>숫자는 앱이, 정리는 AI가</b><small>결제 문자를 거래로 정리하고, 계산 결과를 쉬운 말로 풀어줘요.</small></span></li>
-      </ul>
-      <p className="ob-note">기록은 이 기기에만 남고, 은행·카드와 연결하지 않아요.</p>
-    </>
   );
 }
 
@@ -175,38 +134,7 @@ function PayDay({ demo }: { demo: Demo }) {
           <strong className="num">{bal < 0 ? `${fmt(bal)} 모자라요` : `${fmt(bal)} 남아요`}</strong>
         </div>
       </div>
-      <p className="ob-note">모아는 이런 상황을 결제일 7일·3일 전에 알려주고, 무엇을 바꾸면 되는지 선택지를 보여줘요. 추가 변동 지출이 없다고 둔 단순 예시예요.</p>
-    </>
-  );
-}
-
-/* ───────── 3. AI ───────── */
-const SAMPLE_SMS = '[Web발신]\n신한카드(1234)승인\n김*현님\n6,800원 일시불\n10/29 08:42\n메가커피 서울여대점\n누적 412,300원';
-
-function AiDemo() {
-  const masked = useMemo(() => maskText(SAMPLE_SMS).text, []);
-  const parsed = useMemo(() => exampleNow('parseSpend', { text: masked, today: todayKST() }).items[0], [masked]);
-  const METHOD: Record<string, string> = { credit: '신용카드', debit: '체크카드', transfer: '계좌이체', cash: '현금', atm: 'ATM' };
-  return (
-    <>
-      <div className="ob-split">
-        <div className="ob-split-k ai"><small>AI가 정리</small><b>결제 문자 → 날짜·금액·결제 수단</b></div>
-        <span aria-hidden="true">→</span>
-        <div className="ob-split-k"><small>앱이 계산</small><b>결제일 잔고 · 위험 등급</b></div>
-      </div>
-      <div className="ob-card ob-sms"><small>가린 뒤 AI에게 보내는 문장</small><pre>{masked}</pre></div>
-      {parsed && (
-        <div className="ob-card ob-ai ok">
-          <div className="ob-ai-head"><AiMark /><b>거래로 정리</b><span>확인 후 저장</span></div>
-          <dl className="ob-parsed">
-            <div><dt>가게</dt><dd>{parsed.name}</dd></div>
-            <div><dt>금액</dt><dd className="num">{fmt(parsed.amount)}</dd></div>
-            <div><dt>결제 수단</dt><dd>{parsed.method ? METHOD[parsed.method] : '확인 필요'}</dd></div>
-            <div><dt>날짜</dt><dd>{parsed.date ?? '확인 필요'}</dd></div>
-          </dl>
-        </div>
-      )}
-      <p className="ob-note">AI가 읽은 결과는 저장 전에 직접 확인해요. 같은 문자를 다시 붙여넣어도 한 번만 저장돼요.</p>
+      <p className="ob-note">모두 가상의 날짜와 금액이에요. 실제 결제계좌를 연결하지 않고도 입력한 일정으로 잔액을 계산할 수 있어요.</p>
     </>
   );
 }
@@ -243,13 +171,67 @@ function World({ itemId, setItemId }: { itemId: string; setItemId: (id: string) 
         </div>
         <ForkChart key={item.id} spend={fc.yearSpend} keep={fc.year.net} holdName="참은 나" />
       </div>
-      <p className="ob-note">참은 돈은 평행세계의 자유 저축으로 옮겨지고, 가상 예금·적금이나 모의투자로 굴려볼 수 있어요.</p>
+      <p className="ob-note">가상 투자에 쓴 금액은 현금에서 빠지고, 매도 체결 전까지는 생활비로 사용할 수 없어요.</p>
+    </>
+  );
+}
+
+/* ───────── 2. 소비 선택 분석 (가상 데이터로 화면 체험) ───────── */
+/**
+ * Onboarding never presents a rules fallback as a live LLM result.
+ * The example uses the same decision-coaching fallback available in the app,
+ * with synthetic spending observations and a calculation from futureCost.
+ */
+function AiDecisionDemo({ itemId }: { itemId: string }) {
+  const item = ITEMS.find((i) => i.id === itemId)!;
+  const category = item.id === 'latte' ? '카페' : item.id === 'buds' ? '쇼핑' : '식비';
+  const count = item.id === 'latte' ? 9 : item.id === 'buds' ? 1 : 4;
+  const usableNow = 120_000; // synthetic, explicitly labeled in the UI
+  const today = addDays(startOfMonth(todayKST()), 9);
+  const outcome = futureCost({
+    price: item.price,
+    frequency: item.freq,
+    today,
+    wallet: { cash: WORLD_MONTHLY_INCOME, fixedBills: WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
+  });
+  const explanation = exampleCoach({
+    item: item.name,
+    category,
+    price: item.price,
+    frequency: item.freq,
+    usableNow,
+    usableAfter: usableNow - item.price,
+    afterBills: usableNow - item.price,
+    yearGap: outcome.year.net,
+    categoryCount30: count,
+    categorySpentThisMonth: count * item.price,
+  });
+  return (
+    <>
+      <div className="ob-insight-summary">
+        <span className="ob-insight-overline">예시 사용자의 지난 30일</span>
+        <div className="ob-insight-row">
+          <span>{category} 지출</span>
+          <strong className="num">{count}회 · {fmt(count * item.price)}</strong>
+        </div>
+        <div className="ob-insight-row">
+          <span>남은 가상 소비 가능 금액</span>
+          <strong className="num">{fmt(usableNow)}</strong>
+        </div>
+      </div>
+      <div className="ob-card ob-insight-result">
+        <span className="ob-insight-overline">선택에 도움을 주는 분석 예시</span>
+        <h2>지금 {item.name}을 사면 어떨까요?</h2>
+        <p>{explanation.message}</p>
+        {explanation.tip && <div className="ob-insight-tip"><b>고려할 대안</b><span>{explanation.tip}</span></div>}
+      </div>
+      <p className="ob-note">가상의 지출 기록으로 만든 체험 화면이에요. 실제 개인별 예측·AI 기능은 입력된 자료와 이용 가능한 분석 방식에 따라 달라져요.</p>
     </>
   );
 }
 
 /* ───────── 4. 시작 ───────── */
-function StartPick({ start, setStart, agree, setAgree }: { start: 'demo' | 'mine'; setStart: (v: 'demo' | 'mine') => void; agree: boolean; setAgree: (v: boolean) => void }) {
+function StartPick({ start, setStart }: { start: 'demo' | 'mine'; setStart: (v: 'demo' | 'mine') => void }) {
   return (
     <>
       <div className="ob-start" role="radiogroup" aria-label="시작 방법">
@@ -263,13 +245,7 @@ function StartPick({ start, setStart, agree, setAgree }: { start: 'demo' | 'mine
           <small>결제계좌 잔액과 가장 가까운 필수결제 1건만 넣으면 바로 계산해요.</small>
         </button>
       </div>
-      {start === 'mine' && (
-        <label className="ob-agree">
-          <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-          <span>입력한 금액은 이 기기에만 저장되고, 은행 계좌와 연결하지 않는다는 걸 확인했어요.</span>
-        </label>
-      )}
-      <p className="ob-note">예시로 시작해도 더보기 › 결제계좌·일정 관리에서 언제든 내 정보로 바꿀 수 있어요.</p>
+      <p className="ob-note">예시를 선택하면 가상의 돈으로 체험해요. 내 금액을 입력하면 그 잔액을 평행세계 투자 지갑에도 반영해요.</p>
     </>
   );
 }
