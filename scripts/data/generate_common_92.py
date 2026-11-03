@@ -127,6 +127,13 @@ def build() -> None:
                          "salary_day": salary_day, "salary_krw": income, "rent_krw": rent,
                          "savings_goal_krw": saving, "missing_record_rate_assumption": missing})
         tx_no, choice_no, trade_no = 0, 0, 0
+        # Four guaranteed trading events per profile, including November and December.
+        trade_days = []
+        for offset in (12, 34, 62, 84):
+            candidate = START + timedelta(days=offset + index % 3)
+            while candidate.weekday() >= 5:
+                candidate += timedelta(days=1)
+            trade_days.append(candidate)
         for day in DATE_LIST:
             start_idx = len(all_user_tx)
             ds = day.isoformat()
@@ -201,7 +208,7 @@ def build() -> None:
                     "original_price_krw": price, "paid_krw": paid, "choice": action,
                     "saved_vs_buy_krw": price-paid, "stage": stage(day)})
 
-            if day.weekday() < 5 and (day-START).days in (10+index%3, 34+index%4, 49+index%3, 71+index%4):
+            if day in trade_days:
                 trade_no += 1
                 code = CODES[index%2]
                 side = "sell" if trade_no == 3 else "buy"
