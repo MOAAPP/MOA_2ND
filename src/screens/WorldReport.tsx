@@ -35,7 +35,7 @@ function shareCard(r: Report): Promise<Blob | null> {
   g.fillStyle = 'rgba(255,255,255,.85)'; g.font = font(600, 40);
   g.fillText(`선택 ${r.decisions}번 중 ${r.held}번 참거나 더 싸게`, 90, 1170);
   if (r.year.net > r.savedTotal) g.fillText(`1년 예금에 넣으면 ${r.year.net.toLocaleString('ko-KR')}원`, 90, 1235);
-  g.fillStyle = 'rgba(255,255,255,.5)'; g.font = font(500, 30); g.fillText('학습용 가상 계좌 기준', 90, 1300);
+  g.fillStyle = 'rgba(255,255,255,.5)'; g.font = font(500, 30); g.fillText('평행세계 가상 지갑 기준', 90, 1300);
   return new Promise((res) => c.toBlob(res, 'image/png'));
 }
 

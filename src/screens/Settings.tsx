@@ -72,7 +72,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
         </div>
       </section>
 
-      <p className="small muted" style={{ textAlign: 'center', margin: '20px 0 32px' }}>모아 · 학습용 가상 금융 서비스</p>
+      <p className="small muted" style={{ textAlign: 'center', margin: '20px 0 32px' }}>모아 · 결제일 예측과 평행세계</p>
 
       {reset && (
         <ConfirmSheet

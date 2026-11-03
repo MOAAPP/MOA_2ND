@@ -77,3 +77,36 @@ describe('runAiTask: 실패 사유를 구분해 돌려준다', () => {
     expect(aiStats().parseSpend.fail).toEqual({ invalid_output: 1, ungrounded: 1, no_json: 1, http_error: 1 });
   });
 });
+
+describe('FactChat 게이트웨이 (OpenAI 호환)', () => {
+  afterEach(() => { delete process.env.FACTCHAT_API_KEY; delete process.env.FACTCHAT_BASE_URL; delete process.env.FACTCHAT_MODEL; resetAiStats(); });
+
+  it('FACTCHAT_API_KEY가 있으면 게이트웨이 chat/completions로 Bearer 호출하고 choices에서 답을 읽는다', async () => {
+    process.env.FACTCHAT_API_KEY = 'fc_test';
+    process.env.ANTHROPIC_API_KEY = 'should-not-be-used';
+    const calls: { url: string; init: RequestInit }[] = [];
+    const good = JSON.stringify({ items: [{ date: '2026-11-02', amount: 12_000, name: '스타벅스', category: '카페', method: 'debit', confidence: 0.9 }], skipped: 0 });
+    const fetcher = (async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return new Response(JSON.stringify({ choices: [{ message: { content: good } }] }), { status: 200 });
+    }) as never;
+    const r = await runAiTask('parseSpend', sms, fetcher);
+    delete process.env.ANTHROPIC_API_KEY;
+    expect(r).toMatchObject({ ok: true, model: 'claude-sonnet-5' });
+    expect(calls[0].url).toBe('https://factchat-cloud.mindlogic.ai/v1/gateway/chat/completions');
+    expect((calls[0].init.headers as Record<string, string>).authorization).toBe('Bearer fc_test');
+    const body = JSON.parse(String(calls[0].init.body));
+    expect(body.messages[0].role).toBe('system');
+    expect(body.messages[1].content).toContain('[이름]'); // 원문 이름은 서버에서도 가린 뒤 보낸다
+  });
+
+  it('주소·모델은 환경변수로 바꿀 수 있고, 게이트웨이 오류는 http_error', async () => {
+    process.env.FACTCHAT_API_KEY = 'fc_test';
+    process.env.FACTCHAT_BASE_URL = 'https://swu.factchat.bot/v1/gateway/';
+    process.env.FACTCHAT_MODEL = 'gpt-5';
+    let url = '';
+    const r = await runAiTask('parseSpend', sms, (async (u: string) => { url = u; return new Response('{}', { status: 403 }); }) as never);
+    expect(url).toBe('https://swu.factchat.bot/v1/gateway/chat/completions');
+    expect(r).toMatchObject({ ok: false, reason: 'http_error' });
+  });
+});

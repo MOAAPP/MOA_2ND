@@ -27879,6 +27879,57 @@ var init_krx = __esm({
   }
 });
 
+// server/lib/llm.ts
+function llmProvider() {
+  if (process.env.FACTCHAT_API_KEY) return "factchat";
+  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
+  return null;
+}
+function llmModel() {
+  return llmProvider() === "factchat" ? process.env.FACTCHAT_MODEL || "claude-sonnet-5" : process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
+}
+async function llmComplete(req, fetcher = fetchWithTimeout) {
+  const provider = llmProvider();
+  if (!provider) return { ok: false, reason: "not_configured" };
+  const model = llmModel();
+  const timeout = req.timeoutMs ?? 2e4;
+  try {
+    if (provider === "factchat") {
+      const base2 = (process.env.FACTCHAT_BASE_URL || FACTCHAT_DEFAULT_BASE).replace(/\/+$/, "");
+      const content2 = req.image ? [{ type: "image_url", image_url: { url: `data:${req.image.mediaType};base64,${req.image.base64}` } }, { type: "text", text: req.user }] : req.user;
+      const res2 = await fetcher(`${base2}/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${process.env.FACTCHAT_API_KEY}` },
+        body: JSON.stringify({ model, max_tokens: req.maxTokens, messages: [{ role: "system", content: req.system }, { role: "user", content: content2 }] })
+      }, timeout);
+      if (!res2.ok) return { ok: false, reason: "http_error", status: res2.status };
+      const j2 = await res2.json();
+      const c = j2.choices?.[0]?.message?.content;
+      const text = typeof c === "string" ? c : Array.isArray(c) ? c.map((x) => x.text ?? "").join("") : "";
+      return { ok: true, text, model };
+    }
+    const content = req.image ? [{ type: "image", source: { type: "base64", media_type: req.image.mediaType, data: req.image.base64 } }, { type: "text", text: req.user }] : req.user;
+    const res = await fetcher("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model, max_tokens: req.maxTokens, system: req.system, messages: [{ role: "user", content }] })
+    }, timeout);
+    if (!res.ok) return { ok: false, reason: "http_error", status: res.status };
+    const j = await res.json();
+    return { ok: true, text: j.content?.find((x) => x.type === "text")?.text ?? "", model };
+  } catch {
+    return { ok: false, reason: "network" };
+  }
+}
+var FACTCHAT_DEFAULT_BASE;
+var init_llm = __esm({
+  "server/lib/llm.ts"() {
+    "use strict";
+    init_http();
+    FACTCHAT_DEFAULT_BASE = "https://factchat-cloud.mindlogic.ai/v1/gateway";
+  }
+});
+
 // shared/aiPrompts.ts
 function buildUserMessage(task, input) {
   return `\uC791\uC5C5: ${task}
@@ -28291,7 +28342,7 @@ __export(ai_exports, {
   sanitizeInput: () => sanitizeInput
 });
 function aiConfigured() {
-  return !!process.env.ANTHROPIC_API_KEY;
+  return llmProvider() !== null;
 }
 async function aiSummary(name, e, level) {
   if (!aiConfigured() || e.direction === "unknown") return null;
@@ -28303,24 +28354,15 @@ async function aiSummary(name, e, level) {
     `\uB3C5\uC790 \uC218\uC900: ${level === 1 ? "\uC8FC\uC2DD\uC774 \uCC98\uC74C\uC778 \uC0AC\uB78C(\uC804\uBB38\uC6A9\uC5B4 \uC5C6\uC774)" : level === 2 ? "\uAE30\uBCF8 \uAC1C\uB150\uC744 \uC544\uB294 \uC0AC\uB78C" : "\uC9C0\uD45C\uB97C \uC774\uD574\uD558\uB294 \uC0AC\uB78C"}.`,
     "\uD55C\uAD6D\uC5B4 \uC874\uB313\uB9D0(\uD574\uC694\uCCB4) 2~3\uBB38\uC7A5, 160\uC790 \uC774\uB0B4, \uB9C8\uD06C\uB2E4\uC6B4 \uC5C6\uC774."
   ].join("\n");
-  const user = JSON.stringify({ \uC885\uBAA9: name, \uB4F1\uB77D\uB960: e.pct, \uD655\uC778\uB41C\uC0AC\uC2E4: e.facts, \uD6C4\uBCF4\uC694\uC778: e.reasons.map((r) => `${r.label}(${r.strength}): ${r.detail}`), \uAE30\uC0AC\uC81C\uBAA9: e.newsUsed.map((n2) => n2.title), \uC6D0\uC778\uBD88\uBA85: e.unknown });
-  try {
-    const res = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL ?? "claude-haiku-5-5", max_tokens: 300, system, messages: [{ role: "user", content: user }] })
-    }, 15e3);
-    if (!res.ok) return null;
-    const j = await res.json();
-    const text = j.content?.find((c) => c.type === "text")?.text?.trim();
-    if (!text) return null;
-    const known = (e.facts.join(" ") + e.reasons.map((r) => r.detail).join(" ")).replace(/\s/g, "");
-    const pcts = text.match(/\d+(\.\d+)?%/g) ?? [];
-    if (pcts.some((p) => !known.includes(p))) return null;
-    return text.slice(0, 220);
-  } catch {
-    return null;
-  }
+  const user = JSON.stringify({ \uC885\uBAA9: name, \uB4F1\uB77D\uB960: e.pct, \uD655\uC778\uB41C\uC0AC\uC2E4: e.facts, \uD6C4\uBCF4\uC694\uC778: e.reasons.map((r2) => `${r2.label}(${r2.strength}): ${r2.detail}`), \uAE30\uC0AC\uC81C\uBAA9: e.newsUsed.map((n2) => n2.title), \uC6D0\uC778\uBD88\uBA85: e.unknown });
+  const r = await llmComplete({ system, user, maxTokens: 300, timeoutMs: 15e3 });
+  if (!r.ok) return null;
+  const text = r.text.trim();
+  if (!text) return null;
+  const known = (e.facts.join(" ") + e.reasons.map((x) => x.detail).join(" ")).replace(/\s/g, "");
+  const pcts = text.match(/\d+(\.\d+)?%/g) ?? [];
+  if (pcts.some((p) => !known.includes(p))) return null;
+  return text.slice(0, 220);
 }
 function sanitizeInput(task, input) {
   if ((task === "parseSpend" || task === "parseSchedule") && input && typeof input === "object" && typeof input.text === "string") {
@@ -28349,49 +28391,41 @@ function resetAiStats() {
 }
 async function runAiTask(task, input, fetcher = fetchWithTimeout) {
   const t0 = Date.now();
-  const done = (r) => {
-    record2(task, r);
-    return r;
+  const done = (r2) => {
+    record2(task, r2);
+    return r2;
   };
   if (!aiConfigured()) return done({ ok: false, reason: "not_configured", ms: 0 });
   const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);
+  const r = await llmComplete({ system: p.system, user: buildUserMessage(task, input), maxTokens: p.maxTokens }, fetcher);
+  if (!r.ok) return done({ ok: false, reason: r.reason === "network" ? "network" : "http_error", ms: Date.now() - t0 });
+  const text = r.text;
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
+  let raw;
   try {
-    const res = await fetcher("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: aiModel(), max_tokens: p.maxTokens, system: p.system, messages: [{ role: "user", content: buildUserMessage(task, input) }] })
-    }, 2e4);
-    if (!res.ok) return done({ ok: false, reason: "http_error", ms: Date.now() - t0 });
-    const j = await res.json();
-    const text = j.content?.find((c) => c.type === "text")?.text ?? "";
-    const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
-    let raw;
-    try {
-      raw = JSON.parse(m[0]);
-    } catch {
-      return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
-    }
-    const checked = checkAiOutput(task, raw);
-    if (!checked.ok) return done({ ok: false, reason: "invalid_output", ms: Date.now() - t0, issues: checked.issues });
-    if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: "ungrounded", ms: Date.now() - t0 });
-    return done({ ok: true, data: checked.data, model: aiModel(), ms: Date.now() - t0 });
+    raw = JSON.parse(m[0]);
   } catch {
-    return done({ ok: false, reason: "network", ms: Date.now() - t0 });
+    return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
   }
+  const checked = checkAiOutput(task, raw);
+  if (!checked.ok) return done({ ok: false, reason: "invalid_output", ms: Date.now() - t0, issues: checked.issues });
+  if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: "ungrounded", ms: Date.now() - t0 });
+  return done({ ok: true, data: checked.data, model: r.model, ms: Date.now() - t0 });
 }
 var AI_TASKS, stats, aiModel;
 var init_ai = __esm({
   "server/lib/ai.ts"() {
     "use strict";
     init_http();
+    init_llm();
     init_aiPrompts();
     init_mask();
     init_aiSchemas();
     AI_TASKS = Object.keys(AI_PROMPTS);
     stats = /* @__PURE__ */ new Map();
-    aiModel = () => process.env.ANTHROPIC_MODEL ?? "claude-haiku-5-5";
+    aiModel = () => llmModel();
   }
 });
 
@@ -53995,23 +54029,9 @@ async function ocrWithClaude(image, mediaType) {
     "candidates: \uC0AC\uC9C4\uC5D0 \uBCF4\uC774\uB294 \uB2E4\uB978 \uAE08\uC561 \uD6C4\uBCF4 \uCD5C\uB300 4\uAC1C(\uD070 \uC21C).",
     "\uC77D\uC744 \uC218 \uC5C6\uC73C\uBA74 null. \uC0AC\uC9C4\uC5D0 \uC5C6\uB294 \uC22B\uC790\uB97C \uB9CC\uB4E4\uC9C0 \uB9C8\uC138\uC694."
   ].join("\n");
-  const res = await fetchWithTimeout(
-    "https://api.anthropic.com/v1/messages",
-    {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({
-        model: process.env.ANTHROPIC_MODEL ?? "claude-haiku-5-5",
-        max_tokens: 300,
-        system,
-        messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: image } }, { type: "text", text: "\uC774 \uC0AC\uC9C4\uC758 \uAD6C\uB9E4 \uAE08\uC561\uACFC \uC0C1\uD488\uBA85\uC744 \uC77D\uC5B4\uC8FC\uC138\uC694." }] }]
-      })
-    },
-    2e4
-  );
-  if (!res.ok) throw new ApiError(502, "ocr_failed", "\uC0AC\uC9C4\uC744 \uC77D\uC9C0 \uBABB\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.", true);
-  const j = await res.json();
-  const text = j.content?.find((c) => c.type === "text")?.text ?? "";
+  const r = await llmComplete({ system, user: "\uC774 \uC0AC\uC9C4\uC758 \uAD6C\uB9E4 \uAE08\uC561\uACFC \uC0C1\uD488\uBA85\uC744 \uC77D\uC5B4\uC8FC\uC138\uC694.", image: { mediaType, base64: image }, maxTokens: 300 });
+  if (!r.ok) throw new ApiError(502, "ocr_failed", "\uC0AC\uC9C4\uC744 \uC77D\uC9C0 \uBABB\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.", true);
+  const text = r.text;
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) throw new ApiError(502, "ocr_failed", "\uC0AC\uC9C4\uC5D0\uC11C \uAE08\uC561\uC744 \uCC3E\uC9C0 \uBABB\uD588\uC5B4\uC694.", true);
   const out = OcrOut.parse(JSON.parse(m[0]));
@@ -54080,6 +54100,7 @@ var init_purchase = __esm({
     import_express = __toESM(require_express2(), 1);
     init_zod();
     init_ai();
+    init_llm();
     init_http();
     init_http();
     init_rateLimit();

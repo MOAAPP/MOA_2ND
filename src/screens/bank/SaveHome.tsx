@@ -93,7 +93,7 @@ export function SaveHome() {
 
   return (
     <div className="page t-page b-save">
-      <TopHeader title="모으기" />
+      <TopHeader title="모으기" sub="참은 돈을 예금·적금에 넣고 이자가 붙는 걸 봐요" />
 
       <section className="t-card b-hero">
         <span className="t-label">모은 돈</span>
@@ -179,7 +179,7 @@ export function SaveHome() {
         <p className="t-note">다음 날짜: {kDate(addDays(today, 30))} (+1달)</p>
       </section>
 
-      <p className="t-foot">모든 상품은 학습용 가상 상품이에요. 금리·세금(15.4%)·중도해지 규칙은 실제 은행 방식을 단순하게 따랐고, 실제 금융사와 연결되지 않아요.</p>
+      <p className="t-foot">모든 상품은 평행세계 가상 상품이에요. 금리·세금(15.4%)·중도해지 규칙은 실제 은행 방식을 단순하게 따랐고, 실제 금융사와 연결되지 않아요.</p>
       {freeOpen && <FreeSavingsSheet onClose={() => setFreeOpen(false)} />}
     </div>
   );

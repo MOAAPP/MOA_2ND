@@ -191,6 +191,6 @@ export function WorldInvestment() {
       </section>;})}
     {message&&<div className="v7-confirmation" role="status">{message}</div>}
     <div className="v7-invest-footer"><button onClick={()=>{nav.pop();nav.setTab('invest')}}>1,000만 원 모의투자로 더 연습하기 →</button><button onClick={()=>{nav.reset();nav.setTab('learn')}}>ETF가 뭔지 배우기 →</button><button className="reset" onClick={()=>act({type:'reset'},'가상 생활비를 처음 상태로 되돌렸어요.')}>실험 처음부터 다시 시작</button></div>
-    <p className="v7-disclaimer">실제 주문이 아닌 학습용 연습이에요. 가격은 시세 제공처의 최근 가격이고, 장이 닫혀 있으면 마지막 가격으로 계산해요. 수수료·세금은 빼고 계산해요.</p>
+    <p className="v7-disclaimer">실제 주문이 아닌 모의투자예요. 가격은 시세 제공처의 최근 가격이고, 장이 닫혀 있으면 마지막 가격으로 계산해요. 수수료·세금은 빼고 계산해요.</p>
   </div>;
 }

@@ -89,7 +89,7 @@ export function ProductDetail({ id }: { id: string }) {
         </ul>
       </section>
 
-      <p className="t-foot">학습용 가상 상품이에요. 실제 금융사·상품과 관계없어요.</p>
+      <p className="t-foot">평행세계 가상 상품이에요. 실제 금융사·상품과 관계없어요.</p>
       <CtaBar>
         <button className="t-btn primary" style={{ marginTop: 0 }} onClick={() => nav.push({ name: 'join', id: p.id })}>가입하기</button>
       </CtaBar>

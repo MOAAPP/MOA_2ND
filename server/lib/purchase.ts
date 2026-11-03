@@ -1,6 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import { aiConfigured } from './ai';
+import { llmComplete } from './llm';
 import { ApiError, methodNotAllowed, route } from './http';
 import { fetchWithTimeout } from './http';
 import { rateLimit } from './rateLimit';
@@ -34,23 +35,9 @@ export async function ocrWithClaude(image: string, mediaType: string) {
     'candidates: 사진에 보이는 다른 금액 후보 최대 4개(큰 순).',
     '읽을 수 없으면 null. 사진에 없는 숫자를 만들지 마세요.',
   ].join('\n');
-  const res = await fetchWithTimeout(
-    'https://api.anthropic.com/v1/messages',
-    {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: process.env.ANTHROPIC_MODEL ?? 'claude-haiku-5-5',
-        max_tokens: 300,
-        system,
-        messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mediaType, data: image } }, { type: 'text', text: '이 사진의 구매 금액과 상품명을 읽어주세요.' }] }],
-      }),
-    },
-    20000,
-  );
-  if (!res.ok) throw new ApiError(502, 'ocr_failed', '사진을 읽지 못했어요. 잠시 후 다시 시도해 주세요.', true);
-  const j = (await res.json()) as { content?: { type: string; text?: string }[] };
-  const text = j.content?.find((c) => c.type === 'text')?.text ?? '';
+  const r = await llmComplete({ system, user: '이 사진의 구매 금액과 상품명을 읽어주세요.', image: { mediaType, base64: image }, maxTokens: 300 });
+  if (!r.ok) throw new ApiError(502, 'ocr_failed', '사진을 읽지 못했어요. 잠시 후 다시 시도해 주세요.', true);
+  const text = r.text;
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) throw new ApiError(502, 'ocr_failed', '사진에서 금액을 찾지 못했어요.', true);
   const out = OcrOut.parse(JSON.parse(m[0]));

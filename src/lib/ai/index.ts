@@ -1,7 +1,8 @@
 /**
  * 모아 AI 진입점. 화면은 runAi / useAi 만 쓴다.
- * - 기본: 예시 응답(example.ts). 네트워크 없이 내 데이터로 문장을 만든다.
- * - VITE_AI_MODE=live 이면 /api/ai/:task 로 실제 모델을 부르고, 실패하면 예시 응답으로 돌아온다.
+ * - 기본(auto): 처음 한 번 /api/health 로 서버에 AI 키(FactChat 등)가 있는지 보고, 있으면 /api/ai/:task 로 실제 모델을 부른다.
+ *   키가 없거나 호출이 실패하면 예시 응답(example.ts)으로 돌아오고, 결과에 source·fallback을 남긴다.
+ * - VITE_AI_MODE=example 이면 항상 예시 응답, live 이면 확인 없이 항상 서버를 부른다.
  * 작업 정의·프롬프트: shared/aiPrompts.ts · 문서: docs/AI.md
  */
 import { useEffect, useRef, useState } from 'react';
@@ -30,7 +31,22 @@ const EXAMPLE: { [T in AiTask]: (i: AiInput<T>) => AiOutput<T> } = {
 };
 
 const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
-export const AI_MODE: AiSource = env.VITE_AI_MODE === 'live' ? 'live' : 'example';
+const MODE: 'auto' | 'live' | 'example' = env.VITE_AI_MODE === 'live' ? 'live' : env.VITE_AI_MODE === 'example' ? 'example' : 'auto';
+/** 화면 첫 표시용 기본값 (확인 전에는 예시로 그린다) */
+export const AI_MODE: AiSource = MODE === 'live' ? 'live' : 'example';
+
+let liveCheck: Promise<boolean> | null = null;
+/** 서버에 실제 AI가 설정돼 있는지 (세션당 한 번만 확인). 테스트 환경처럼 fetch가 없으면 false. */
+export function liveAvailable(): Promise<boolean> {
+  if (MODE === 'example') return Promise.resolve(false);
+  if (MODE === 'live') return Promise.resolve(true);
+  if (!liveCheck) {
+    liveCheck = typeof fetch === 'function' && typeof window !== 'undefined'
+      ? fetch('/api/health').then((r) => (r.ok ? r.json() : null)).then((j: { ai?: boolean } | null) => !!j?.ai).catch(() => false)
+      : Promise.resolve(false);
+  }
+  return liveCheck;
+}
 
 /** 예시 응답도 모델처럼 잠깐 생각하는 시간을 둔다(화면 흐름을 실제와 같게). 테스트에서는 0. */
 let exampleDelay: (task: AiTask) => number = (task) => (task === 'categorize' ? 120 : task === 'ask' ? 700 : 450);
@@ -41,7 +57,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function runAi<T extends AiTask>(task: T, input: AiInput<T>): Promise<AiResult<T>> {
   const t0 = Date.now();
   let fallback: string | undefined;
-  if (AI_MODE === 'live') {
+  if (await liveAvailable()) {
     try {
       const res = await fetch(`/api/ai/${task}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ input }) });
       const j = (await res.json().catch(() => ({}))) as { data?: AiOutput<T>; meta?: { model?: string }; error?: { code?: string } | string; code?: string };

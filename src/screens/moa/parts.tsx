@@ -100,20 +100,22 @@ export function ShortfallCard() {
   const [alerts, setAlerts] = useState(false);
   const unread = moa.alerts.filter((a) => !a.read).length;
   const w = report.worst;
-  const steps = useMemo(() => [
-    { done: !!moa.anchor, label: '잔액' },
-    { done: moa.schedule.some((s) => s.direction === 'out'), label: '필수결제' },
-    { done: moa.cards.some((c) => c.kind === 'credit' && c.payDay), label: '카드 결제일' },
-    { done: moa.schedule.some((s) => s.direction === 'in'), label: '입금 일정' },
-    { done: moa.txns.length > 0, label: '결제 문자' },
-  ], [moa]);
-  const scope = moa.cards.some((c) => c.kind === 'credit' && c.payDay) ? '카드값까지 계산해요' : '등록한 일정으로 계산해요';
+
+  // 지금 할 일은 하나만: 기록 신뢰도 문제 → 빠진 설정 순으로
+  const todo = useMemo(() => {
+    if (report.reliability.level !== 'enough' && report.reliability.reasons.length) return { text: report.reliability.reasons[0].text, cta: '잔액 다시 넣기', go: () => nav.push({ name: 'shortfall' }) };
+    if (!moa.schedule.some((x) => x.direction === 'out')) return { text: '월세·통신비 같은 필수결제를 등록하면 결제일을 봐드려요', cta: '등록하기', go: () => nav.push({ name: 'moaSetup' }) };
+    if (!moa.cards.some((c) => c.kind === 'credit' && c.payDay)) return { text: '신용카드 결제일을 넣으면 카드값까지 계산해요', cta: '넣기', go: () => nav.push({ name: 'moaSetup' }) };
+    if (!moa.schedule.some((x) => x.direction === 'in')) return { text: '월급·알바비 날짜를 넣으면 입금이 늦어질 때도 봐드려요', cta: '넣기', go: () => nav.push({ name: 'moaSetup' }) };
+    return null;
+  }, [report.reliability, moa, nav]);
 
   if (!report.hasAnchor) {
     return (
       <section className="t-card mo-home">
-        <span className="t-label">다가오는 필수결제</span>
-        <p className="mo-home-title">결제계좌 잔액부터 알려주세요</p>
+        <div className="h-tag-row"><span className="h-tag real">내 결제계좌</span></div>
+        <p className="mo-home-title">다음 결제일에 통장에 돈이 충분할지 봐드릴게요</p>
+        <small className="mo-home-sub">결제계좌 잔액과 가장 가까운 필수결제 1건만 넣으면 돼요.</small>
         <button className="t-btn primary" onClick={() => nav.push({ name: 'moaSetup' })}>1분 설정하기</button>
       </section>
     );
@@ -121,25 +123,24 @@ export function ShortfallCard() {
   const s = w ? paymentSentence(w, report.delayDays) : null;
   return (
     <section className={`t-card mo-home ${w ? `g-${w.grade}` : 'g-ok'}`}>
-      <div className="mo-home-top">
-        <span className="t-label">앞으로 14일 필수결제</span>
+      <div className="h-tag-row">
+        <span className="h-tag real">내 결제계좌 · 앞으로 14일</span>
         <button className="mo-bell" onClick={() => setAlerts(true)} aria-label={`알림 ${unread}개`}>알림{unread > 0 && <b>{unread}</b>}</button>
       </div>
-      <button className="mo-home-main" onClick={() => nav.push({ name: 'shortfall' })}>
-        {w ? <GradeBadge grade={w.grade} /> : <span className="mo-grade g-ok">결제 일정 없음</span>}
-        <strong>{s ? s.title : '14일 안에 등록된 필수결제가 없어요'}</strong>
-        <small>{s ? s.body : '월세·카드값처럼 꼭 나가는 돈을 등록하면 결제일 잔고를 미리 봐드려요.'}</small>
-        <em>근거 보기 <IconChevron /></em>
-      </button>
-      <p className="mo-scope">
-        결제계좌 잔액 {fmt(report.anchorBalance ?? 0)} 기준이에요. 연습용 가상 지갑과는 따로 계산해요.{' '}
-        <button className="mo-link" onClick={() => nav.push({ name: 'moaSetup' })}>잔액 고치기</button>
-      </p>
-      <ReliabilityRow value={report.reliability} onFix={() => nav.push({ name: 'shortfall' })} />
-      <div className="mo-steps" aria-label="예측 범위">
-        {steps.map((st) => <span key={st.label} className={st.done ? 'on' : ''}>{st.label}</span>)}
+      {w ? <GradeBadge grade={w.grade} /> : <span className="mo-grade g-ok">결제 일정 없음</span>}
+      <strong className="mo-home-title">{s ? s.title : '14일 안에 등록된 필수결제가 없어요'}</strong>
+      {s && <small className="mo-home-sub">{s.body}</small>}
+      <div className="mo-home-actions">
+        <button className="t-btn primary" onClick={() => nav.push({ name: 'shortfall' })}>결제일 자세히 보기</button>
+        <button className="t-btn" onClick={() => nav.push({ name: 'choose' })}>이거 사도 될까?</button>
       </div>
-      <p className="mo-scope">{scope} · {report.forecast.ready.message}</p>
+      {todo && (
+        <div className="mo-todo">
+          <span>{todo.text}</span>
+          <button className="mo-link" onClick={todo.go}>{todo.cta}</button>
+        </div>
+      )}
+      <p className="mo-scope">결제계좌 잔액 {fmt(report.anchorBalance ?? 0)} 기준{report.anchorAt ? ` · ${formatKDateTime(report.anchorAt)} 확인` : ''}</p>
       {alerts && <AlertsSheet list={moa.alerts} onClose={() => setAlerts(false)} />}
     </section>
   );
@@ -191,6 +192,20 @@ export function SavingsLinkCard({ saved }: { saved: number }) {
     <section className="t-card mo-save">
       <h2>참은 돈 {fmt(saved)}</h2>
       <p>실제로 옮기고 싶다면 직접 저축하세요. 만 19~34세라면 정부 기여금이 붙는 청년미래적금도 있어요. 모아는 돈을 옮기지 않아요.</p>
+    </section>
+  );
+}
+
+/** 필요할 때만 펼쳐 보는 묶음. 화면에는 제목 한 줄만 보이고, 누르면 그 자리에서 열린다(다른 화면으로 넘어가지 않음). */
+export function Fold({ title, hint, children, defaultOpen = false }: { title: string; hint?: string; children: ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className={`t-card mo-fold${open ? ' open' : ''}`}>
+      <button type="button" className="mo-fold-head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <span><b>{title}</b>{hint && <small>{hint}</small>}</span>
+        <IconChevron />
+      </button>
+      {open && <div className="mo-fold-body">{children}</div>}
     </section>
   );
 }
