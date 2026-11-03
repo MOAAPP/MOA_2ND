@@ -101,7 +101,7 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
   return (
     <>
       {job.notice && <p className="xs muted" style={{ margin: '8px 4px 0' }}>{job.notice}</p>}
-      {job.headline && !job.images.length && <p className="bold" style={{ fontSize: 16, margin: '10px 4px 0' }}>{job.headline}</p>
+      {job.headline && !job.images.length && <p className="bold" style={{ fontSize: 16, margin: '10px 4px 0' }}>{job.headline}</p>}
       {(job.status === 'generating' || job.status === 'sending') && <div className="card" style={{ marginTop: 12 }}><Spinner label={STAGE_LABEL[job.stage ?? 'data']} /></div>}
       {job.status === 'failed' && (
         <div style={{ marginTop: 12 }}>
