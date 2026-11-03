@@ -44,7 +44,7 @@ function useDemo() {
 }
 type Demo = ReturnType<typeof useDemo>;
 
-export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () => void }) {
+export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: () => void; onDemo: () => void; existingData?: boolean }) {
   const [step, setStep] = useState(0);
   const [start, setStart] = useState<'demo' | 'mine'>('demo');
   const demo = useDemo();
@@ -80,8 +80,8 @@ export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () 
       kicker: '이제 시작해요',
       title: <>내 돈으로 시작할까요?</>,
       sub: '로그인이나 은행 연결은 필요 없어요. 직접 입력하거나 예시로 둘러볼 수 있어요.',
-      body: <StartPick start={start} setStart={setStart} />,
-      cta: start === 'demo' ? '예시로 바로 둘러보기' : '내 결제계좌 입력하기',
+      body: <StartPick start={start} setStart={setStart} existingData={existingData} />,
+      cta: start === 'demo' ? (existingData ? '기존 기록으로 돌아가기' : '예시로 바로 둘러보기') : '내 결제계좌 입력하기',
     },
   ];
   const s = screens[step];
@@ -231,21 +231,21 @@ function AiDecisionDemo({ itemId }: { itemId: string }) {
 }
 
 /* ───────── 4. 시작 ───────── */
-function StartPick({ start, setStart }: { start: 'demo' | 'mine'; setStart: (v: 'demo' | 'mine') => void }) {
+function StartPick({ start, setStart, existingData }: { start: 'demo' | 'mine'; setStart: (v: 'demo' | 'mine') => void; existingData: boolean }) {
   return (
     <>
       <div className="ob-start" role="radiogroup" aria-label="시작 방법">
         <button type="button" role="radio" aria-checked={start === 'demo'} className={start === 'demo' ? 'on' : ''} onClick={() => setStart('demo')}>
           <span className="tag">추천</span>
-          <b>예시로 먼저 둘러보기</b>
-          <small>대학생 한 명의 결제계좌·카드·일정과 3개월 기록이 채워진 상태로 시작해요.</small>
+          <b>{existingData ? '지금 내 기록으로 돌아가기' : '예시로 먼저 둘러보기'}</b>
+          <small>{existingData ? '이미 저장한 기록과 평행세계 가상 자산은 그대로 유지해요.' : '가상의 생활비와 결제 일정이 채워진 상태로 앱을 체험해요.'}</small>
         </button>
         <button type="button" role="radio" aria-checked={start === 'mine'} className={start === 'mine' ? 'on' : ''} onClick={() => setStart('mine')}>
-          <b>내 결제계좌로 시작하기</b>
-          <small>결제계좌 잔액과 가장 가까운 필수결제 1건만 넣으면 바로 계산해요.</small>
+          <b>{existingData ? '내 결제계좌 설정 다시 보기' : '내 결제계좌로 시작하기'}</b>
+          <small>{existingData ? '기존 기록을 지우지 않고 결제계좌 잔액과 예정 결제를 확인해요.' : '잔액과 가장 가까운 필수결제 한 건만 입력하면 바로 시작해요.'}</small>
         </button>
       </div>
-      <p className="ob-note">예시를 선택하면 가상의 돈으로 체험해요. 내 금액을 입력하면 그 잔액을 평행세계 투자 지갑에도 반영해요.</p>
+      <p className="ob-note">{existingData ? '소개를 다시 보는 동안 기존 데이터는 지우지 않아요.' : '예시는 가상 돈으로 시작해요. 내 정보를 처음 입력하면 그 잔액을 평행세계 투자 지갑에도 반영해요.'}</p>
     </>
   );
 }
