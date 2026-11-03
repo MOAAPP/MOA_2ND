@@ -1,3 +1,5 @@
+> **결제일 부족 탐지 MVP (2026-10-31):** 기획서 기준 핵심 기능을 붙였습니다. 결제계좌 기준 현금흐름 엔진(결제 수단별 출금 시점·카드 청구·입금 지연), 네 시나리오 등급과 D-7·D-3 알림, 문자 마스킹 후 AI 추출, 1분 설정·홈 부족 카드·살까 말까. 대응표: [docs/MOA_ENGINE.md](docs/MOA_ENGINE.md) · 검증: [docs/eval/RESULTS.md](docs/eval/RESULTS.md) · ML 비교: [ml/README.md](ml/README.md)
+
 > **v16 N7 (2026-10-29):** 사기 전 결정 플로우 — 금액·빈도를 넣으면 이번 달 쓸 수 있는 돈, 다음 결제일 잔고, 1년 뒤 두 세계 차이(가상 예금·적금 세후)를 보여주고, 참은 돈을 자유 저축 → 예금·적금으로 이어줍니다. 계산: `src/lib/futureCost.ts`
 
 > **v16 모아 (2026-10-29):** 참은 돈을 가상 예금·적금으로 굴리는 **모으기 탭**을 추가했습니다(상품 6종, 4단계 가입, 계좌 상세·거래내역 필터, 세후 계산). 배포: https://parallel-bank.vercel.app · 기획서 [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) · 아침 요약 [.night/MORNING_SUMMARY.md](.night/MORNING_SUMMARY.md)

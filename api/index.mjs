@@ -27886,8 +27886,30 @@ function buildUserMessage(task, input) {
 \uC785\uB825:
 ${JSON.stringify(input)}`;
 }
+function amountsInText(text) {
+  const out = /* @__PURE__ */ new Set();
+  for (const m of text.matchAll(/\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?/g)) {
+    const raw = m[0];
+    const n2 = Number(raw.replace(/,/g, ""));
+    if (!Number.isFinite(n2)) continue;
+    out.add(Math.round(n2));
+    const after = text.slice((m.index ?? 0) + raw.length, (m.index ?? 0) + raw.length + 2);
+    if (/^\s?만/.test(after)) out.add(Math.round(n2 * 1e4));
+    if (/^\s?천/.test(after)) out.add(Math.round(n2 * 1e3));
+  }
+  for (const m of text.matchAll(/(\d+)\s?만\s?(\d+)\s?천/g)) out.add(Number(m[1]) * 1e4 + Number(m[2]) * 1e3);
+  return out;
+}
+function extractionGrounded(task, input, output) {
+  if (task !== "parseSpend" && task !== "parseSchedule") return true;
+  const text = input?.text ?? "";
+  const known = amountsInText(text);
+  const items = output?.items;
+  if (!Array.isArray(items)) return false;
+  return items.every((it) => (it.amount == null || known.has(Math.round(it.amount))) && (it.balanceAfter == null || known.has(Math.round(it.balanceAfter))));
+}
 function numbersGrounded(task, input, output) {
-  if (task === "parseSpend" || task === "categorize") return true;
+  if (task === "parseSpend" || task === "parseSchedule" || task === "categorize") return true;
   const known = /* @__PURE__ */ new Set();
   const walk = (v) => {
     if (typeof v === "number") {
@@ -27940,9 +27962,27 @@ var init_aiPrompts = __esm({
       },
       parseSpend: {
         system: `${COMMON}
-\uC0AC\uC6A9\uC790\uAC00 \uBD99\uC5EC\uB123\uC740 \uCE74\uB4DC \uC2B9\uC778 \uBB38\uC790, \uC601\uC218\uC99D, \uBA54\uBAA8\uC5D0\uC11C \uC9C0\uCD9C\uC744 \uCC3E\uC544 JSON\uC73C\uB85C \uBC14\uAFD4\uC694. \uC2B9\uC778 \uCDE8\uC18C\xB7\uC785\uAE08\uC740 \uBE7C\uC694. \uB0A0\uC9DC\uAC00 \uC5C6\uC73C\uBA74 today, \uC5F0\uB3C4\uAC00 \uC5C6\uC73C\uBA74 today\uC758 \uC5F0\uB3C4. category\uB294 \uC2DD\uBE44\xB7\uCE74\uD398\xB7\uC1FC\uD551\xB7\uD328\uC158\xB7\uAD50\uD1B5\xB7\uBB38\uD654\xB7\uC5EC\uAC00\xB7\uAD6C\uB3C5\xB7\uC0DD\uD65C\xB7\uACBD\uC870\uC0AC\xB7\uAE30\uD0C0 \uC911 \uD558\uB098. confidence\uB294 0~1.`,
-        schema: '{"items":[{"date":"YYYY-MM-DD","amount":number,"name":string,"category":string,"confidence":number}],"skipped":number}',
-        maxTokens: 600
+\uC0AC\uC6A9\uC790\uAC00 \uBD99\uC5EC\uB123\uC740 \uCE74\uB4DC\xB7\uC740\uD589 \uBB38\uC790, \uC601\uC218\uC99D, \uBA54\uBAA8\uC5D0\uC11C \uAC70\uB798\uB97C \uCC3E\uC544 JSON\uC73C\uB85C \uBC14\uAFD4\uC694. \uAC1C\uC778\uC815\uBCF4\uB294 \uC774\uBBF8 [\uC774\uB984] [\uACC4\uC88C\uBC88\uD638] \uAC19\uC740 \uD45C\uC2DC\uB85C \uAC00\uB824\uC838 \uC788\uC5B4\uC694. \uAC00\uB824\uC9C4 \uBD80\uBD84\uC744 \uCD94\uCE21\uD558\uC9C0 \uC54A\uC544\uC694.
+- \uAE00\uC5D0 \uC5C6\uB294 \uAC12\uC740 \uBC18\uB4DC\uC2DC null\uB85C \uB46C\uC694. \uB0A0\uC9DC\uAC00 \uC5C6\uC73C\uBA74 date\uB294 null, \uC2DC\uAC01\uC774 \uC5C6\uC73C\uBA74 time\uC740 null. \uBE48\uCE78\uC744 \uADF8\uB7F4\uB4EF\uD558\uAC8C \uCC44\uC6B0\uC9C0 \uC54A\uC544\uC694.
+- \uC5F0\uB3C4\uAC00 \uC5C6\uB294 \uB0A0\uC9DC\uB294 today\uC758 \uC5F0\uB3C4\uB85C \uC4F0\uB418, today\uBCF4\uB2E4 \uBBF8\uB798\uAC00 \uB418\uBA74 \uC791\uB144\uC73C\uB85C \uBD10\uC694.
+- method: \uCCB4\uD06C\uCE74\uB4DC debit, \uC2E0\uC6A9\uCE74\uB4DC(\uC77C\uC2DC\uBD88\xB7\uD560\uBD80) credit, \uACC4\uC88C\uC774\uCCB4\xB7\uC790\uB3D9\uC774\uCCB4\xB7\uCD9C\uAE08 transfer, \uD604\uAE08 cash, ATM \uC778\uCD9C atm. \uAE00\uB85C \uC54C \uC218 \uC5C6\uC73C\uBA74 null.
+- kind: \uC18C\uBE44 spend, \uC785\uAE08 income, \uCE74\uB4DC \uB300\uAE08 \uCD9C\uAE08 card_payment, \uB0B4 \uACC4\uC88C\uB07C\uB9AC \uC774\uCCB4 transfer_self, \uC801\uAE08 \uB0A9\uC785 saving, \uC2B9\uC778\uCDE8\uC18C\xB7\uD658\uBD88 refund.
+- balanceAfter: '\uC794\uC561'\uC73C\uB85C \uCC0D\uD78C \uAC70\uB798 \uD6C4 \uC794\uC561. '\uB204\uC801'\xB7'\uD55C\uB3C4'\uB294 \uC794\uC561\uC774 \uC544\uB2C8\uC5D0\uC694.
+- issuer: \uCE74\uB4DC\uC0AC\xB7\uC740\uD589 \uC774\uB984\uB9CC(\uBC88\uD638 \uC5C6\uC774). installments: \uD560\uBD80 \uAC1C\uC6D4 \uC218, \uC77C\uC2DC\uBD88\uC774\uBA74 null.
+- essential: \uC6D4\uC138\xB7\uAD00\uB9AC\uBE44\xB7\uD1B5\uC2E0\uBE44\xB7\uACF5\uACFC\uAE08\xB7\uBCF4\uD5D8\uB8CC\xB7\uD559\uC6D0\uBE44\uCC98\uB7FC \uAF2D \uB0B4\uC57C \uD558\uB294 \uB3C8\uC774\uBA74 true.
+- category\uB294 \uC2DD\uBE44\xB7\uCE74\uD398\xB7\uC1FC\uD551\xB7\uD328\uC158\xB7\uAD50\uD1B5\xB7\uBB38\uD654\xB7\uC5EC\uAC00\xB7\uAD6C\uB3C5\xB7\uC0DD\uD65C\xB7\uACBD\uC870\uC0AC\xB7\uAE30\uD0C0 \uC911 \uD558\uB098. confidence\uB294 0~1.`,
+        schema: '{"items":[{"date":"YYYY-MM-DD"|null,"time":"HH:MM"|null,"amount":number,"name":string,"category":string,"method":"debit"|"credit"|"transfer"|"cash"|"atm"|null,"kind":"spend"|"income"|"card_payment"|"transfer_self"|"saving"|"refund","issuer":string|null,"installments":number|null,"balanceAfter":number|null,"essential":boolean,"confidence":number}],"skipped":number}',
+        maxTokens: 900
+      },
+      parseSchedule: {
+        system: `${COMMON}
+\uC0AC\uC6A9\uC790\uAC00 \uC4F4 \uB3C8 \uC77C\uC815 \uBB38\uC7A5\uC744 \uC77C\uC815\uD45C\uB85C \uBC14\uAFD4\uC694. \uD56D\uBAA9\uB9C8\uB2E4 \uC774\uB984, \uAE08\uC561, \uB4E4\uC5B4\uC624\uB294\uC9C0(in)\xB7\uB098\uAC00\uB294\uC9C0(out), \uB0A0\uC9DC\uB97C \uBF51\uC544\uC694.
+- \uAE08\uC561\uC774\uB098 \uB0A0\uC9DC\uAC00 \uBB38\uC7A5\uC5D0 \uC5C6\uC73C\uBA74 null\uB85C \uB46C\uC694. \uC808\uB300 \uC9C0\uC5B4\uB0B4\uC9C0 \uC54A\uC544\uC694.
+- '\uB9E4\uB2EC'\xB7'\uB9E4\uC6D4'\uC774\uBA74 recurrence\uB294 monthly\uC774\uACE0 day\uC5D0 \uC77C\uC790\uB97C, \uB0A0\uC9DC\uAC00 \uD55C \uBC88\uBFD0\uC774\uBA74 once\uC774\uACE0 date\uC5D0 YYYY-MM-DD\uB97C \uC368\uC694. '\uB2E4\uC74C \uB2EC 5\uC77C'\uC740 today \uAE30\uC900 \uB2E4\uC74C \uB2EC 5\uC77C\uC774\uC5D0\uC694.
+- '\uB4E4\uC5B4\uC624\uACE0\xB7\uBC1B\uACE0\xB7\uC785\uAE08'\uC740 in, '\uB098\uAC00\xB7\uB0B4\uACE0\xB7\uBE60\uC838'\uB294 out. \uC54C \uC218 \uC5C6\uC73C\uBA74 null.
+- '35\uB9CC\uC6D0'\uC740 350000, '1.2\uB9CC'\uC740 12000\uCC98\uB7FC \uC6D0 \uB2E8\uC704 \uC815\uC218\uB85C \uBC14\uAFD4\uC694.`,
+        schema: '{"items":[{"name":string,"amount":number|null,"direction":"in"|"out"|null,"date":"YYYY-MM-DD"|null,"day":number|null,"recurrence":"monthly"|"once"|null}]}',
+        maxTokens: 500
       },
       categorize: {
         system: `${COMMON}
@@ -27960,13 +28000,167 @@ var init_aiPrompts = __esm({
   }
 });
 
+// shared/mask.ts
+function maskNames(text, hits) {
+  let out = text.replace(PARTIAL_NAME, (m) => {
+    hits.push({ kind: "name", length: m.length });
+    return MASK_TOKEN.name;
+  });
+  out = out.replace(new RegExp(NAME_BEFORE.source + "([\uAC00-\uD7A3]{2,4})(?![\uAC00-\uD7A3])", "g"), (m, _lead, name) => {
+    if (NOT_NAME.has(name)) return m;
+    hits.push({ kind: "name", length: name.length });
+    return m.replace(name, MASK_TOKEN.name);
+  });
+  out = out.replace(new RegExp("(^|[\\s/|:,\\]\\)])([\uAC00-\uD7A3]{2,4})(\\s?)" + NAME_AFTER.source, "gm"), (m, pre, name, sp, post) => {
+    if (NOT_NAME.has(name) || /(카드|은행|뱅크|페이|마트|점|센터)$/.test(name)) return m;
+    if (post !== "\uB2D8" && post !== "\uC528" && name.length > 3) return m;
+    hits.push({ kind: "name", length: name.length });
+    return `${pre}${MASK_TOKEN.name}${sp}${post}`;
+  });
+  if (/(입금|출금|이체|송금|보냈|받았)/.test(out)) {
+    out = out.replace(new RegExp(`(^|[\\s/|])((?:${SURNAMES})[\uAC00-\uD7A3]{1,2})(?=$|[\\s/|])`, "gm"), (m, pre, name) => {
+      if (NOT_NAME.has(name) || /(카드|은행|뱅크|페이|마트|점|비|료|금)$/.test(name)) return m;
+      hits.push({ kind: "name", length: name.length });
+      return `${pre}${MASK_TOKEN.name}`;
+    });
+  }
+  return out;
+}
+function maskText(input, extra = []) {
+  const hits = [];
+  let text = input;
+  for (const r of RULES) {
+    text = text.replace(r.re, (m) => {
+      if (r.kind === "account" && /^\d{4}-\d{2}-\d{2}$/.test(m)) return m;
+      hits.push({ kind: r.kind, length: m.length });
+      return MASK_TOKEN[r.kind];
+    });
+  }
+  text = maskNames(text, hits);
+  for (const w of extra.map((x) => x.trim()).filter((x) => x.length >= 2)) {
+    if (!text.includes(w)) continue;
+    hits.push({ kind: "name", length: w.length });
+    text = text.split(w).join(MASK_TOKEN.name);
+  }
+  return { text, hits };
+}
+var MASK_TOKEN, NAME_BEFORE, NAME_AFTER, NOT_NAME, RULES, SURNAMES, PARTIAL_NAME;
+var init_mask = __esm({
+  "shared/mask.ts"() {
+    "use strict";
+    MASK_TOKEN = {
+      rrn: "[\uC8FC\uBBFC\uBC88\uD638]",
+      phone: "[\uC804\uD654\uBC88\uD638]",
+      card: "[\uCE74\uB4DC\uBC88\uD638]",
+      account: "[\uACC4\uC88C\uBC88\uD638]",
+      digits: "[\uBC88\uD638]",
+      name: "[\uC774\uB984]",
+      email: "[\uC774\uBA54\uC77C]"
+    };
+    NAME_BEFORE = /(보낸\s?분|받는\s?분|예금주|입금자|송금인|수취인|성명|고객|님께서)\s*[:：]?\s*/;
+    NAME_AFTER = /(님|씨|입금|출금|송금|이체|보냄|받음|잔액)/;
+    NOT_NAME = /* @__PURE__ */ new Set([
+      "\uAE09\uC5EC",
+      "\uC6D4\uAE09",
+      "\uC6A9\uB3C8",
+      "\uC774\uC790",
+      "\uCCB4\uD06C",
+      "\uC2E0\uC6A9",
+      "\uCE74\uB4DC",
+      "\uC790\uB3D9",
+      "\uD0C0\uD589",
+      "\uB300\uCCB4",
+      "\uCD9C\uAE08",
+      "\uC785\uAE08",
+      "\uC774\uCCB4",
+      "\uC1A1\uAE08",
+      "\uC6D4\uC138",
+      "\uAD00\uB9AC\uBE44",
+      "\uD1B5\uC2E0\uBE44",
+      "\uC801\uAE08",
+      "\uC608\uAE08",
+      "\uACB0\uC81C",
+      "\uC2B9\uC778",
+      "\uCDE8\uC18C",
+      "\uC794\uC561",
+      "\uB204\uC801",
+      "\uC77C\uC2DC\uBD88",
+      "\uD560\uBD80",
+      "\uD574\uC678",
+      "\uAD6D\uB0B4",
+      "\uD604\uAE08",
+      "\uC778\uCD9C",
+      "\uD658\uBD88",
+      "\uC54C\uBC14\uBE44",
+      "\uC0C1\uC5EC",
+      "\uC815\uC0B0",
+      "\uB300\uAE08",
+      "\uCE74\uB4DC\uB300\uAE08",
+      "\uB0A9\uBD80",
+      "\uBAA8\uBC14\uC77C",
+      "\uC778\uD130\uB137",
+      "\uC2A4\uB9C8\uD2B8",
+      "\uC624\uD508",
+      "\uBC45\uD0B9",
+      "\uD38C\uBC45\uD0B9",
+      "\uCC3D\uAD6C",
+      "\uBB34\uD1B5\uC7A5",
+      "\uBCF8\uC778",
+      "\uAC00\uC871",
+      "\uBD80\uBAA8",
+      "\uC5C4\uB9C8",
+      "\uC544\uBE60",
+      "\uD559\uC6D0\uBE44",
+      "\uB4F1\uB85D\uAE08",
+      "\uBCF4\uD5D8\uB8CC",
+      "\uACF5\uACFC\uAE08",
+      "\uC2E0\uD55C",
+      "\uAD6D\uBBFC",
+      "\uC6B0\uB9AC",
+      "\uD558\uB098",
+      "\uB18D\uD611",
+      "\uAE30\uC5C5",
+      "\uCE74\uCE74\uC624",
+      "\uD1A0\uC2A4",
+      "\uCF00\uC774",
+      "\uC0BC\uC131",
+      "\uD604\uB300",
+      "\uB86F\uB370",
+      "\uBE44\uC528",
+      "\uC528\uD2F0",
+      "\uC0C8\uB9C8\uC744",
+      "\uC6B0\uCCB4\uAD6D",
+      "\uC218\uD611",
+      "\uC2E0\uD611"
+    ]);
+    RULES = [
+      { kind: "email", re: /[^\s@()<>\[\]]+@[\w-]+\.[\w.-]+/g },
+      { kind: "rrn", re: /(?<!\d)\d{6}\s?[-–]\s?[1-4*][\d*]{6}(?!\d)/g },
+      { kind: "phone", re: /(?<![\d*])(?:\+82[-\s]?)?0(?:1[016789]|2|[3-6]\d|70)[-.\s]?[\d*]{3,4}[-.\s]?[\d*]{4}(?![\d*])/g },
+      // 카드번호: 4-4-4-(1~4) 묶음, 일부가 *로 가려져 있어도
+      { kind: "card", re: /(?<![\d*])[\d*]{4}[-\s][\d*]{4}[-\s][\d*]{4}[-\s]?[\d*]{1,4}(?![\d*])/g },
+      // 계좌번호: 하이픈으로 이은 숫자 묶음 3개 이상(일부 * 포함)
+      { kind: "account", re: /(?<![\d*,])[\d*]{2,6}-[\d*]{2,6}-[\d*]{2,8}(?:-[\d*]{1,3})?(?![\d*])/g },
+      // 금액이 아닌 긴 숫자열(10자리 이상, 콤마 없음)
+      { kind: "account", re: /(?<![\d,.*])\d{10,16}(?![\d,]|\s?원)/g },
+      // 괄호 안 카드·계좌 끝자리: (1234) (12*4) (끝자리 5678)
+      { kind: "digits", re: /\((?:끝자리\s?)?[\d*]{3,4}\)/g },
+      // 별표가 섞인 번호 조각: 1234**** / ***-**-1234 / 51**
+      { kind: "digits", re: /(?<![\d,])(?:\d{2,}\*{2,}[\d*]*|\*{2,}[\d*-]*\d{2,}[\d*]*)(?![\d,]|\s?원)/g }
+    ];
+    SURNAMES = "\uAE40|\uC774|\uBC15|\uCD5C|\uC815|\uAC15|\uC870|\uC724|\uC7A5|\uC784|\uD55C|\uC624|\uC11C|\uC2E0|\uAD8C|\uD669|\uC548|\uC1A1|\uB958|\uC720|\uC804|\uD64D|\uACE0|\uBB38|\uC591|\uC190|\uBC30|\uBC31|\uD5C8|\uB0A8|\uC2EC|\uB178|\uD558|\uACFD|\uC131|\uCC28|\uC8FC|\uC6B0|\uAD6C|\uBBFC|\uC9C4|\uB098|\uC5C4|\uCC44|\uC6D0|\uCC9C|\uBC29|\uACF5|\uD604|\uD568|\uBCC0|\uC5FC|\uC5EC|\uCD94|\uB3C4|\uC11D|\uC120|\uC124|\uB9C8|\uAE38|\uC5F0|\uC704|\uD45C|\uBA85|\uAE30|\uBC18|\uC655|\uAE08|\uC625|\uC721|\uC778|\uB9F9|\uC81C|\uBAA8|\uD0C1|\uAD6D|\uC5B4|\uC740|\uD3B8|\uC6A9|\uC608|\uBD09|\uACBD|\uB0A8\uAD81|\uD669\uBCF4|\uC81C\uAC08|\uC120\uC6B0|\uB3C5\uACE0";
+    PARTIAL_NAME = /(?<![가-힣])[가-힣][*＊○●][가-힣*＊○●]?(?:님|씨)?(?![가-힣])/g;
+  }
+});
+
 // server/lib/ai.ts
 var ai_exports = {};
 __export(ai_exports, {
   AI_TASKS: () => AI_TASKS,
   aiConfigured: () => aiConfigured,
   aiSummary: () => aiSummary,
-  runAiTask: () => runAiTask
+  runAiTask: () => runAiTask,
+  sanitizeInput: () => sanitizeInput
 });
 function aiConfigured() {
   return !!process.env.ANTHROPIC_API_KEY;
@@ -28000,9 +28194,17 @@ async function aiSummary(name, e, level) {
     return null;
   }
 }
+function sanitizeInput(task, input) {
+  if ((task === "parseSpend" || task === "parseSchedule") && input && typeof input === "object" && typeof input.text === "string") {
+    const i = input;
+    return { ...i, text: maskText(i.text.slice(0, 4e3)).text };
+  }
+  return input;
+}
 async function runAiTask(task, input) {
   if (!aiConfigured()) return null;
   const p = AI_PROMPTS[task];
+  input = sanitizeInput(task, input);
   try {
     const res = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -28015,7 +28217,7 @@ async function runAiTask(task, input) {
     const m = text.match(/\{[\s\S]*\}/);
     if (!m) return null;
     const out = JSON.parse(m[0]);
-    return numbersGrounded(task, input, out) ? out : null;
+    return numbersGrounded(task, input, out) && extractionGrounded(task, input, out) ? out : null;
   } catch {
     return null;
   }
@@ -28026,6 +28228,7 @@ var init_ai = __esm({
     "use strict";
     init_http();
     init_aiPrompts();
+    init_mask();
     AI_TASKS = Object.keys(AI_PROMPTS);
   }
 });

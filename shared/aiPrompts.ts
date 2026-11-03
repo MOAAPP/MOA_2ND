@@ -8,7 +8,7 @@
  * - 사기·투자 권유, 단정적인 판단 대신 선택지를 보여준다.
  */
 
-export type AiTask = 'brief' | 'coach' | 'ledgerSummary' | 'parseSpend' | 'ask' | 'categorize';
+export type AiTask = 'brief' | 'coach' | 'ledgerSummary' | 'parseSpend' | 'parseSchedule' | 'ask' | 'categorize';
 
 /* ───────── 입력·출력 ───────── */
 
@@ -67,16 +67,32 @@ export interface LedgerSummaryOut {
   points: string[];
 }
 
-/** 카드 문자·영수증 글 → 지출 기록 */
+/** 카드 문자·영수증 글 → 거래 기록. text는 반드시 마스킹을 거친 문자열이다. */
 export interface ParseSpendIn {
   text: string;
   today: string;
 }
+export type ParsedMethod = 'debit' | 'credit' | 'transfer' | 'cash' | 'atm';
+export type ParsedKind = 'spend' | 'income' | 'card_payment' | 'transfer_self' | 'saving' | 'refund';
 export interface ParsedSpend {
-  date: string;
+  /** 글에 날짜가 없으면 null (지어내지 않는다) */
+  date: string | null;
+  /** HH:MM, 없으면 null */
+  time?: string | null;
   amount: number;
   name: string;
   category: string;
+  /** 결제 수단. 글로 알 수 없으면 null */
+  method?: ParsedMethod | null;
+  kind?: ParsedKind;
+  /** 카드·은행 이름 (번호 없이) */
+  issuer?: string | null;
+  /** 할부 개월 수 */
+  installments?: number | null;
+  /** 문자에 찍힌 거래 후 잔액 */
+  balanceAfter?: number | null;
+  /** 월세·통신비·공과금처럼 꼭 내야 하는 돈 */
+  essential?: boolean;
   /** 0~1 */
   confidence: number;
 }
@@ -84,6 +100,27 @@ export interface ParseSpendOut {
   items: ParsedSpend[];
   /** 읽지 못한 줄 */
   skipped: number;
+}
+
+/** 일정 문장 → 일정표 ("다음 달 5일 월세 35만원, 10일 알바비 48만원 들어오고") */
+export interface ParseScheduleIn {
+  text: string;
+  today: string;
+}
+export interface ParsedSchedule {
+  name: string;
+  /** 글에 금액이 없으면 null */
+  amount: number | null;
+  /** 들어오는 돈 in / 나가는 돈 out, 알 수 없으면 null */
+  direction: 'in' | 'out' | null;
+  /** 날짜가 정해진 한 번 (YYYY-MM-DD), 없으면 null */
+  date: string | null;
+  /** '매달 N일'이면 N, 아니면 null */
+  day: number | null;
+  recurrence: 'monthly' | 'once' | null;
+}
+export interface ParseScheduleOut {
+  items: ParsedSchedule[];
 }
 
 /** 품목 이름 → 카테고리 */
@@ -119,6 +156,7 @@ export interface AiIO {
   coach: [CoachIn, CoachOut];
   ledgerSummary: [LedgerSummaryIn, LedgerSummaryOut];
   parseSpend: [ParseSpendIn, ParseSpendOut];
+  parseSchedule: [ParseScheduleIn, ParseScheduleOut];
   categorize: [CategorizeIn, CategorizeOut];
   ask: [AskIn, AskOut];
 }
@@ -153,9 +191,28 @@ export const AI_PROMPTS: { [T in AiTask]: { system: string; schema: string; maxT
     maxTokens: 260,
   },
   parseSpend: {
-    system: `${COMMON}\n사용자가 붙여넣은 카드 승인 문자, 영수증, 메모에서 지출을 찾아 JSON으로 바꿔요. 승인 취소·입금은 빼요. 날짜가 없으면 today, 연도가 없으면 today의 연도. category는 식비·카페·쇼핑·패션·교통·문화·여가·구독·생활·경조사·기타 중 하나. confidence는 0~1.`,
-    schema: '{"items":[{"date":"YYYY-MM-DD","amount":number,"name":string,"category":string,"confidence":number}],"skipped":number}',
-    maxTokens: 600,
+    system: `${COMMON}
+사용자가 붙여넣은 카드·은행 문자, 영수증, 메모에서 거래를 찾아 JSON으로 바꿔요. 개인정보는 이미 [이름] [계좌번호] 같은 표시로 가려져 있어요. 가려진 부분을 추측하지 않아요.
+- 글에 없는 값은 반드시 null로 둬요. 날짜가 없으면 date는 null, 시각이 없으면 time은 null. 빈칸을 그럴듯하게 채우지 않아요.
+- 연도가 없는 날짜는 today의 연도로 쓰되, today보다 미래가 되면 작년으로 봐요.
+- method: 체크카드 debit, 신용카드(일시불·할부) credit, 계좌이체·자동이체·출금 transfer, 현금 cash, ATM 인출 atm. 글로 알 수 없으면 null.
+- kind: 소비 spend, 입금 income, 카드 대금 출금 card_payment, 내 계좌끼리 이체 transfer_self, 적금 납입 saving, 승인취소·환불 refund.
+- balanceAfter: '잔액'으로 찍힌 거래 후 잔액. '누적'·'한도'는 잔액이 아니에요.
+- issuer: 카드사·은행 이름만(번호 없이). installments: 할부 개월 수, 일시불이면 null.
+- essential: 월세·관리비·통신비·공과금·보험료·학원비처럼 꼭 내야 하는 돈이면 true.
+- category는 식비·카페·쇼핑·패션·교통·문화·여가·구독·생활·경조사·기타 중 하나. confidence는 0~1.`,
+    schema: '{"items":[{"date":"YYYY-MM-DD"|null,"time":"HH:MM"|null,"amount":number,"name":string,"category":string,"method":"debit"|"credit"|"transfer"|"cash"|"atm"|null,"kind":"spend"|"income"|"card_payment"|"transfer_self"|"saving"|"refund","issuer":string|null,"installments":number|null,"balanceAfter":number|null,"essential":boolean,"confidence":number}],"skipped":number}',
+    maxTokens: 900,
+  },
+  parseSchedule: {
+    system: `${COMMON}
+사용자가 쓴 돈 일정 문장을 일정표로 바꿔요. 항목마다 이름, 금액, 들어오는지(in)·나가는지(out), 날짜를 뽑아요.
+- 금액이나 날짜가 문장에 없으면 null로 둬요. 절대 지어내지 않아요.
+- '매달'·'매월'이면 recurrence는 monthly이고 day에 일자를, 날짜가 한 번뿐이면 once이고 date에 YYYY-MM-DD를 써요. '다음 달 5일'은 today 기준 다음 달 5일이에요.
+- '들어오고·받고·입금'은 in, '나가·내고·빠져'는 out. 알 수 없으면 null.
+- '35만원'은 350000, '1.2만'은 12000처럼 원 단위 정수로 바꿔요.`,
+    schema: '{"items":[{"name":string,"amount":number|null,"direction":"in"|"out"|null,"date":"YYYY-MM-DD"|null,"day":number|null,"recurrence":"monthly"|"once"|null}]}',
+    maxTokens: 500,
   },
   categorize: {
     system: `${COMMON}\n품목 이름을 보고 categories 중 하나를 골라요. reason은 15자 이내.`,
@@ -174,9 +231,36 @@ export function buildUserMessage<T extends AiTask>(task: T, input: AiInput<T>): 
   return `작업: ${task}\n출력 형식: ${AI_PROMPTS[task].schema}\n입력:\n${JSON.stringify(input)}`;
 }
 
+/** 글 속 금액 후보: 6,800 / 6800 / 35만 / 1.2만 / 3천 */
+export function amountsInText(text: string): Set<number> {
+  const out = new Set<number>();
+  for (const m of text.matchAll(/\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?/g)) {
+    const raw = m[0];
+    const n = Number(raw.replace(/,/g, ''));
+    if (!Number.isFinite(n)) continue;
+    out.add(Math.round(n));
+    const after = text.slice((m.index ?? 0) + raw.length, (m.index ?? 0) + raw.length + 2);
+    if (/^\s?만/.test(after)) out.add(Math.round(n * 10000));
+    if (/^\s?천/.test(after)) out.add(Math.round(n * 1000));
+  }
+  // 35만 5천 → 355000
+  for (const m of text.matchAll(/(\d+)\s?만\s?(\d+)\s?천/g)) out.add(Number(m[1]) * 10000 + Number(m[2]) * 1000);
+  return out;
+}
+
+/** 추출 결과의 금액이 원문에 있던 숫자인지 (없는 금액을 지어내면 버린다) */
+export function extractionGrounded(task: AiTask, input: unknown, output: unknown): boolean {
+  if (task !== 'parseSpend' && task !== 'parseSchedule') return true;
+  const text = (input as { text?: string })?.text ?? '';
+  const known = amountsInText(text);
+  const items = (output as { items?: { amount?: number | null; balanceAfter?: number | null }[] })?.items;
+  if (!Array.isArray(items)) return false;
+  return items.every((it) => (it.amount == null || known.has(Math.round(it.amount))) && (it.balanceAfter == null || known.has(Math.round(it.balanceAfter))));
+}
+
 /** 응답에 나온 금액(원)이 입력에 있던 숫자인지 확인 — 지어낸 숫자를 막는다. parseSpend는 글에서 읽으므로 제외. */
 export function numbersGrounded(task: AiTask, input: unknown, output: unknown): boolean {
-  if (task === 'parseSpend' || task === 'categorize') return true;
+  if (task === 'parseSpend' || task === 'parseSchedule' || task === 'categorize') return true;
   const known = new Set<number>();
   const walk = (v: unknown) => {
     if (typeof v === 'number') { known.add(Math.abs(Math.round(v))); return; }

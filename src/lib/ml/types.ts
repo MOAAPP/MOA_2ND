@@ -14,6 +14,8 @@ export interface SpendEntry {
   name?: string;
   /** 어디서 온 기록인지 */
   from: 'record' | 'csv' | 'demo';
+  /** 모아 거래 기록과 연결된 경우 그 id */
+  txnId?: string;
 }
 
 /** 하루 생활비의 분위수 예측 (원) */

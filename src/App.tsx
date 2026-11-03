@@ -15,7 +15,6 @@ import { Lesson } from './screens/Lesson';
 import { GuideArticle } from './screens/GuideArticle';
 import { RecordDetail } from './screens/RecordDetail';
 import { FinanceEdit, Settings } from './screens/Settings';
-import { Setup } from './screens/Setup';
 import { StockDetail } from './screens/StockDetail';
 import { MarketProvider } from './state/market';
 import { NavProvider, useNav, type Screen, type Tab } from './state/nav';
@@ -38,6 +37,10 @@ import { Research } from './screens/Research';
 import { AskAi } from './screens/AskAi';
 import { WorldReport } from './screens/WorldReport';
 import { startSession } from './lib/research/log';
+import { Shortfall } from './screens/moa/Shortfall';
+import { MoaSetup, QuickStart } from './screens/moa/MoaSetup';
+import { MoaAlertsDaemon } from './state/moa';
+import { demoMoa, profileFromMoa } from './lib/moa/bridge';
 
 const TABS: { id: Tab; label: string; Icon: typeof IconHome }[] = [
   { id: 'home', label: '홈', Icon: IconHome },
@@ -89,6 +92,8 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'research': return <Research />;
     case 'ask': return <AskAi initial={screen.q} />;
     case 'report': return <WorldReport />;
+    case 'shortfall': return <Shortfall />;
+    case 'moaSetup': return <MoaSetup />;
   }
 }
 
@@ -129,7 +134,7 @@ function Shell() {
         onDemo={() => {
           finishIntroPreview();
           nav.reset();
-          update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWallet(), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null }));
+          update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWallet(), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
           nav.setTab('home');
         }}
       />
@@ -137,22 +142,27 @@ function Shell() {
   }
 
   if (!state.profile) {
+    // 1분 설정: 결제계좌 잔액 + 가장 가까운 필수결제 1건이면 바로 결과를 보여준다
     return (
-      <Setup
-        onFinish={(compare) => {
-          nav.setTab('home');
-          if (compare) nav.push({ name: 'decide' });
-        }}
-      />
+      <div className="page t-page mo-page">
+        <QuickStart
+          onDone={() => {
+            update((s) => ({ ...s, profile: profileFromMoa(s.moa, null), setupDraft: null }));
+            nav.setTab('home');
+            nav.push({ name: 'shortfall' });
+          }}
+        />
+      </div>
     );
   }
 
   const top = nav.stack[nav.stack.length - 1];
-  if (top) return <><BankClock /><ScreenView screen={top} onReplayIntro={() => setReplayIntro(true)} /></>;
+  if (top) return <><BankClock /><MoaAlertsDaemon /><ScreenView screen={top} onReplayIntro={() => setReplayIntro(true)} /></>;
 
   return (
     <>
       <BankClock />
+      <MoaAlertsDaemon />
       <main>
         {nav.tab === 'home' && <V8Home />}
         {nav.tab === 'ledger' && <Ledger />}

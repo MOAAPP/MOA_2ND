@@ -1,18 +1,17 @@
 import { useCallback, useMemo, useState, type ReactElement } from 'react';
-import { addDays, addMonths, diffDays, endOfMonth, formatKDate, formatShort, maxDate, startOfMonth, todayKST, type ISODate } from '../../shared/dates';
+import { addDays, addMonths, formatKDate, formatShort, maxDate, startOfMonth, todayKST, type ISODate } from '../../shared/dates';
 import { manShort, won } from '../../shared/format';
 import { CategoryPill, OptionList, PhotoButton, QuickDate, StepHead } from '../components/flow';
 import { IconTile } from '../components/Glyph';
 import { ParallelChart } from '../components/ParallelChart';
 import { DecisionTrend } from '../components/DecisionTrend';
 import { usePhotoReader } from '../components/PhotoReader';
-import { AmountInput, CtaBar, Sheet, Spinner, Switch, TopBar, useToast } from '../components/ui';
+import { AmountInput, CtaBar, Sheet, Switch, TopBar, useToast } from '../components/ui';
 import { balanceOn, nextOccurrence } from '../lib/cashflow';
 import { WORLD_NAME } from '../lib/categories';
 import { projectGoal } from '../lib/goals';
 import { uid } from '../lib/id';
-import { pctText, riskTone, riskWords, useAppForecast, useTiming, useWorldRisks } from '../lib/ml/risk';
-import { SAFE_SHORTFALL_PROB } from '../lib/ml/types';
+import { PaymentGradeCompare } from './moa/GradeCompare';
 import { findLowestPrice, type PriceResult } from '../lib/ocr';
 import { compareChoices, toSnapshot, type ScenarioResult } from '../lib/scenarios';
 import type { Choice, ChoiceParams, DecisionRecord } from '../lib/types';
@@ -89,24 +88,6 @@ export function Decide({ recordId }: { recordId?: string }) {
   const B = cmp?.results[partnerChoice];
   const cur = cursor && cmp && cursor >= cmp.from && cursor <= cmp.horizon ? cursor : A?.monthEnd.date ?? today;
 
-  /* 생활비까지 넣은 확률 (워커에서 경로 3,000개) */
-  const riskFrom = cmp?.from ?? today;
-  const riskUntil = cmp?.horizon ?? today;
-  const timingUntil = endOfMonth(addMonths(riskFrom, 1));
-  const otherRecords = useMemo(() => state.records.filter((r) => r.id !== recordId), [state.records, recordId]);
-  const forecast = useAppForecast(profile, otherRecords, state.spendLog, today, riskFrom, maxDate(riskUntil, timingUntil));
-  const { data: risks, pending: riskPending } = useWorldRisks(forecast, [A?.sim, B?.sim], riskFrom, riskUntil, profile.minBalance);
-  const timingBase = useMemo(() => (params && phase === 'compare' ? { profile, records: state.records, params, label, today, excludeRecordId: recordId } : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [phase, profile, state.records, JSON.stringify(params), label, today, recordId]);
-  const candidates = useMemo(() => {
-    if (!params) return [];
-    const start = maxDate(params.date, riskFrom);
-    const len = Math.min(62, diffDays(start, timingUntil) + 1);
-    return len > 1 ? Array.from({ length: len }, (_, i) => addDays(start, i)) : [];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params?.date, riskFrom, timingUntil]);
-  const { data: timing } = useTiming(forecast, timingBase, candidates, riskFrom, timingUntil);
 
   const goalInfo = useMemo(() => {
     const g = profile.goal;
@@ -198,12 +179,6 @@ export function Decide({ recordId }: { recordId?: string }) {
   }
 
   const diff = B.monthEnd.balance - A.monthEnd.balance;
-  const rA = risks?.[0];
-  const rB = risks?.[1];
-  const monthEndBand = (rk: typeof rA) => (rk ? rk.band.find((b) => b.date === A.monthEnd.date) ?? rk.end : null);
-
-  const easiest = timing ? timing.points.reduce((m, p) => (p.pShort < m.pShort ? p : m), timing.points[0]) : null;
-  const suggest = timing ? timing.best ?? (easiest && easiest.pShort < timing.original.pShort - 0.1 ? easiest : null) : null;
 
   const altChips: { c: Exclude<Choice, 'buy'>; title: string; sub: string; ready: boolean }[] = [
     { c: 'skip', title: '안 산 나', sub: '이번엔 참기', ready: true },
@@ -280,8 +255,8 @@ export function Decide({ recordId }: { recordId?: string }) {
           <div className="block-head"><h2>날짜별 잔고 확인하기</h2></div>
           <p className="muted-note">그래프를 움직이면 그날의 예상 잔고를 볼 수 있어요.</p>
           <ParallelChart
-            real={{ days: A.sim.days, label: WORLD_NAME.buy, band: rA?.band }}
-            para={{ days: B.sim.days, label: WORLD_NAME[partnerChoice], band: rB?.band }}
+            real={{ days: A.sim.days, label: WORLD_NAME.buy }}
+            para={{ days: B.sim.days, label: WORLD_NAME[partnerChoice] }}
             from={cmp.from}
             minBalance={profile.minBalance}
             cursor={cur}
@@ -296,80 +271,8 @@ export function Decide({ recordId }: { recordId?: string }) {
           </div>
         </section>
 
-      {/* 생활비까지 넣으면 */}
-      <section className="blk">
-        <div className="block-head">
-          <h2>밥값까지 넣어 보면</h2>
-          {riskPending && rA && <span className="aside"><Spinner label="" /></span>}
-        </div>
-        {rA && rB ? (
-          <>
-            <dl className="kv-rows">
-              <div className="head"><dt /><dd>{WORLD_NAME.buy}</dd><dd className="para">{WORLD_NAME[partnerChoice]}</dd></div>
-              <div>
-                <dt>월말에 남을 돈</dt>
-                {[rA, rB].map((rk, i) => {
-                  const b = monthEndBand(rk)!;
-                  return <dd key={i} className="num">{manShort(b.p50)}원<small>{manShort(b.p10)}~{manShort(b.p90)}</small></dd>;
-                })}
-              </div>
-              <div>
-                <dt>잔고가 바닥날 가능성</dt>
-                {[rA, rB].map((rk, i) => (
-                  <dd key={i}><span className={`tag ${riskTone(rk.pShort)}`}>{riskWords(rk.pShort)}</span><small>{pctText(rk.pShort)}</small></dd>
-                ))}
-              </div>
-              {profile.minBalance > 0 && (
-                <div>
-                  <dt>지킬 돈 아래로</dt>
-                  {[rA, rB].map((rk, i) => <dd key={i} className="num">{pctText(rk.pBelowMin)}</dd>)}
-                </div>
-              )}
-            </dl>
-            <p className="muted-note">하루 생활비를 매일 다르게 뽑아 {rA.paths.toLocaleString('ko-KR')}번 돌려본 결과예요. 아래 숫자는 열 번 중 한 번 나올 만큼 적게 또는 많이 쓴 경우예요.</p>
-          </>
-        ) : riskPending ? (
-          <Spinner label="계산하고 있어요" />
-        ) : (
-          <button className="risk-cta" onClick={() => nav.push({ name: 'finance' })}>
-            하루에 보통 얼마 쓰는지 알려주시면 <b>월말에 모자랄 가능성</b>과 <b>사기 좋은 날</b>을 알려드려요
-          </button>
-        )}
-      </section>
-
-      {/* 사기 좋은 날 */}
-      {timing && (
-        <section className="blk">
-          <div className="block-head"><h2>언제 사면 덜 빠듯할까</h2></div>
-          {timing.original.pShort <= SAFE_SHORTFALL_PROB ? (
-            <p className="sheet-text">{formatShort(timing.original.date)}에 사도 괜찮아 보여요. 사고 나서 잔고가 바닥날 가능성이 {pctText(timing.original.pShort)}예요.</p>
-          ) : timing.best ? (
-            <p className="sheet-text">
-              <b>{formatKDate(timing.best.date, { weekday: true })}</b> 이후에 사면 잔고가 바닥날 가능성이 {pctText(timing.original.pShort)}에서 <b>{pctText(timing.best.pShort)}</b>로 줄어요.
-            </p>
-          ) : (() => {
-            if (!easiest) return null;
-            return easiest.pShort < timing.original.pShort - 0.1 ? (
-              <p className="sheet-text">
-                {formatShort(timing.until)}까지는 언제 사도 빠듯한 편이에요. 그나마 <b>{formatKDate(easiest.date, { weekday: true })}</b> 이후가 나아요. 바닥날 가능성이 {pctText(timing.original.pShort)}에서 {pctText(easiest.pShort)}로 줄어요.
-              </p>
-            ) : (
-              <p className="sheet-text">{formatShort(timing.until)}까지는 언제 사도 빠듯해요. 금액을 줄이거나 다음 수입 뒤를 생각해 보세요.</p>
-            );
-          })()}
-          <div className="timing-bars" role="img" aria-label="산 날짜별 잔고가 바닥날 가능성">
-            {timing.points.map((pt) => (
-              <span key={pt.date} className={`${suggest?.date === pt.date ? 'best' : pt.pShort <= SAFE_SHORTFALL_PROB ? 'ok' : ''}`} style={{ height: `${Math.max(3, pt.pShort * 100)}%` }} />
-            ))}
-          </div>
-          <div className="timing-axis"><span>{formatShort(timing.points[0].date)}</span><span>막대가 낮을수록 여유 있어요</span><span>{formatShort(timing.points[timing.points.length - 1].date)}</span></div>
-          {suggest && suggest.date !== params.date && timing.original.pShort > SAFE_SHORTFALL_PROB && (
-            <button className="btn secondary block sm" style={{ marginTop: 14 }} onClick={() => { setDelayDate(suggest.date); setPartner('delay'); setCursor(null); }}>
-              {formatShort(suggest.date)}로 미룬 나와 비교하기
-            </button>
-          )}
-        </section>
-      )}
+      {/* 결제일 기준 (확률 대신 네 시나리오 등급) */}
+      <PaymentGradeCompare amount={params.amount} date={params.date} installments={params.installments} />
 
       {/* 최저가 */}
       {name.trim().length >= 2 && <PriceBlock query={name.trim()} amount={params.amount} onUse={(p) => { setAlt(p); setPartner('alt'); setCursor(null); }} />}

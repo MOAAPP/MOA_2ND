@@ -7,13 +7,15 @@
 import { useMemo, useState } from 'react';
 import { addDays, addMonths, daysInMonth, parseISO, startOfMonth, todayKST, weekdayOf, type ISODate } from '../../shared/dates';
 import { manShort } from '../../shared/format';
-import type { ParsedSpend } from '../../shared/aiPrompts';
-import { AiCard, AiMark, AiSourceNote } from '../components/Ai';
+import { AiCard, AiMark } from '../components/Ai';
 import { CategoryIcon, categoryColor } from '../components/CategoryIcon';
 import { AmountText, Button, Chip, Chips, NumberPad, Won } from '../components/ds';
 import { IconGear } from '../components/Icons';
 import { Sheet, useToast } from '../components/ui';
-import { runAi, useAi, exampleNow, type AiSource } from '../lib/ai';
+import { useAi, exampleNow } from '../lib/ai';
+import { METHOD_LABEL, setDayStatus, type PayMethod } from '../lib/moa';
+import { useMoa } from '../state/moa';
+import { PasteFlow } from './moa/PasteFlow';
 import { ledgerSummaryInput, monthSlice } from '../lib/ai/context';
 import { CATEGORIES } from '../lib/categories';
 import { spendHistory } from '../lib/ml/provider';
@@ -95,6 +97,8 @@ export function Ledger() {
         </div>
       </section>
 
+      <DayDone today={today} />
+
       {inMonth.length > 0 && (
         <AiCard title={ai.data?.title ?? '이번 달 정리'} loading={ai.loading} source={ai.source}>
           <ul className="ai-points">{ai.data?.points.map((p) => <li key={p}>{p}</li>)}</ul>
@@ -123,7 +127,7 @@ export function Ledger() {
       )}
 
       {sheet === 'add' && <AddSheet today={today} onClose={() => setSheet(null)} />}
-      {sheet === 'paste' && <PasteSheet today={today} onClose={() => setSheet(null)} />}
+      {sheet === 'paste' && <PasteFlow onClose={() => setSheet(null)} />}
     </div>
   );
 }
@@ -245,12 +249,12 @@ function AddSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
   const suggested = remembered ?? (guess && guess.confidence >= 0.5 ? guess.category : null);
   const category = picked ?? suggested ?? '기타';
 
+  const { moa, saveTxns } = useMoa();
+  const [method, setMethod] = useState<PayMethod>(moa.mainMethod && moa.mainMethod !== 'atm' ? moa.mainMethod : 'debit');
   const save = () => {
-    const entry: SpendEntry = { date, amount, category, name: name.trim() || category, from: 'record' };
-    update((s) => {
-      const next = { ...s, spendLog: [...s.spendLog, entry] };
-      return picked && name.trim() ? rememberCategory(next, name.trim(), picked) : next;
-    });
+    const occurredAt = date === today ? Date.now() : Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)), 3);
+    saveTxns([{ occurredAt, date, amount, kind: 'spend', method, account: method === 'cash' ? 'cash' : method === 'credit' ? 'other' : 'pay', name: name.trim() || category, category, essential: false, source: 'manual' }]);
+    if (picked && name.trim()) update((s) => rememberCategory(s, name.trim(), picked));
     toast(`${fmt(amount)} 적었어요`);
     onClose();
   };
@@ -265,6 +269,9 @@ function AddSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
           {CATEGORIES.map((c) => <Chip key={c} on={category === c} onClick={() => setPicked(c)}>{c}</Chip>)}
         </Chips>
       </div>
+      <Chips label="결제 수단">
+        {(['debit', 'credit', 'transfer', 'cash'] as PayMethod[]).map((p) => <Chip key={p} on={method === p} onClick={() => setMethod(p)}>{METHOD_LABEL[p]}</Chip>)}
+      </Chips>
       <Chips label="날짜">
         <Chip on={date === today} onClick={() => setDate(today)}>오늘</Chip>
         <Chip on={date === addDays(today, -1)} onClick={() => setDate(addDays(today, -1))}>어제</Chip>
@@ -275,71 +282,31 @@ function AddSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
   );
 }
 
-/* ───────── 문자 붙여넣기 ───────── */
-const SAMPLE_SMS = (today: ISODate) => {
-  const d = (n: number) => { const p = parseISO(addDays(today, -n)); return `${String(p.m).padStart(2, '0')}/${String(p.d).padStart(2, '0')}`; };
-  return [
-    `[Web발신]\n신한카드(1234)승인\n김*현님\n6,800원 일시불\n${d(0)} 08:42\n메가커피 서울여대점\n누적 412,300원`,
-    `[Web발신]\nKB국민체크(5678)승인\n18,500원\n${d(1)} 19:10\n배달의민족`,
-    `[Web발신]\n삼성카드 승인취소\n32,000원\n${d(1)} 13:02\n무신사스토어`,
-    `[Web발신]\n토스뱅크 체크카드\n1,450원 결제\n${d(2)} 07:55\n서울교통공사 지하철`,
-  ].join('\n\n');
-};
-
-function PasteSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
-  const { update } = useStore();
-  const toast = useToast();
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [found, setFound] = useState<{ items: ParsedSpend[]; skipped: number; source: AiSource } | null>(null);
-  const [off, setOff] = useState<Set<number>>(new Set());
-
-  const read = async () => {
-    setBusy(true);
-    const r = await runAi('parseSpend', { text, today });
-    setFound({ ...r.data, source: r.source });
-    setOff(new Set());
-    setBusy(false);
-  };
-  const chosen = found ? found.items.filter((_, i) => !off.has(i)) : [];
-  const save = () => {
-    update((s) => ({ ...s, spendLog: [...s.spendLog, ...chosen.map((p) => ({ date: p.date, amount: p.amount, category: p.category, name: p.name, from: 'record' as const }))] }));
-    toast(`${chosen.length}건을 가계부에 넣었어요`);
-    onClose();
-  };
-
+/* ───────── 오늘 기록 완료 ───────── */
+/** '0원인 날'과 '기록 안 한 날', '일부만 적은 날'을 가르는 버튼. 지출 예측의 정답은 완료한 날만 쓴다. */
+function DayDone({ today }: { today: ISODate }) {
+  const { moa, set } = useMoa();
+  const yesterday = addDays(today, -1);
+  const st = moa.dayStatus[today];
+  const yst = moa.dayStatus[yesterday];
+  const labeled = Object.keys(moa.dayStatus).length;
   return (
-    <Sheet
-      title={found ? `${found.items.length}건을 찾았어요` : '카드 문자로 한 번에'}
-      onClose={onClose}
-      footer={found
-        ? <Button disabled={!chosen.length} onClick={save}>{chosen.length ? `${chosen.length}건 넣기 · ${fmt(chosen.reduce((s, p) => s + p.amount, 0))}` : '넣을 기록을 골라 주세요'}</Button>
-        : <Button disabled={!text.trim() || busy} onClick={() => void read()}>{busy ? 'AI가 읽는 중…' : 'AI로 읽기'}</Button>}
-    >
-      {!found ? (
-        <>
-          <p className="lg-help">카드 승인 문자나 영수증 글을 그대로 붙여넣어요. 여러 건도 한 번에 돼요. 승인 취소는 알아서 빼요.</p>
-          <textarea className="lg-textarea" value={text} onChange={(e) => setText(e.target.value.slice(0, 4000))} placeholder="[Web발신] 신한카드 승인 6,800원 …" rows={7} />
-          <button type="button" className="lg-sample" onClick={() => setText(SAMPLE_SMS(today))}>예시 문자 넣어보기</button>
-        </>
-      ) : (
-        <>
-          <div className="lg-found">
-            {found.items.map((p, i) => (
-              <label key={i} className={`lg-found-row ${off.has(i) ? 'off' : ''}`}>
-                <input type="checkbox" checked={!off.has(i)} onChange={() => setOff((o) => { const n = new Set(o); if (n.has(i)) n.delete(i); else n.add(i); return n; })} />
-                <CategoryIcon category={p.category} size={36} />
-                <span className="lg-row-main"><b>{p.name}</b><small>{parseISO(p.date).m}월 {parseISO(p.date).d}일 · {p.category}{p.confidence < 0.6 ? ' · 확인 필요' : ''}</small></span>
-                <strong className="num">−{fmt(p.amount)}</strong>
-              </label>
-            ))}
-            {!found.items.length && <p className="t-empty">지출을 찾지 못했어요. 금액에 '원'이 있는지 확인해 주세요.</p>}
-          </div>
-          {found.skipped > 0 && <p className="lg-help">취소·입금 같은 {found.skipped}건은 뺐어요.</p>}
-          <AiSourceNote source={found.source} />
-          <button type="button" className="lg-sample" onClick={() => setFound(null)}>다시 붙여넣기</button>
-        </>
-      )}
-    </Sheet>
+    <section className="t-card lg-done">
+      <div>
+        <b>{st ? (st === 'reconciled' ? '오늘 은행 앱과 대조 완료' : '오늘 기록 완료') : '오늘 쓴 돈을 다 적었나요?'}</b>
+        <small>지출이 없었던 날도 눌러 주세요. 다 적은 날만 예측 학습에 써요 · 완료한 날 {labeled}일</small>
+      </div>
+      <div className="lg-done-btns">
+        {!st ? (
+          <>
+            <button className="lg-act primary" onClick={() => set((m) => setDayStatus(m, today, 'self'))}>오늘 기록 완료</button>
+            <button className="lg-act" onClick={() => set((m) => setDayStatus(m, today, 'reconciled'))}>은행 앱과 대조함</button>
+          </>
+        ) : (
+          <button className="lg-act" onClick={() => set((m) => setDayStatus(m, today, null))}>완료 취소</button>
+        )}
+        {!yst && <button className="lg-act" onClick={() => set((m) => setDayStatus(m, yesterday, 'self'))}>어제도 완료</button>}
+      </div>
+    </section>
   );
 }
