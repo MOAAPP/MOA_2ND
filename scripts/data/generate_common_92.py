@@ -14,6 +14,7 @@ import random
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "data" / "moa-2026-fall"
@@ -315,7 +316,22 @@ def build() -> None:
     front_json=json.dumps(demo_source,ensure_ascii=False,separators=(",",":"))+"\n"
     FRONT.write_text(front_json, encoding="utf-8")
     (OUT/"frontend-demo.json").write_text(front_json, encoding="utf-8")
+    # Share as one reproducible, UTF-8-safe ZIP. Team can also inspect each CSV in GitHub.
+    archive = OUT / "MOA_common_92days_team.zip"
+    contents = [OUT/n for n in [
+        "README.md", "manifest.json", "profiles.json", "schedules.json",
+        "transactions.csv", "daily.csv", "choices.csv", "investments.csv",
+        "ml_features.csv", "frontend-demo.json"
+    ]] + [ROOT/"scripts/data/generate_common_92.py", ROOT/"scripts/data/validate_common_92.py"]
+    with ZipFile(archive, "w", compression=ZIP_DEFLATED, compresslevel=9) as z:
+        for p in contents:
+            info = ZipInfo("MOA_common_92days/" + (p.name if p.parent == OUT else "scripts/" + p.name),
+                           date_time=(2026, 9, 11, 0, 0, 0))
+            info.compress_type = ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            z.writestr(info, p.read_bytes(), compress_type=ZIP_DEFLATED, compresslevel=9)
     print(json.dumps(manifest,ensure_ascii=False,indent=2))
+    print(f"Team ZIP: {archive.stat().st_size} bytes")
 
 
 FEATURE_ROWS: list[dict] = []
