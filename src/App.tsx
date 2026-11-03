@@ -134,17 +134,26 @@ function Shell() {
   }, [state.settings.reduceMotion]);
 
   if (!state.introSeen || replayIntro) {
+    // Replaying onboarding must never replace existing cash, records or investments with demo data.
+    const hasExistingData = Boolean(state.profile || state.demo || state.records.length || state.spendLog.length || state.moa.anchor);
     return (
       <Onboarding
+        existingData={hasExistingData}
         onDone={() => {
           finishIntroPreview();
           nav.reset();
           update((s) => ({ ...s, introSeen: true }));
+          // "My account" on replay opens account settings instead of doing nothing.
+          if (state.profile) nav.push({ name: 'moaSetup' });
         }}
         onDemo={() => {
           finishIntroPreview();
           nav.reset();
-          update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWallet(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
+          if (hasExistingData) {
+            update((s) => ({ ...s, introSeen: true }));
+          } else {
+            update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWallet(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
+          }
           nav.setTab('home');
         }}
       />
