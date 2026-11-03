@@ -1,0 +1,53 @@
+name: Generate shared MOA 92-day synthetic data
+
+on:
+  push:
+    branches:
+      - feat/common-synthetic-92day-fixtures
+    paths:
+      - scripts/data/generate_common_92.py
+      - .github/workflows/generate-moa-92days.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Regenerate deterministic synthetic CSV and frontend JSON
+        run: python3 scripts/data/generate_common_92.py
+      - name: Validate all 92 days and core fixture integrity
+        run: |
+          python3 - <<'PY'
+          import csv, json
+          from pathlib import Path
+          root=Path("data/moa-2026-fall")
+          m=json.loads((root/"manifest.json").read_text(encoding="utf-8"))
+          assert m["synthetic"] and m["days_inclusive"] == 92 and m["profiles"] == 10
+          for name, n in m["counts"].items():
+              file_name = {"transactions":"transactions.csv", "daily":"daily.csv",
+                           "choices":"choices.csv", "investments":"investments.csv",
+                           "ml_features":"ml_features.csv"}[name]
+              with (root/file_name).open(encoding="utf-8-sig", newline="") as f:
+                  actual=sum(1 for _ in csv.DictReader(f))
+              assert n == actual, (file_name,n,actual)
+          demo=json.loads(Path("src/data/moa92.json").read_text(encoding="utf-8"))
+          assert demo["start"] == "2026-09-11" and demo["end"] == "2026-12-11"
+          assert len(demo["daily"]) == 92
+          assert len({x["date"] for x in demo["daily"]}) == 92
+          print("OK: fixture counts, dates and JSON integrity")
+          PY
+      - name: Commit reproducible generated data to this branch
+        run: |
+          git config user.name "Park Ji Hyun"
+          git config user.email "127265212+jihyuncoding@users.noreply.github.com"
+          git add data/moa-2026-fall src/data/moa92.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: regenerate valid 92-day shared synthetic files"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
