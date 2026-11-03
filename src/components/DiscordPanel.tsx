@@ -135,13 +135,12 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
           onChange={(v) => {
             if (v && !state.settings.discordConsent) return setConsent('daily');
             setDaily({ enabled: v });
-            toast(v ? '데일리 카드뉴스를 켰어요' : '데일리 카드뉴스를 껐어요');
+            toast(v ? '수신 요청을 저장했어요. 현재 자동 발송은 준비 중이에요' : '수신 요청을 껐어요');
           }}
         />
       </div>
 
-      {on && (
-        <>
+      <div className="cn-delivery-fields">
           <div className="cn-time-field">
             <label htmlFor="cn-custom-time" className="lab">받고 싶은 시간 <span className="cn-time-zone">한국 시간 · 매일</span></label>
             <input id="cn-custom-time" className="cn-time-input" type="time" step={60}
@@ -161,17 +160,18 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
               <div className="hint">Discord 공용 채널에 표시돼요. 실명 대신 별명을 권장해요.</div>
             </label>
           )}
-          {sub?.nextRunAt && <p className="small muted" style={{ margin: '8px 0 0' }}>서버에 저장된 예약 시각: {formatKDateTime(sub.nextRunAt)} (예상)</p>}
-          {m.dailySync.error && <Notice kind="danger">시간 설정 저장에 실패했어요: {m.dailySync.error}</Notice>}
-          <div className="row between" style={{ marginTop: 14 }}>
-            <div>
-              <div className="bold" style={{ fontSize: 15 }}>모의투자 체결 카드도 받기</div>
-              <div className="small muted">사고팔면 그 거래 카드도 바로 와요.</div>
+          {on && !import.meta.env.PROD && sub?.nextRunAt && <p className="small muted" style={{ margin: '8px 0 0' }}>서버의 다음 실행 예정: {formatKDateTime(sub.nextRunAt)}</p>}
+          {on && m.dailySync.error && <Notice kind="danger">시간 설정 동기화에 실패했어요: {m.dailySync.error}</Notice>}
+          {on && (
+            <div className="row between" style={{ marginTop: 14 }}>
+              <div>
+                <div className="bold" style={{ fontSize: 15 }}>매수·매도 카드도 받기</div>
+                <div className="small muted">모의투자 체결 시 공유 채널로 보내요.</div>
+              </div>
+              <Switch label="체결 카드 자동 전송" checked={state.settings.autoSendDiscord} onChange={(v) => update((s) => ({ ...s, settings: { ...s.settings, autoSendDiscord: v } }))} />
             </div>
-            <Switch label="체결 카드 자동 전송" checked={state.settings.autoSendDiscord} onChange={(v) => update((s) => ({ ...s, settings: { ...s.settings, autoSendDiscord: v } }))} />
-          </div>
-        </>
-      )}
+          )}
+        </div>
       <div className="cn-delivery-caution" role="status">현재 Vercel 배포에서는 예약 자동 발송 서버가 실행되지 않아요. 시간을 선택·저장할 수 있지만, 해당 시각에 Discord로 자동 전송되지는 않습니다. 카드뉴스는 앱에서 직접 확인할 수 있어요.</div>
       {testResult && !testResult.ok && <div style={{ marginTop: 10 }}><Notice kind="danger">{testResult.msg}</Notice></div>}
       <div className="row" style={{ gap: 8, marginTop: 14 }}>
@@ -185,7 +185,7 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
             update((s) => ({ ...s, settings: { ...s.settings, discordConsent: true }, daily: { ...s.daily, enabled: was === 'daily' ? true : s.daily.enabled } }));
             setConsent(null);
             if (was === 'test') void test();
-            else toast('데일리 카드뉴스를 켰어요');
+            else toast('수신 요청을 저장했어요. 실제 자동 전송은 준비 중이에요');
           }}
         />
       )}
