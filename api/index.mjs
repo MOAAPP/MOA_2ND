@@ -28771,7 +28771,7 @@ function parseNewsRss(xml, now, maxAgeDays = 7) {
 async function fetchNews(query) {
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(`"${query}" when:3d`)}&hl=ko&gl=KR&ceid=KR:ko`;
   try {
-    const res = await fetchWithTimeout(url, { headers: { "User-Agent": "Mozilla/5.0 (parallel-bank)" } }, 8e3);
+    const res = await fetchWithTimeout(url, { headers: { "User-Agent": "Mozilla/5.0 (moa)" } }, 8e3);
     if (!res.ok) return { items: [], error: `\uAE30\uC0AC \uAC80\uC0C9 \uC751\uB2F5 \uC624\uB958(${res.status})` };
     const xml = await res.text();
     return { items: parseNewsRss(xml, Date.now(), 4).slice(0, 5), error: null };
@@ -29201,7 +29201,7 @@ function parseNaverItem(it, now = Date.now()) {
 async function poll(path) {
   let res;
   try {
-    res = await fetchWithTimeout(`https://polling.finance.naver.com/api/realtime/domestic/${path}`, { headers: { "User-Agent": "Mozilla/5.0 (parallel-bank)", Referer: "https://m.stock.naver.com/" } }, 6e3);
+    res = await fetchWithTimeout(`https://polling.finance.naver.com/api/realtime/domestic/${path}`, { headers: { "User-Agent": "Mozilla/5.0 (moa)", Referer: "https://m.stock.naver.com/" } }, 6e3);
   } catch {
     throw new ApiError(502, "quote_unreachable", "\uB124\uC774\uBC84 \uC2DC\uC138\uC5D0 \uC5F0\uACB0\uD558\uC9C0 \uBABB\uD588\uC5B4\uC694.", true);
   }
@@ -29263,7 +29263,7 @@ async function yahooChart(symbol, range = "3mo") {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=1d`;
   let res;
   try {
-    res = await fetchWithTimeout(url, { headers: { "User-Agent": "Mozilla/5.0 (parallel-bank)", Accept: "application/json" } }, 8e3);
+    res = await fetchWithTimeout(url, { headers: { "User-Agent": "Mozilla/5.0 (moa)", Accept: "application/json" } }, 8e3);
   } catch {
     throw new ApiError(502, "quote_unreachable", "Yahoo \uC2DC\uC138\uC5D0 \uC5F0\uACB0\uD558\uC9C0 \uBABB\uD588\uC5B4\uC694.", true);
   }
@@ -53631,7 +53631,7 @@ async function sendJob(id, auto) {
   running.add(id);
   patch(id, { status: "sending", stage: "send", error: void 0 });
   try {
-    const files = job.images.map((f, i) => ({ name: `parallel-bank-${job.kind}-${i + 1}.png`, data: readFileSync4(join4(jobDir(id), f)), description: job.titles[i] }));
+    const files = job.images.map((f, i) => ({ name: `moa-${job.kind}-${i + 1}.png`, data: readFileSync4(join4(jobDir(id), f)), description: job.titles[i] }));
     await sendToDiscord(job.summary, files);
     patch(id, { status: "sent", stage: void 0, sends: [...job.sends, { at: Date.now(), auto, ok: true }] });
   } catch (e) {
@@ -54284,7 +54284,7 @@ data: ${JSON.stringify({ message: e.message })}
 
 // server/vercel-entry.ts
 process.env.DAILY_SCHEDULER ??= "off";
-process.env.DATA_DIR ??= "/tmp/parallel-bank-data";
+process.env.DATA_DIR ??= "/tmp/moa-data";
 var { app: app2 } = await init_index().then(() => index_exports);
 var vercel_entry_default = app2;
 export {

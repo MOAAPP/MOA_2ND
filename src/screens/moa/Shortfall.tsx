@@ -16,7 +16,7 @@ import {
 } from '../../lib/moa';
 import { useNav } from '../../state/nav';
 import { useMoa } from '../../state/moa';
-import { AiLabel, BalanceChart, fmt, GradeBadge, HelpCard, md } from './parts';
+import { AiLabel, BalanceChart, fmt, GradeBadge, HelpCard, md, ReliabilityRow } from './parts';
 
 /**
  * 부족 가능일 상세 — 근거, 시나리오 전환(급여 지연), 살까 말까(결제 수단별).
@@ -64,6 +64,7 @@ export function Shortfall() {
                 )}
               </>
             ) : <h1>14일 안에 등록된 필수결제가 없어요</h1>}
+            <ReliabilityRow value={report.reliability} onFix={() => setBalOpen(true)} />
           </section>
 
           <section className="t-card">

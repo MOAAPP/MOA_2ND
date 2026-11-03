@@ -46,7 +46,7 @@ export function useDiscordStatus() {
 export function ConsentSheet({ onClose, onAgree }: { onClose: () => void; onAgree: () => void }) {
   return (
     <Sheet title="Discord로 보내는 정보" onClose={onClose} footer={<><button className="btn ghost" onClick={onClose}>취소</button><button className="btn primary flex" onClick={onAgree}>동의하고 켜기</button></>}>
-      <p className="ink2" style={{ marginTop: 0, fontSize: 15 }}>카드뉴스는 <b>평행통장 Discord 서버의 공용 채널</b>로 전송돼요. 서버에 참여한 사람은 누구나 볼 수 있어요.</p>
+      <p className="ink2" style={{ marginTop: 0, fontSize: 15 }}>카드뉴스는 <b>모아 Discord 서버의 공용 채널</b>로 전송돼요. 서버에 참여한 사람은 누구나 볼 수 있어요.</p>
       <div className="card" style={{ boxShadow: 'none', background: 'var(--surface-2)' }}>
         <div className="bold small">보내는 것</div>
         <ul className="small ink2" style={{ margin: '6px 0 0', paddingLeft: 18 }}>

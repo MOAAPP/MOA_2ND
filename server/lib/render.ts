@@ -57,7 +57,7 @@ export function cardTree(card: CardSpec, photo: RenderPhoto): Node {
     h(
       'div',
       { position: 'relative', justifyContent: 'space-between', alignItems: 'center', padding: '44px 56px 0' },
-      h('div', { fontSize: 28, fontWeight: 700, color: '#FFFFFF', letterSpacing: -0.5 }, '평행통장'),
+      h('div', { fontSize: 28, fontWeight: 700, color: '#FFFFFF', letterSpacing: -0.5 }, '모아'),
       h('div', { fontSize: 26, fontWeight: 600, color: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.18)', padding: '8px 20px', borderRadius: 999 }, `${card.index} / 4`),
     ),
     h(

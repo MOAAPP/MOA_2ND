@@ -155,3 +155,39 @@
   .mo-scn > div { flex-direction: column; gap: 2px; }
 }
 .mo-confirm-top > :nth-child(2) { flex: none; width: 32px; }
+
+/* 기록 신뢰도 — 위험 등급과 색 계열을 다르게 둬 헷갈리지 않게 */
+.mo-rel { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; border: 1px solid currentColor; }
+.mo-rel.r-enough { color: #1F7A5C; background: #F0FAF6; }
+.mo-rel.r-check { color: #8A5A00; background: #FFF8EA; }
+.mo-rel.r-low { color: #6B6F80; background: #F2F3F7; }
+.mo-rel-row { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--mo-g50, #F5F7FB); text-align: left; }
+.mo-rel-row p { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: #4E5468; }
+.mo-rel-row .mo-link { margin-top: 6px; }
+
+/* 온보딩 v20 — 결제일 부족 탐지 중심 */
+.ob-hero-solo { margin: 4px 0 6px; color: var(--moa); }
+.ob-wf-row.show { opacity: 1; animation: none; }
+.ob-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin-bottom: 10px; border-radius: 14px; background: #EEF0F6; }
+.ob-seg.three { grid-template-columns: repeat(3, 1fr); }
+.ob-seg button { min-height: 40px; padding: 6px 8px; border: 0; border-radius: 11px; background: transparent; font: inherit; font-size: 13.5px; font-weight: 700; color: #5A6072; letter-spacing: -0.02em; }
+.ob-seg button.on { background: #fff; color: var(--ink, #15172E); box-shadow: 0 1px 3px rgba(21,23,46,.1); }
+.ob-payday { margin-top: 14px; padding: 14px; border-radius: 14px; display: grid; gap: 2px; }
+.ob-payday.ok { background: #EEF9F4; }
+.ob-payday.short { background: #FFF0F2; }
+.ob-payday span { font-size: 13px; font-weight: 600; color: #4E5468; }
+.ob-payday strong { font-size: 26px; font-weight: 800; letter-spacing: -0.04em; }
+.ob-payday.ok strong { color: #1F7A5C; }
+.ob-payday.short strong { color: #E0244A; }
+.ob-payday em { font-style: normal; font-size: 13px; color: #4E5468; }
+.ob-sms { margin-bottom: 10px; }
+.ob-sms small { display: block; font-size: 12px; color: var(--t-g500, #6B7684); }
+.ob-sms .raw { margin: 6px 0; padding: 10px 12px; border-radius: 12px; background: #F6F7FB; font-size: 13px; line-height: 1.5; color: #2B2F42; word-break: keep-all; }
+.ob-sms mark { background: #E3E6EE; color: #6B6F80; border-radius: 4px; padding: 0 3px; }
+.ob-ai .tip, .ob-trust2 .tip { margin: 10px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--t-g500, #6B7684); }
+.ob-trust2 .row { display: grid; gap: 6px; justify-items: start; padding: 10px 0; border-bottom: 1px solid #F0F1F5; }
+.ob-trust2 .row small { font-size: 12px; font-weight: 700; color: var(--t-g500, #6B7684); }
+.ob-trust2 .row p { margin: 0; font-size: 13.5px; line-height: 1.45; color: #2B2F42; }
+.ob-levels { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.ob-levels li { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; color: #4E5468; }
+.ob-levels .mo-rel { flex: none; }

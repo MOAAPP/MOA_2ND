@@ -181,7 +181,7 @@ describe('데일리 카드뉴스', () => {
     expect(job.images).toHaveLength(4);
     expect(discordCalls).toHaveLength(1);
     const payload = JSON.parse(String(discordCalls[0].form.get('payload_json')));
-    expect(payload.content).toContain('평행통장 데일리');
+    expect(payload.content).toContain('모아 데일리');
     expect(payload.content).toContain('3일 연속');
     expect(payload.attachments).toHaveLength(4);
     expect(isDue(store.get().subscriptions[sub.deviceHash])).toBe(false);

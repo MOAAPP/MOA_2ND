@@ -1,5 +1,5 @@
 {
-  "name": "parallel-bank",
+  "name": "moa",
   "version": "1.0.0",
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",

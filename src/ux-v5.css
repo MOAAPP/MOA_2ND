@@ -1,4 +1,4 @@
-/* 평행통장 v5 · 금융 앱형 UI 시스템: 현재 / 과거 / 미래 중심.
+/* 모아 v5 · 금융 앱형 UI 시스템: 현재 / 과거 / 미래 중심.
    브랜드별 고유 UI를 복제하지 않고 가독성, 일관된 정보 위계, 행동 우선순위만 차용. */
 :root{--bg:#f6f7f9;--surface:#fff;--surface-2:#f3f5f7;--ink:#191f28;--ink-2:#4e5968;--ink-3:#8b95a1;--blue:#3182f6;--blue-press:#2273db;--blue-weak:#eaf3ff;--line:#ecf0f3;--radius:20px;--shadow:none;--nav-h:72px}
 body{background:#e9edf2;color:#191f28;line-height:1.48}

@@ -420,7 +420,7 @@ button.world-card { text-align: left; border: 0; width: 100%; font: inherit; }
 .daily-thumbs img { width: calc(25% - 5px); aspect-ratio: 1080 / 1350; object-fit: cover; border-radius: 8px; background: #dfe3e8; }
 
 /* ══════════════════════════════════════════
- * 평행통장 화면 — 연한 블루 바탕, 둥근 흰 카드, 입체 아이콘 타일
+ * 모아 화면 — 연한 블루 바탕, 둥근 흰 카드, 입체 아이콘 타일
  * ══════════════════════════════════════════ */
 .app { background: linear-gradient(180deg, #e9eefd 0px, #f4f6fb 320px); }
 .btn { border-radius: 16px; }

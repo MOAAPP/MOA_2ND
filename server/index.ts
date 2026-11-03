@@ -176,7 +176,7 @@ api
     route(async (req, res) => {
       deviceOf(req);
       try {
-        await sendToDiscord('✅ 평행통장 연결 확인 메시지예요. 데일리 카드뉴스와 모의투자 카드뉴스가 이 채널로 전송됩니다.');
+        await sendToDiscord('✅ 모아 연결 확인 메시지예요. 데일리 카드뉴스와 모의투자 카드뉴스가 이 채널로 전송됩니다.');
         res.json({ ok: true, status: discordStatus() });
       } catch (e) {
         const msg = e instanceof DiscordError ? e.message : 'Discord 연결 확인에 실패했어요.';
@@ -366,7 +366,7 @@ if (process.env.VITEST !== 'true' && !process.env.VERCEL) {
   app.listen(port, () => {
     const s = discordStatus();
     const m = marketInfo();
-    console.log(`[평행통장 API] http://localhost:${port}`);
+    console.log(`[모아 API] http://localhost:${port}`);
     console.log(`  시세: ${m.chain.join(' → ')} (설정 ${m.setting}${m.kis ? ', KIS 키 있음' : ''})  사진: ${photosConfigured() ? '설정됨' : '미설정'}  AI 요약: ${aiConfigured() ? '켜짐' : '꺼짐'}  Discord: ${s.configured ? '설정됨' : s.misconfigured ? '형식 오류' : '미설정'}`);
     if (process.env.DAILY_SCHEDULER !== 'off') startScheduler();
   });
