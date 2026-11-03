@@ -6,6 +6,7 @@ import { CardNewsDemo } from './screens/CardNewsDemo';
 import { Decide } from './screens/Decide';
 import { Future } from './screens/Future';
 import { Onboarding } from './screens/Onboarding';
+import { DemoDataset } from './screens/DemoDataset';
 import { ParallelLab } from './screens/ParallelLab';
 import { Insights } from './screens/Insights';
 import { Learn, Practice } from './screens/Learn';
@@ -81,6 +82,7 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'record': return <RecordDetail id={screen.id} />;
     case 'past': return <Past />;
     case 'settings': return <Settings onReplayIntro={onReplayIntro} />;
+    case 'demoDataset': return <DemoDataset />;
     case 'finance': return <FinanceEdit />;
     case 'insights': return <Insights />;
     case 'future': return <Future />;
