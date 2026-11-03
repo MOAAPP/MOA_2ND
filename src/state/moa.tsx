@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { todayKST } from '../../shared/dates';
-import { addTxns, assessRisk, decideAlerts, pushAlerts, type MoaState, type NewTxn, type RiskOptions } from '../lib/moa';
+import { addTxns, addTxnsChecked, assessRisk, decideAlerts, pushAlerts, type MoaState, type NewTxn, type RiskOptions } from '../lib/moa';
 import { profileFromMoa, spendEntryOf } from '../lib/moa/bridge';
 import { useStore } from './store';
 
@@ -32,17 +32,20 @@ export function useMoa(opts: RiskOptions = {}) {
     [update],
   );
 
-  /** 거래 저장: 모아 엔진 + 가계부 목록 */
+  /** 거래 저장: 모아 엔진 + 가계부 목록. 이미 저장된 자동 기록은 건너뛰고, 저장·건너뜀 건수를 돌려준다. */
   const saveTxns = useCallback(
-    (list: NewTxn[]) =>
+    (list: NewTxn[]): { saved: number; skipped: number } => {
+      const preview = addTxnsChecked(state.moa, list);
       update((s) => {
         const before = new Set(s.moa.txns.map((t) => t.id));
         const moa = addTxns(s.moa, list);
         const added = moa.txns.filter((t) => !before.has(t.id));
         const entries = added.map(spendEntryOf).filter((e): e is NonNullable<typeof e> => !!e);
         return { ...s, moa, spendLog: [...s.spendLog, ...entries], profile: s.profile ? profileFromMoa(moa, s.profile) : s.profile };
-      }),
-    [update],
+      });
+      return { saved: preview.added.length, skipped: preview.skipped.length };
+    },
+    [update, state.moa],
   );
 
   return { moa: state.moa, report, today, now, set, saveTxns };

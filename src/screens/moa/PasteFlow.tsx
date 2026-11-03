@@ -125,9 +125,9 @@ export function PasteFlow({ onClose }: { onClose: () => void }) {
       });
     }
     if (m !== moa) set(() => m);
-    saveTxns(list);
+    const { saved, skipped } = saveTxns(list);
     const newCards = [...cardIds.keys()];
-    toast(`${list.length}건 저장했어요${newCards.length ? ` · ${newCards.join(', ')} 카드 결제일을 확인해 주세요` : ''}`);
+    toast(`${saved}건 저장했어요${skipped ? ` · ${skipped}건은 이미 있어서 건너뛰었어요` : ''}${newCards.length ? ` · ${newCards.join(', ')} 카드 결제일을 확인해 주세요` : ''}`);
     onClose();
   };
 
