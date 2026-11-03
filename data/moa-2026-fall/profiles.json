@@ -1,0 +1,60 @@
+[
+  {
+    "user_id": "S01",
+    "scenario": "기본 대학생·평행세계 체험",
+    "start_cash_krw": 800000,
+    "salary_day": 1,
+    "salary_krw": 800000,
+    "rent_krw": 400000,
+    "savings_goal_krw": 45000,
+    "missing_record_rate_assumption": 0.04
+  },
+  {
+    "user_id": "S02",
+    "scenario": "소액 지출 반복",
+    "start_cash_krw": 1050000,
+    "salary_day": 10,
+    "salary_krw": 1050000,
+    "rent_krw": 380000,
+    "savings_goal_krw": 35000,
+    "missing_record_rate_assumption": 0.06
+  },
+  {
+    "user_id": "S03",
+    "scenario": "주말 집중 소비",
+    "start_cash_krw": 1100000,
+    "salary_day": 5,
+    "salary_krw": 900000,
+    "rent_krw": 420000,
+    "savings_goal_krw": 65000,
+    "missing_record_rate_assumption": 0.08
+  },
+  {
+    "user_id": "S04",
+    "scenario": "월급 입금 지연",
+    "start_cash_krw": 380000,
+    "salary_day": 23,
+    "salary_krw": 750000,
+    "rent_krw": 450000,
+    "savings_goal_krw": 10000,
+    "missing_record_rate_assumption": 0.12
+  },
+  {
+    "user_id": "S05",
+    "scenario": "식비 비중 높음",
+    "start_cash_krw": 1250000,
+    "salary_day": 15,
+    "salary_krw": 900000,
+    "rent_krw": 450000,
+    "savings_goal_krw": 30000,
+    "missing_record_rate_assumption": 0.05
+  },
+  {
+    "user_id": "S06",
+    "scenario": "결제일 잔액 부족",
+    "start_cash_krw": 320000,
+    "salary_day": 28,
+    "salary_krw": 720000,
+    "rent_krw": 500000,
+    "savings_goal_krw": 10000,
+    "missing_record_rate_assumption": 0.13���q�^

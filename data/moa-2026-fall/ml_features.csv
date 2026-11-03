@@ -1,0 +1,17 @@
+ï»¿user_id,as_of_date,target_date,split,as_of_weekday,days_to_salary,days_to_rent,observed_days_14,mean_recorded_14_krw,last_recorded_spend_krw,prev_day_recorded,target_actual_spend_krw,target_recorded,target_stage
+S01,2026-09-24,2026-09-25,train,3,6,6,10,20800,21500,1,7100,1,historical_synthetic
+S01,2026-09-25,2026-09-26,train,4,5,5,10,20060,7100,1,41500,1,historical_synthetic
+S01,2026-09-26,2026-09-27,train,5,4,4,10,21930,41500,1,17400,1,historical_synthetic
+S01,2026-09-27,2026-09-28,train,6,3,3,10,20370,17400,1,20300,1,historical_synthetic
+S01,2026-09-28,2026-09-29,train,0,2,2,11,20364,20300,1,1500,1,historical_synthetic
+S01,2026-09-29,2026-09-30,train,1,1,1,12,18792,1500,1,8000,1,historical_synthetic
+S01,2026-09-30,2026-10-01,train,2,0,0,12,17558,8000,1,12100,1,historical_synthetic
+S01,2026-10-01,2026-10-02,train,3,30,30,12,16900,12100,1,8200,1,historical_synthetic
+S01,2026-10-02,2026-10-03,train,4,29,29,13,16231,8200,1,35000,1,historical_synthetic
+S01,2026-10-03,2026-10-04,train,5,28,28,13,17638,35000,1,43100,1,historical_synthetic
+S01,2026-10-04,2026-10-05,train,6,27,27,13,17454,43100,1,5300,1,historical_synthetic
+S01,2026-10-05,2026-10-06,train,0,26,26,13,17523,5300,1,4500,1,historical_synthetic
+S01,2026-10-06,2026-10-07,train,1,25,25,13,17346,4500,1,9100,0,historical_synthetic
+S01,2026-10-07,2026-10-08,train,2,24,24,13,17346,4500,0,0,0,historical_synthetic
+S01,2026-10-08,2026-10-09,train,3,23,23,12,17000,4500,0,13000,1,historical_synthetic
+S01,2026-10-¶»§q«^

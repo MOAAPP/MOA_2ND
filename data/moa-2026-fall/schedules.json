@@ -1,0 +1,67 @@
+[
+  {
+    "user_id": "S01",
+    "scenario": "기본 대학생·평행세계 체험",
+    "start_cash_krw": 800000,
+    "salary_delays": {},
+    "schedule": [
+      {
+        "id": "S01-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 800000,
+        "recurrence": "monthly",
+        "day": 1,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S01-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount": 400000,
+        "recurrence": "monthly",
+        "day": 1,
+        "essential": true
+      },
+      {
+        "id": "S01-phone",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 55000,
+        "recurrence": "monthly",
+        "day": 1,
+        "essential": true
+      },
+      {
+        "id": "S01-bills",
+        "name": "관리비·구독",
+        "direction": "out",
+        "amount": 75000,
+        "recurrence": "monthly",
+        "day": 1,
+        "essential": true
+      }
+    ]
+  },
+  {
+    "user_id": "S02",
+    "scenario": "소액 지출 반복",
+    "start_cash_krw": 1050000,
+    "salary_delays": {},
+    "schedule": [
+      {
+        "id": "S02-salary",
+        "name": "알바비",
+        "direction": "in",
+        "amount": 1050000,
+        "recurrence": "monthly",
+        "day": 10,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "S02-rent",
+        "name": "월세",
+        "direction": "out",
+        "amount"���q�^

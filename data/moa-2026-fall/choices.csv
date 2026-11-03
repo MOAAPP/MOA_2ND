@@ -1,0 +1,13 @@
+﻿id,user_id,date,at_kst,item,category,original_price_krw,paid_krw,choice,saved_vs_buy_krw,stage
+S01-choice-001,S01,2026-09-11,2026-09-11T19:00+09:00,무선 이어폰,쇼핑,159000,87450,alternative,71550,historical_synthetic
+S01-choice-002,S01,2026-09-15,2026-09-15T19:00+09:00,택시,교통,14800,14800,buy,0,historical_synthetic
+S01-choice-003,S01,2026-09-19,2026-09-19T19:00+09:00,카페 라떼,카페,5500,0,wait,5500,historical_synthetic
+S01-choice-004,S01,2026-09-23,2026-09-23T19:00+09:00,러닝 스니커즈,패션,129000,70950,alternative,58050,historical_synthetic
+S01-choice-005,S01,2026-09-27,2026-09-27T19:00+09:00,OTT 연간권,구독,99000,99000,buy,0,historical_synthetic
+S01-choice-006,S01,2026-10-01,2026-10-01T19:00+09:00,디저트,카페,12000,0,wait,12000,historical_synthetic
+S01-choice-007,S01,2026-10-05,2026-10-05T19:00+09:00,친구와 저녁,식비,28000,15400,alternative,12600,historical_synthetic
+S01-choice-008,S01,2026-10-09,2026-10-09T19:00+09:00,배달 야식,식비,23500,23500,buy,0,historical_synthetic
+S01-choice-009,S01,2026-10-13,2026-10-13T19:00+09:00,무선 이어폰,쇼핑,159000,0,wait,159000,historical_synthetic
+S01-choice-010,S01,2026-10-17,2026-10-17T19:00+09:00,택시,교통,14800,8140,alternative,6660,historical_synthetic
+S01-choice-011,S01,2026-10-21,2026-10-21T19:00+09:00,카페 라떼,카페,5500,5500,buy,0,historical_synthetic
+S01-choice-012,S01,2026-10-25,2026-10-25T19:00+09:00,러닝 스니커즈,패션,129000,0,wait,129000,���q�^

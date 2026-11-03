@@ -1,0 +1,11 @@
+﻿id,user_id,date,at_kst,code,stock_name,side,qty,price_krw,amount_krw,stage,note
+S01-trade-001,S01,2026-09-23,2026-09-23T13:00+09:00,360750,TIGER 미국S&P500,buy,2,25700,51400,historical_synthetic,가상 ETF 체결 예시 (가상 시세)
+S01-trade-002,S01,2026-10-15,2026-10-15T13:00+09:00,360750,TIGER 미국S&P500,buy,2,26000,52000,historical_synthetic,가상 ETF 체결 예시 (가상 시세)
+S01-trade-003,S01,2026-11-12,2026-11-12T13:00+09:00,360750,TIGER 미국S&P500,sell,1,26200,26200,future_scenario,가상 ETF 체결 예시 (가상 시세)
+S01-trade-004,S01,2026-12-04,2026-12-04T13:00+09:00,360750,TIGER 미국S&P500,buy,2,26400,52800,future_scenario,가상 ETF 체결 예시 (가상 시세)
+S02-trade-001,S02,2026-09-24,2026-09-24T13:00+09:00,069500,KODEX 200,buy,2,33000,66000,historical_synthetic,가상 ETF 체결 예시 (가상 시세)
+S02-trade-002,S02,2026-10-16,2026-10-16T13:00+09:00,069500,KODEX 200,buy,2,32900,65800,historical_synthetic,가상 ETF 체결 예시 (가상 시세)
+S02-trade-003,S02,2026-11-13,2026-11-13T13:00+09:00,069500,KODEX 200,sell,1,32800,32800,future_scenario,가상 ETF 체결 예시 (가상 시세)
+S02-trade-004,S02,2026-12-07,2026-12-07T13:00+09:00,069500,KODEX 200,buy,2,32600,65200,future_scenario,가상 ETF 체결 예시 (가상 시세)
+S03-trade-001,S03,2026-09-25,2026-09-25T13:00+09:00,360750,TIGER 미국S&P500,buy,2,25700,51400,historical_synthetic,가상 ETF 체결 예시 (가상 시세)
+S03-trade-002,S03,2026-10-19,2026-10-19���q�^

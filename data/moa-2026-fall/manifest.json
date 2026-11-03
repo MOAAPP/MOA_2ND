@@ -1,0 +1,26 @@
+{
+  "dataset": "MOA-common-92days-v1",
+  "version": "1.0.0",
+  "synthetic": true,
+  "seed": 20260911,
+  "timezone": "Asia/Seoul",
+  "currency": "KRW",
+  "date_start": "2026-09-11",
+  "date_end": "2026-12-11",
+  "days_inclusive": 92,
+  "as_of_reference": "2026-11-04",
+  "profiles": 10,
+  "counts": {
+    "transactions": 1600,
+    "daily": 920,
+    "choices": 230,
+    "investments": 40,
+    "ml_features": 780
+  },
+  "warnings": [
+    "All profiles/amounts/transactions/quotes are artificial.",
+    "2026-11-05 through 2026-12-11 is hypothetical future, not observed actual spending.",
+    "Never train on future/target rows when evaluating as of 2026-11-04.",
+    "Unrecorded days are UNKNOWN, not zero-spend training labels."
+  ]
+}
