@@ -90,7 +90,7 @@ export function Lesson({ id }: { id: string }) {
       case 'buyEtf':
         return nav.push({ name: 'stock', code: '069500' });
       case 'sellAny': {
-        const held = Object.keys(state.portfolio.positions)[0];
+        const held = Object.keys(state.worldWallet.etfs)[0];
         return nav.push(held ? { name: 'stock', code: held } : { name: 'stock', code: '005930' });
       }
       case 'viewPortfolio':

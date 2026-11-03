@@ -210,7 +210,7 @@ export function CardNews({ tradeId, jobId: givenJobId }: { tradeId: string; jobI
   const nav = useNav();
   const m = useMarket();
   const jobId = givenJobId ?? state.cardJobIds[tradeId];
-  const fill = state.portfolio.fills.find((f) => f.id === tradeId);
+  const fill = state.investJournal.fills.find((f) => f.id === tradeId) ?? state.portfolio.fills.find((f) => f.id === tradeId);
   const { job, setJob, err, setErr, load } = useJob(jobId);
   const [creating, setCreating] = useState(false);
 

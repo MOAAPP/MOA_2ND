@@ -212,7 +212,7 @@ export function Learn() {
 
     <button className="t-cta-card" onClick={()=>nav.setTab('invest')}>
       <span className="t-cta-icon violet"><IconChartBars/></span>
-      <span className="t-cta-text"><b>배운 걸 바로 써보기</b><small>가상의 1,000만 원으로 사고팔아요</small></span>
+      <span className="t-cta-text"><b>배운 걸 바로 써보기</b><small>홈의 평행세계 가상 지갑으로 사고팔아요</small></span>
       <IconChevron className="t-chev"/>
     </button>
   </div>;
