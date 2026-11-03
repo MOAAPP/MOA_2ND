@@ -59,7 +59,10 @@
 
 
 /* v22 onboarding: short, practical introduction. No oversized decorative icons. */
-.ob { background: #F6F7FA; }
+@keyframes ob-v22-fade { from { opacity: 0; } to { opacity: 1; } }
+.ob { background: #F6F7FA; overflow-x: clip; }
+.ob-main { animation: ob-v22-fade .2s ease-out; }
+.reduce-motion .ob-main { animation: none; }
 .ob-top { background: rgba(246, 247, 250, .94); }
 .ob-main { padding-top: 18px; }
 .ob-step-0 .ob-kicker { color: var(--moa); }
