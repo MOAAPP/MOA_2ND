@@ -17,6 +17,7 @@ import { RecordDetail } from './screens/RecordDetail';
 import { FinanceEdit, Settings } from './screens/Settings';
 import { StockDetail } from './screens/StockDetail';
 import { MarketProvider } from './state/market';
+import { FundedInvestDaemon } from './state/fundedInvestDaemon';
 import { NavProvider, useNav, type Screen, type Tab } from './state/nav';
 import { StoreProvider, useStore } from './state/store';
 import { demoData } from './lib/demo';
@@ -189,6 +190,7 @@ export function App() {
       <NavProvider>
         <ToastProvider>
           <MarketProvider>
+            <FundedInvestDaemon />
             <div className="app">
               <Shell />
             </div>
