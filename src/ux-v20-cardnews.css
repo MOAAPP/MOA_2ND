@@ -1,0 +1,44 @@
+/* 모아 v20: 작은 카드 네 장의 가로 스크롤을 하나의 순차 읽기 경험으로 교체 */
+.cn-reader { margin-top: 16px; padding: 18px; border: 1px solid var(--line); border-radius: 22px; background: var(--surface); }
+.cn-reader-intro { padding: 0 0 16px; border-bottom: 1px solid var(--line); }
+.cn-overline { display: block; color: var(--blue); font-size: 12px; font-weight: 750; letter-spacing: .02em; }
+.cn-reader-intro h2 { margin: 7px 0 6px; font-size: clamp(19px, 5.2vw, 23px); line-height: 1.35; letter-spacing: -.035em; word-break: keep-all; }
+.cn-reader-intro p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.65; }
+.cn-reader-count { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 16px 0 10px; font-size: 14px; font-weight: 650; }
+.cn-reader-count > :first-child { flex: 1; min-width: 0; }
+.cn-reader-fraction { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 12px; }
+.cn-reader-image-frame { overflow: hidden; display: flex; align-items: center; justify-content: center; width: 100%; background: #f6f7fa; border-radius: 14px; border: 1px solid var(--line); }
+.cn-reader-image-frame img { display: block; width: 100%; height: auto; max-height: 530px; object-fit: contain; }
+.cn-reader-steps { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+.cn-reader-steps button { display: grid; place-items: center; width: 37px; height: 37px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink-2); font-size: 13px; font-weight: 750; }
+.cn-reader-steps button[aria-current="step"] { border-color: var(--blue); color: white; background: var(--blue); }
+.cn-reader-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 10px; margin-top: 14px; }
+.cn-reader-actions button { min-height: 48px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 14px; font-weight: 750; }
+.cn-reader-actions .cn-reader-next { background: var(--blue); color: white; border-color: var(--blue); }
+.cn-reader-actions button:disabled { opacity: .45; cursor: default; }
+.cn-reader-original { display: block; margin-top: 12px; text-align: center; padding: 8px; font-size: 13px; font-weight: 650; text-underline-offset: 3px; }
+.cn-reader-note { font-size: 12px; line-height: 1.5; color: var(--ink-3); margin: 6px 0 0; text-align: center; }
+.cn-expand { background: var(--surface); border-radius: 16px; border: 1px solid var(--line); margin-top: 14px; overflow: hidden; }
+.cn-expand summary { list-style: none; display: flex; justify-content: space-between; gap: 14px; align-items: center; min-height: 54px; padding: 15px 16px; cursor: pointer; color: var(--ink); font-weight: 700; font-size: 14px; }
+.cn-expand summary::-webkit-details-marker { display: none; }
+.cn-expand summary::after { content: '＋'; color: var(--ink-3); font-size: 19px; font-weight: 400; line-height: 1; }
+.cn-expand[open] summary::after { content: '−'; }
+.cn-expand[open] summary { border-bottom: 1px solid var(--line); }
+.cn-expand-panel { padding: 15px 16px; line-height: 1.6; }
+.cn-expand-panel > :first-child { margin-top: 0; }
+.cn-daily-intro { margin: 4px 4px 16px; color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+.cn-home-assets { padding-top: 4px; }
+.cn-home-assets summary { list-style: none; display: flex; align-items: center; justify-content: space-between; cursor: pointer; min-height: 48px; color: var(--ink-2); font-size: 14px; font-weight: 700; }
+.cn-home-assets summary::-webkit-details-marker { display: none; }
+.cn-home-assets[open] summary { border-bottom: 1px solid var(--line); }
+.cn-home-assets[open] summary svg { transform: rotate(90deg); }
+.cn-home-help { margin-top: 16px; }
+.cn-home-help > button { width: 100%; min-height: 48px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink-2); font-size: 14px; font-weight: 700; }
+.cn-home-help .t-brief { margin-top: 10px; }
+@media (max-width: 390px) {
+  .cn-reader { padding: 14px; border-radius: 18px; }
+  .cn-reader-intro h2 { font-size: 19px; }
+  .cn-reader-image-frame img { max-height: 490px; }
+  .cn-expand summary { padding: 14px; }
+}
+@media (prefers-reduced-motion: no-preference) { .cn-reader-steps button, .cn-reader-actions button { transition: background-color .16s ease, border-color .16s ease; } }
