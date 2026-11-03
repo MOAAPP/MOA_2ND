@@ -56,3 +56,35 @@
   .cn-hub-card h2 { font-size: 15px; }
   .cn-time-presets button { font-size: 10px; }
 }
+
+
+/* v22 onboarding: short, practical introduction. No oversized decorative icons. */
+.ob { background: #F6F7FA; }
+.ob-top { background: rgba(246, 247, 250, .94); }
+.ob-main { padding-top: 18px; }
+.ob-step-0 .ob-kicker { color: var(--moa); }
+.ob-step-0 .ob-main h1 { font-size: clamp(25px, 6.7vw, 30px); letter-spacing: -.045em; }
+.ob-sub { max-width: 38ch; }
+.ob-step-0 .ob-card,
+.ob-step-1 .ob-card,
+.ob-step-2 .ob-card { box-shadow: none; border: 1px solid #EBEDF4; }
+.ob-step-0 .ob-pay { padding: 17px; }
+.ob-step-0 .ob-seg button { min-height: 45px; }
+.ob-step-2 .ob-body { gap: 10px; }
+.ob-insight-summary { padding: 17px 18px 13px; background: #FFFFFF; border: 1px solid #E7E9F0; border-radius: 20px; }
+.ob-insight-overline { display: block; font-weight: 750; font-size: 12px; color: var(--moa); line-height: 1.5; }
+.ob-insight-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; color: #5B6277; font-size: 13.5px; }
+.ob-insight-row + .ob-insight-row { border-top: 1px solid #EFF0F4; }
+.ob-insight-row strong { font-size: 14px; font-weight: 750; color: #191D35; white-space: nowrap; }
+.ob-insight-result { padding: 18px !important; }
+.ob-insight-result h2 { margin: 7px 0 9px; font-size: 19px; line-height: 1.35; letter-spacing: -.035em; color: #191D35; }
+.ob-insight-result > p { margin: 0; font-size: 14px; line-height: 1.65; color: #454B60; word-break: keep-all; }
+.ob-insight-tip { display: grid; gap: 5px; padding: 13px; margin-top: 14px; border-radius: 13px; background: #F1F3FE; font-size: 13px; line-height: 1.55; color: #4F5676; }
+.ob-insight-tip b { font-size: 12px; font-weight: 750; color: #4140C0; }
+.ob-note { line-height: 1.55; }
+.ob-step-3 .ob-start button { box-shadow: none; border: 1.5px solid #E7E9F0; }
+.ob-step-3 .ob-start button.on { border: 1.5px solid var(--moa); }
+@media (max-width: 360px) {
+  .ob-insight-row { flex-wrap: wrap; gap: 0; }
+  .ob-insight-row strong { font-size: 14px; }
+}
