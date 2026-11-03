@@ -1,4 +1,5 @@
 import { fetchWithTimeout } from './http';
+import { llmComplete, llmModel, llmProvider } from './llm';
 import type { Explanation } from './explain';
 
 /**
@@ -6,7 +7,7 @@ import type { Explanation } from './explain';
  * 숫자 계산·원인 판단은 코드가 하고, AI는 문장 정리만 한다. 실패하면 null → 규칙 기반 문장을 쓴다.
  */
 export function aiConfigured() {
-  return !!process.env.ANTHROPIC_API_KEY;
+  return llmProvider() !== null;
 }
 
 export async function aiSummary(name: string, e: Explanation, level: 1 | 2 | 3): Promise<string | null> {
@@ -20,24 +21,15 @@ export async function aiSummary(name: string, e: Explanation, level: 1 | 2 | 3):
     '한국어 존댓말(해요체) 2~3문장, 160자 이내, 마크다운 없이.',
   ].join('\n');
   const user = JSON.stringify({ 종목: name, 등락률: e.pct, 확인된사실: e.facts, 후보요인: e.reasons.map((r) => `${r.label}(${r.strength}): ${r.detail}`), 기사제목: e.newsUsed.map((n) => n.title), 원인불명: e.unknown });
-  try {
-    const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL ?? 'claude-haiku-5-5', max_tokens: 300, system, messages: [{ role: 'user', content: user }] }),
-    }, 15000);
-    if (!res.ok) return null;
-    const j = (await res.json()) as { content?: { type: string; text?: string }[] };
-    const text = j.content?.find((c) => c.type === 'text')?.text?.trim();
-    if (!text) return null;
-    // 숫자를 지어내지 않았는지 간단히 확인: 응답에 나온 % 숫자는 사실 목록에 있어야 함
-    const known = (e.facts.join(' ') + e.reasons.map((r) => r.detail).join(' ')).replace(/\s/g, '');
-    const pcts = text.match(/\d+(\.\d+)?%/g) ?? [];
-    if (pcts.some((p) => !known.includes(p))) return null;
-    return text.slice(0, 220);
-  } catch {
-    return null;
-  }
+  const r = await llmComplete({ system, user, maxTokens: 300, timeoutMs: 15000 });
+  if (!r.ok) return null;
+  const text = r.text.trim();
+  if (!text) return null;
+  // 숫자를 지어내지 않았는지 간단히 확인: 응답에 나온 % 숫자는 사실 목록에 있어야 함
+  const known = (e.facts.join(' ') + e.reasons.map((x) => x.detail).join(' ')).replace(/\s/g, '');
+  const pcts = text.match(/\d+(\.\d+)?%/g) ?? [];
+  if (pcts.some((p) => !known.includes(p))) return null;
+  return text.slice(0, 220);
 }
 
 /* ───────── 모아 AI 작업 (shared/aiPrompts.ts · docs/AI.md) ───────── */
@@ -78,7 +70,7 @@ export function aiStats() {
 }
 export function resetAiStats() { stats.clear(); }
 
-export const aiModel = () => process.env.ANTHROPIC_MODEL ?? 'claude-haiku-5-5';
+export const aiModel = () => llmModel();
 
 /**
  * 작업 하나를 실제 모델로 실행한다. 입력은 라우트에서 checkAiInput을 통과한 값이다.
@@ -91,24 +83,15 @@ export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fe
   if (!aiConfigured()) return done({ ok: false, reason: 'not_configured', ms: 0 });
   const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);
-  try {
-    const res = await fetcher('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: aiModel(), max_tokens: p.maxTokens, system: p.system, messages: [{ role: 'user', content: buildUserMessage(task, input as never) }] }),
-    }, 20000);
-    if (!res.ok) return done({ ok: false, reason: 'http_error', ms: Date.now() - t0 });
-    const j = (await res.json()) as { content?: { type: string; text?: string }[] };
-    const text = j.content?.find((c) => c.type === 'text')?.text ?? '';
-    const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return done({ ok: false, reason: 'no_json', ms: Date.now() - t0 });
-    let raw: unknown;
-    try { raw = JSON.parse(m[0]); } catch { return done({ ok: false, reason: 'no_json', ms: Date.now() - t0 }); }
-    const checked = checkAiOutput(task, raw);
-    if (!checked.ok) return done({ ok: false, reason: 'invalid_output', ms: Date.now() - t0, issues: checked.issues });
-    if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: 'ungrounded', ms: Date.now() - t0 });
-    return done({ ok: true, data: checked.data, model: aiModel(), ms: Date.now() - t0 });
-  } catch {
-    return done({ ok: false, reason: 'network', ms: Date.now() - t0 });
-  }
+  const r = await llmComplete({ system: p.system, user: buildUserMessage(task, input as never), maxTokens: p.maxTokens }, fetcher);
+  if (!r.ok) return done({ ok: false, reason: r.reason === 'network' ? 'network' : 'http_error', ms: Date.now() - t0 });
+  const text = r.text;
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) return done({ ok: false, reason: 'no_json', ms: Date.now() - t0 });
+  let raw: unknown;
+  try { raw = JSON.parse(m[0]); } catch { return done({ ok: false, reason: 'no_json', ms: Date.now() - t0 }); }
+  const checked = checkAiOutput(task, raw);
+  if (!checked.ok) return done({ ok: false, reason: 'invalid_output', ms: Date.now() - t0, issues: checked.issues });
+  if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: 'ungrounded', ms: Date.now() - t0 });
+  return done({ ok: true, data: checked.data, model: r.model, ms: Date.now() - t0 });
 }
