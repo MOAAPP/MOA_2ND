@@ -97,7 +97,7 @@ export function Practice() {
         </dl>
         <div className="t-btn-row">
           <button className="t-btn primary" onClick={() => nav.push({ name: 'portfolio' })}>내 보유·주문{pending ? ` · 대기 ${pending}` : ''}</button>
-          <button className="t-btn tonal" onClick={() => nav.push({ name: 'cards' })}>카드뉴스 읽기</button>
+          <button className="t-btn tonal" onClick={() => nav.push({ name: 'cards' })}>카드뉴스</button>
         </div>
       </section>
       {intro && <div className="t-tip"><span><b>진짜 돈 없이, 투자 감각부터</b>1,000만 원 가상 자금은 홈의 생활비와 따로 관리돼요.</span><button type="button" aria-label="안내 닫기" onClick={() => setIntro(false)}>×</button></div>}
