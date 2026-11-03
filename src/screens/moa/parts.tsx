@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { formatKDateTime, parseISO, type ISODate } from '../../../shared/dates';
 import { IconChevron } from '../../components/Icons';
 import { Sheet } from '../../components/ui';
-import { GRADE_LABEL, paymentSentence, triggerLabel, type AlertLog, type DayBalance, type Grade, type PaymentCheck, type RiskReport, type ScenarioKey } from '../../lib/moa';
+import { GRADE_LABEL, RELIABILITY_LABEL, paymentSentence, type Reliability, triggerLabel, type AlertLog, type DayBalance, type Grade, type PaymentCheck, type RiskReport, type ScenarioKey } from '../../lib/moa';
 import { useNav } from '../../state/nav';
 import { useMoa } from '../../state/moa';
 
@@ -11,6 +11,24 @@ export const md = (iso: ISODate) => `${parseISO(iso).m}/${parseISO(iso).d}`;
 
 export function GradeBadge({ grade }: { grade: Grade }) {
   return <span className={`mo-grade g-${grade}`}>{GRADE_LABEL[grade]}</span>;
+}
+
+/** 기록 신뢰도 배지: 위험 등급과 따로, '데이터가 얼마나 믿을 만한가'만 보여준다 */
+export function ReliabilityBadge({ value }: { value: Reliability }) {
+  return <span className={`mo-rel r-${value.level}`}>기록 신뢰도 · {RELIABILITY_LABEL[value.level]}</span>;
+}
+
+export function ReliabilityRow({ value, onFix }: { value: Reliability; onFix?: () => void }) {
+  const hint = value.level === 'enough'
+    ? '최근 잔액 확인과 기록이 맞아서 이 판단을 믿어도 좋아요.'
+    : `${value.reasons.map((r) => r.text).join(', ')}.${value.reasons.some((r) => r.key !== 'missing') ? ' 그래서 등급을 \'주의\'까지만 보여드려요.' : ''}`;
+  return (
+    <div className={`mo-rel-row r-${value.level}`}>
+      <ReliabilityBadge value={value} />
+      <p>{hint}</p>
+      {onFix && value.level !== 'enough' && <button className="mo-link" onClick={onFix}>지금 잔액 입력하기</button>}
+    </div>
+  );
 }
 
 /** AI가 만든 문장·분류 표시 (AI 기본법 사용 사실 고지) */
@@ -114,11 +132,10 @@ export function ShortfallCard() {
         <em>근거 보기 <IconChevron /></em>
       </button>
       <p className="mo-scope">
-        결제계좌 잔액 {fmt(report.anchorBalance ?? 0)} 기준이에요. 평행세계 현금과는 따로 계산해요.{' '}
+        결제계좌 잔액 {fmt(report.anchorBalance ?? 0)} 기준이에요. 연습용 가상 지갑과는 따로 계산해요.{' '}
         <button className="mo-link" onClick={() => nav.push({ name: 'moaSetup' })}>잔액 고치기</button>
       </p>
-      {report.stale && <p className="mo-warn">잔액을 확인한 지 {report.staleDays}일 지났어요. 지금 잔액을 한 번 알려주세요.</p>}
-      {report.gap && <p className="mo-warn">계산한 잔액과 문자 속 잔액이 달라요. 빠진 기록이 있는지 확인해 주세요.</p>}
+      <ReliabilityRow value={report.reliability} onFix={() => nav.push({ name: 'shortfall' })} />
       <div className="mo-steps" aria-label="예측 범위">
         {steps.map((st) => <span key={st.label} className={st.done ? 'on' : ''}>{st.label}</span>)}
       </div>

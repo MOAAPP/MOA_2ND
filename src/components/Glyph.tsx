@@ -92,7 +92,7 @@ export function IconTile({ name, tone = 'blue', size = 44, radius }: { name: Gly
   );
 }
 
-/** 평행통장 로고: 나란히 선 두 개의 둥근 기둥 (두 세계) */
+/** 모아 로고: 나란히 선 두 개의 둥근 기둥 (두 세계) */
 export function Logo({ size = 72 }: { size?: number }) {
   const id = useId().replace(/:/g, '');
   return (

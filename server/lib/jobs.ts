@@ -246,7 +246,7 @@ export async function sendJob(id: string, auto: boolean): Promise<CardJob> {
   running.add(id);
   patch(id, { status: 'sending', stage: 'send', error: undefined });
   try {
-    const files = job.images.map((f, i) => ({ name: `parallel-bank-${job.kind}-${i + 1}.png`, data: readFileSync(join(jobDir(id), f)), description: job.titles[i] }));
+    const files = job.images.map((f, i) => ({ name: `moa-${job.kind}-${i + 1}.png`, data: readFileSync(join(jobDir(id), f)), description: job.titles[i] }));
     await sendToDiscord(job.summary, files);
     patch(id, { status: 'sent', stage: undefined, sends: [...job.sends, { at: Date.now(), auto, ok: true }] });
   } catch (e) {

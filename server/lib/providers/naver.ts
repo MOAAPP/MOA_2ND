@@ -63,7 +63,7 @@ export function parseNaverItem(it: NaverItem, now = Date.now()): NaverQuote {
 async function poll(path: string): Promise<NaverItem[]> {
   let res;
   try {
-    res = await fetchWithTimeout(`https://polling.finance.naver.com/api/realtime/domestic/${path}`, { headers: { 'User-Agent': 'Mozilla/5.0 (parallel-bank)', Referer: 'https://m.stock.naver.com/' } }, 6000);
+    res = await fetchWithTimeout(`https://polling.finance.naver.com/api/realtime/domestic/${path}`, { headers: { 'User-Agent': 'Mozilla/5.0 (moa)', Referer: 'https://m.stock.naver.com/' } }, 6000);
   } catch {
     throw new ApiError(502, 'quote_unreachable', '네이버 시세에 연결하지 못했어요.', true);
   }

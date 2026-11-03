@@ -1,4 +1,4 @@
-/* 평행통장 v6 — 현실적인 금융 UI + 이야기로 경험하는 평행세계.
+/* 모아 v6 — 현실적인 금융 UI + 이야기로 경험하는 평행세계.
    사용자 영역에는 개발/ML 설계 설명을 노출하지 않습니다. */
 :root{--pb6-ink:#192237;--pb6-purple:#7466ea;--pb6-blue:#427af8;--pb6-cyan:#69d5df}
 .pb6-home,.pb6-lab{background:#f5f7fb;color:var(--pb6-ink)}

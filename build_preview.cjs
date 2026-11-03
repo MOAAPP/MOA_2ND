@@ -29,7 +29,7 @@ for(const [name,value] of Object.entries(imageData)) code=code.replaceAll('/illu
 const demoState=fs.readFileSync(path.join(root,'preview-demo-state.json'),'utf8');
 const react=fs.readFileSync(path.join(root,'public/vendor/react.production.min.js'),'utf8');
 const reactdom=fs.readFileSync(path.join(root,'public/vendor/react-dom.production.min.js'),'utf8');
-const html=`<!doctype html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><title>평행통장 · UI 개선 미리보기</title><style>${css.replaceAll('</style','<\\/style')}</style></head><body><div id="root"></div><script>(function(){
+const html=`<!doctype html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><title>모아 · UI 개선 미리보기</title><style>${css.replaceAll('</style','<\\/style')}</style></head><body><div id="root"></div><script>(function(){
 /* 이 파일만 열었을 때 서버 SSE는 실행하지 않습니다. 임베드 미리보기에서 저장 공간이 막힌 경우 메모리로 대체합니다. */
 window.EventSource=undefined;
 try{window.localStorage.getItem('__pb_preview_check__');}catch(err){
@@ -41,9 +41,9 @@ try{window.localStorage.getItem('__pb_preview_check__');}catch(err){
  get length(){return Object.keys(cache).length;}
  }});
 }})();</script><script>${react.replaceAll('</script','<\\/script')}</script><script>${reactdom.replaceAll('</script','<\\/script')}</script><script>try{if(!localStorage.getItem('pb.state.v3'))localStorage.setItem('pb.state.v3',${JSON.stringify(demoState)});}catch(e){console.warn('프리뷰 예시 데이터 준비 실패',e);}</script><script>${code.replaceAll('</script','<\\/script')}</script></body></html>`;
-fs.writeFileSync(path.join(root,'평행통장_기능_클릭_미리보기.html'),html);
+fs.writeFileSync(path.join(root,'모아_기능_클릭_미리보기.html'),html);
 // The onboarding preview always starts on slide 1, even when local storage already exists.
 // Completing slides takes the user to their saved/demo home without erasing anything.
 const onboardingHtml=html.replace('<div id="root"></div>', '<div id="root"></div><script>window.__PB_FORCE_INTRO=true;</script>');
-fs.writeFileSync(path.join(root,'평행통장_온보딩_클릭_미리보기.html'),onboardingHtml);
+fs.writeFileSync(path.join(root,'모아_온보딩_클릭_미리보기.html'),onboardingHtml);
 console.log('Created preview:',(html.length/1024/1024).toFixed(1)+'MB','modules:',ids.length);

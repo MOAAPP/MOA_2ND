@@ -26,7 +26,7 @@ export function Home() {
   const w=walletSummary(state.worldWallet);
   const isDemo=state.demo;
   return <div className="page v7-dashboard">
-    <TopBar title={<span className="brand"><Logo size={24}/>평행통장</span>} right={<button className="icon-btn" aria-label="설정" onClick={()=>nav.push({name:'settings'})}><IconGear/></button>}/>
+    <TopBar title={<span className="brand"><Logo size={24}/>모아</span>} right={<button className="icon-btn" aria-label="설정" onClick={()=>nav.push({name:'settings'})}><IconGear/></button>}/>
     <header className="v7-dashboard-intro"><span className="v7-demo-label">{isDemo?'체험 중 · 가상 데이터':'MY MONEY · 직접 입력한 정보'}</span><h1>내 돈의 현재와<br/><em>선택하지 않은 미래</em></h1></header>
     {isDemo ? <section className="v7-home-asset" aria-label="연습용 돈 현황">
         <div className="v7-home-asset-top"><span>이번 달 사용 가능 금액</span><span className="v7-tag-blue">가상 생활비</span></div>

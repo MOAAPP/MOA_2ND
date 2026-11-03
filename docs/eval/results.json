@@ -62,12 +62,11 @@
       "missed": [],
       "falseAlarms": 5,
       "leadDays": [
-        0,
+        14,
         14
       ],
       "byGrade": {
-        "caution": 7,
-        "registered": 1
+        "caution": 7
       }
     },
     "S07": {

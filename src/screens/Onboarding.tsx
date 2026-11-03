@@ -4,7 +4,8 @@
  *  1) 같은 사람, 입금만 3일 늦어지면 (assessRisk 등록 일정·입금 지연 시나리오)
  *  2) 체크카드는 오늘, 신용카드는 청구일에 (billingDate + extraLines)
  *  3) AI는 결제 문자를 기록으로, 계산은 코드가 (exampleParseSpend + maskText)
- *  4) 시작 방법 고르기
+ *  4) 위험 등급과 기록 신뢰도를 따로 보여준다
+ *  5) 시작 방법 고르기
  * 화면 숫자는 전부 src/lib/moa 계산 결과다(하드코딩 없음). 예시 상황은 기획서 시연 시나리오와 같다.
  */
 import { useMemo, useState, type ReactNode } from 'react';
@@ -19,7 +20,7 @@ const fmt = (n: number) => `${Math.round(Math.abs(n)).toLocaleString('ko-KR')}�
 const dayOf = (d: ISODate) => `${Number(d.slice(8, 10))}일`;
 const mdOf = (d: ISODate) => `${Number(d.slice(5, 7))}월 ${Number(d.slice(8, 10))}일`;
 
-const STEPS = 5;
+const STEPS = 6;
 const BUY = 24_000;
 
 /** 기획서 시연 시나리오: 잔액 15만원, 10일 알바비 20만원 입금 예정, 11일 카드값 30만원 */
@@ -90,6 +91,13 @@ export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () 
       cta: '다음',
     },
     {
+      kicker: '4 · 믿을 수 있는 경고',
+      title: <>얼마나 위험한지와<br />얼마나 믿을 만한지를<br />따로 보여줘요</>,
+      sub: '잔액을 오래 확인하지 않았거나 기록이 빠진 것 같으면, 경고를 키우지 않고 확인을 먼저 부탁해요.',
+      body: <Trust demo={demo} />,
+      cta: '다음',
+    },
+    {
       kicker: '시작하기',
       title: <>어떻게 시작할까요?</>,
       sub: '로그인도, 계좌 연결도 필요 없어요.',
@@ -146,10 +154,11 @@ function Pledge() {
         </svg>
       </div>
       <ul className="ob-trust">
-        <li><span className="ob-ic">₩</span><span><b>계좌를 연결하지 않아요</b><small>결제계좌 잔액과 결제 일정만 직접 넣거나 결제 문자로 채워요.</small></span></li>
-        <li><span className="ob-ic">⌂</span><span><b>기록은 이 기기에만</b><small>로그인 없이 쓰고, 언제든 지울 수 있어요.</small></span></li>
-        <li><span className="ob-ic">=</span><span><b>근거를 다 보여줘요</b><small>어떤 입출금 때문에 모자라는지 날짜별로 확인할 수 있어요.</small></span></li>
+        <li><span className="ob-ic">14</span><span><b>14일 안의 필수결제 확인</b><small>월세·카드값·통신비가 빠지는 날, 결제계좌에 돈이 남는지 봐요.</small></span></li>
+        <li><span className="ob-ic">⇄</span><span><b>결제 전 선택 비교</b><small>살까 말까 고민될 때 넣어 보면 결제일 잔고가 어떻게 바뀌는지 보여줘요.</small></span></li>
+        <li><span className="ob-ic">✓</span><span><b>위험 근거와 기록 신뢰도</b><small>왜 이런 판단이 나왔는지, 그 판단을 얼마나 믿어도 되는지 같이 보여줘요.</small></span></li>
       </ul>
+      <p className="ob-note">기록은 이 기기에만 남고, 은행·카드와 연결하지 않아요.</p>
     </>
   );
 }
@@ -239,7 +248,32 @@ function AiDemo() {
   );
 }
 
-/* ───────── 4. 시작 ───────── */
+/* ───────── 4. 위험 등급 vs 기록 신뢰도 ───────── */
+function Trust({ demo }: { demo: Demo }) {
+  const card = `${dayOf(demo.card.date!)} ${demo.card.name}`;
+  return (
+    <div className="ob-card ob-trust2">
+      <div className="row">
+        <small>자금 부족 위험</small>
+        <span className="mo-grade g-caution">주의</span>
+        <p>"{card}, 입금이 늦어지면 모자랄 수 있어요"</p>
+      </div>
+      <div className="row">
+        <small>기록 신뢰도</small>
+        <span className="mo-rel r-check">기록 신뢰도 · 확인 필요</span>
+        <p>"잔액을 확인한 지 9일 지났어요. 지금 잔액을 입력하면 다시 판단해요"</p>
+      </div>
+      <ul className="ob-levels">
+        <li><span className="mo-rel r-enough">충분</span>최근 잔액 확인과 기록이 맞아요</li>
+        <li><span className="mo-rel r-check">확인 필요</span>잔액 확인이 오래됐거나, 기록이 어긋났거나, 카드 결제일·입금 일정이 빠졌어요</li>
+        <li><span className="mo-rel r-low">부족</span>위 문제가 두 가지 이상 겹쳐요</li>
+      </ul>
+      <p className="tip">잔액 확인이 7일을 넘기거나 기록이 어긋나면 등급은 '주의'보다 올라가지 않아요.</p>
+    </div>
+  );
+}
+
+/* ───────── 5. 시작 ───────── */
 function StartPick({ start, setStart, agree, setAgree }: { start: 'demo' | 'mine'; setStart: (v: 'demo' | 'mine') => void; agree: boolean; setAgree: (v: boolean) => void }) {
   return (
     <>

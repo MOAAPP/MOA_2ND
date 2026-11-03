@@ -205,6 +205,36 @@ describe('결제계좌 기준 부족', () => {
   });
 });
 
+describe('기록 신뢰도 (위험 등급과 따로)', () => {
+  const withIncome = (m: MoaState) => upsertSchedule(m, { name: '알바비', amount: 200_000, recurrence: 'monthly', day: 10, direction: 'in', essential: false, status: 'scheduled' });
+  it('잔액이 최근이고 불일치·누락 정보가 없으면 충분', () => {
+    const m = withIncome(quickStart(emptyMoa(), 150_000, { name: '카드값', amount: 300_000, day: 11 }, NOW));
+    expect(assessRisk(m, NOW, TODAY).reliability).toMatchObject({ level: 'enough', reasons: [] });
+  });
+  it('잔액 확인이 7일을 넘기면 확인 필요, 등급은 주의 상한', () => {
+    const m = withIncome(quickStart(emptyMoa(), 50_000, { name: '월세', amount: 300_000, day: 5 }, NOW - 9 * 86400000));
+    const r = assessRisk(m, NOW, TODAY);
+    expect(r.reliability.level).toBe('check');
+    expect(r.reliability.reasons.map((x) => x.key)).toEqual(['stale']);
+    expect(r.worst?.grade).toBe('caution');
+  });
+  it('입금 일정이 빠져 있으면 확인 필요 (등급 상한은 걸지 않음)', () => {
+    const m = quickStart(emptyMoa(), 50_000, { name: '월세', amount: 300_000, day: 3 }, NOW);
+    const r = assessRisk(m, NOW, TODAY);
+    expect(r.reliability.level).toBe('check');
+    expect(r.reliability.reasons[0].key).toBe('missing');
+    expect(r.worst?.grade).toBe('registered');
+  });
+  it('신용카드 결제일이 없고 잔액 불일치도 있으면 부족', () => {
+    let m = withIncome(quickStart(emptyMoa(), 50_000, { name: '월세', amount: 300_000, day: 5 }, NOW));
+    m = upsertCard(m, { id: 'c9', name: '카드', kind: 'credit', linked: false });
+    m = { ...m, mismatches: [{ at: NOW - 86400000, expected: 120_000, actual: 50_000 }] };
+    const r = assessRisk(m, NOW, TODAY);
+    expect(r.reliability.level).toBe('low');
+    expect(r.reliability.reasons.map((x) => x.key)).toEqual(['gap', 'missing']);
+  });
+});
+
 /** 4주 동안 매일 정답 기록이 있는 사용자 */
 function withHistory(daily: (d: string, i: number) => number, days = 28, method: NewTxn['method'] = 'debit'): MoaState {
   let m = base(400_000, NOW);
