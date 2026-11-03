@@ -20,6 +20,7 @@ export type Screen =
   | { name: 'daily' }
   | { name: 'cardnews'; tradeId: string; jobId?: string }
   | { name: 'cards' }
+  | { name: 'cardnewsDemo' }
   | { name: 'portfolio' }
   | { name: 'newChoice' }
   | { name: 'product'; id: string }

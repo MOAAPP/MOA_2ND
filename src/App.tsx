@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { IconChartBars, IconFork, IconHome, IconPiggy, IconReceipt } from './components/Icons';
 import { ToastProvider, useKeyboardInset } from './components/ui';
 import { CardNews, CardsList, DailyScreen } from './screens/CardNews';
+import { CardNewsDemo } from './screens/CardNewsDemo';
 import { Decide } from './screens/Decide';
 import { Future } from './screens/Future';
 import { Onboarding } from './screens/Onboarding';
@@ -91,6 +92,7 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'daily': return <DailyScreen />;
     case 'cardnews': return <CardNews tradeId={screen.tradeId} jobId={screen.jobId} />;
     case 'cards': return <CardsList />;
+    case 'cardnewsDemo': return <CardNewsDemo />;
     case 'portfolio': return <Portfolio />;
     case 'newChoice': return <NewChoice />;
     case 'product': return <ProductDetail key={screen.id} id={screen.id} />;

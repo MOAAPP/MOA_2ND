@@ -285,6 +285,7 @@ export function DailyScreen() {
   return (
     <div className="page no-nav">
       <TopBar onBack={nav.pop} title="데일리 카드뉴스" center />
+      <button className="btn secondary block" style={{ marginBottom: 12 }} onClick={() => nav.push({ name: "cardnewsDemo" })}>장 마감에도 예시 카드뉴스 보기 (전송·거래 없음)</button>
       <p className="small ink2" style={{ margin: '0 4px 12px' }}>매일 정해진 시각, 시장·내 종목·움직인 이유·오늘의 퀴즈를 4장 카드로 Discord에 보내드려요. 앱에서도 같은 카드를 볼 수 있어요.</p>
       {err && <Notice kind="danger">{err}</Notice>}
       <section className="card">
@@ -351,6 +352,7 @@ export function CardsList() {
   return (
     <div className="page no-nav">
       <TopBar onBack={nav.pop} title="카드뉴스 기록" center />
+      <button className="btn secondary block" style={{ marginBottom: 12 }} onClick={() => nav.push({ name: "cardnewsDemo" })}>예시 카드뉴스 4장 보기</button>
       {err && <Notice kind="danger">목록을 불러오지 못했어요. {err}</Notice>}
       {!jobs && !err && <div className="card"><Spinner /></div>}
       {jobs && (

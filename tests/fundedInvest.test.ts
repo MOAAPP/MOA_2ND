@@ -98,6 +98,38 @@ describe('한 가상 지갑을 사용하는 투자', () => {
     expect(r.journal.orders[0].status).toBe('rejected');
   });
 
+
+  it('평가액이 올라가도 팔기 전에는 그 수익을 저축이나 소비에 사용할 수 없다', () => {
+    const bought = placeFundedOrder(emptyWorldWallet(), emptyInvestJournal(), buy(), ctx(50_000));
+    if (!bought.ok) throw new Error('buy');
+    expect(walletSummary(bought.wallet, { '005930': 80_000 }).totalAssets).toBe(830_000);
+    expect(bought.wallet.cash).toBe(750_000);
+    expect(fundedAvailableCash(bought.wallet, bought.journal)).toBe(70_000);
+    expect(transactWorldWallet(bought.wallet, { type: 'save', amount: 75_000 })).toBeNull();
+    const sold = placeFundedOrder(bought.wallet, bought.journal, { ...buy('sell-profit'), side: 'sell' }, ctx(80_000));
+    if (!sold.ok) throw new Error('sell');
+    expect(sold.wallet.cash).toBe(830_000);
+    expect(fundedAvailableCash(sold.wallet, sold.journal)).toBe(150_000);
+    expect(transactWorldWallet(sold.wallet, { type: 'save', amount: 75_000 })?.savings).toBe(75_000);
+  });
+
+  it('지정가 매도는 체결 전까지 현금을 증가시키지 않는다', () => {
+    const bought = placeFundedOrder(emptyWorldWallet(), emptyInvestJournal(), buy(), ctx(50_000));
+    if (!bought.ok) throw new Error('buy');
+    const pending = placeFundedOrder(bought.wallet, bought.journal,
+      { ...buy('sell-later'), side: 'sell', type: 'limit', limitPrice: 90_000 }, ctx(80_000));
+    if (!pending.ok) throw new Error('pending sell');
+    expect(pending.journal.orders[0].status).toBe('pending');
+    expect(pending.wallet.cash).toBe(750_000);
+    expect(fundedAvailableCash(pending.wallet, pending.journal)).toBe(70_000);
+    const settled = settleFundedOrders(pending.wallet, pending.journal, {
+      '005930': { ...ctx(90_000).quote, time: now + 60_000, fetchedAt: now + 60_000 } as Quote,
+    }, now + 60_000);
+    expect(settled.fills).toHaveLength(1);
+    expect(settled.wallet.cash).toBe(840_000);
+    expect(fundedAvailableCash(settled.wallet, settled.journal)).toBe(160_000);
+  });
+
   it('기존 가상 ETF 보유분도 바로 같은 투자 계좌에 표시된다', () => {
     const w = transactWorldWallet(emptyWorldWallet(), { type: 'buyEtf', code: '360750', name: 'TIGER 미국S&P500', qty: 2, price: 20_000 })!;
     const linked = fundedPortfolio(w, emptyInvestJournal());
