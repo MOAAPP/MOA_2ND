@@ -24,9 +24,13 @@ describe('체험용 평행세계 기록', () => {
     expect(p90.filter((x) => x.events.length).length).toBeGreaterThan(10);
   });
 
-  it('내 세계의 쓸 수 있는 돈은 하루 마감 기준 음수가 되지 않는다', () => {
-    expect(Math.min(...worldHistory(w, 90, NOW).map((x) => x.actual))).toBeGreaterThanOrEqual(0);
-    expect(walletSummary(w).monthlyUsable).toBeGreaterThan(0);
+  it('잔액은 음수가 되지 않아야 하지만 보호 생활비를 못 지키는 날은 그대로 위험을 표시한다', () => {
+    const protectedCash = 530_000 + 150_000;
+    const points = worldHistory(w, 90, NOW);
+    expect(points.every((x) => x.actual >= -protectedCash)).toBe(true);
+    // An intentionally risky synthetic history must not be silently clamped to zero.
+    expect(points.at(-1)!.actual).toBe(walletSummary(w).monthlyUsable);
+    expect(w.cash).toBeGreaterThanOrEqual(0);
   });
 
   it('미래 시각 기록이 없고, 이번 달 월급은 중복 입금되지 않는다', () => {
