@@ -9,6 +9,7 @@ import { fetchWithTimeout } from './http';
  *  2) ANTHROPIC_API_KEY — Anthropic Messages API 직접 호출
  *
  * 환경변수
+ *  AI_ENABLED=off — 키는 그대로 두고 AI 호출만 끈다(크레딧 아끼기). 앱은 예시 응답으로 동작. 지우거나 on이면 다시 켜짐
  *  FACTCHAT_API_KEY, FACTCHAT_BASE_URL(기본 https://factchat-cloud.mindlogic.ai/v1/gateway), FACTCHAT_MODEL(기본 claude-sonnet-5)
  *  ANTHROPIC_API_KEY, ANTHROPIC_MODEL(기본 claude-haiku-5-5)
  */
@@ -18,6 +19,7 @@ export type LlmProvider = 'factchat' | 'anthropic';
 export const FACTCHAT_DEFAULT_BASE = 'https://factchat-cloud.mindlogic.ai/v1/gateway';
 
 export function llmProvider(): LlmProvider | null {
+  if (/^(off|false|0)$/i.test(process.env.AI_ENABLED ?? '')) return null;
   if (process.env.FACTCHAT_API_KEY) return 'factchat';
   if (process.env.ANTHROPIC_API_KEY) return 'anthropic';
   return null;
