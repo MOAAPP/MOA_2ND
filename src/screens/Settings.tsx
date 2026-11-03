@@ -31,7 +31,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
 
       <section className="card" style={{ padding: '4px 18px' }}>
         {state.demo ? (
-          <button className="list-item" onClick={() => { update((s) => ({ ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null })); nav.reset(); }}>
+          <button className="list-item" onClick={() => { update((s) => resetScope(s, 'all')); nav.reset(); }}>
             <div className="grow"><div className="t">내 생활비로 시작하기</div><div className="s">지금은 예시 데이터로 체험 중이에요</div></div>
             <IconChevron width={18} height={18} color="var(--ink-3)" />
           </button>
@@ -64,6 +64,13 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
         <div className="section-head"><h2>데이터</h2></div>
         <div className="card">
           <p className="small ink2" style={{ marginTop: 0 }}>로그인 없이 이 기기에만 저장돼요. 실제 은행·카드와 연결하지 않아요.</p>
+          {state.demo && (
+            <button type="button" className="list-item" onClick={() => nav.push({ name: 'demoDataset' })}>
+              <div className="grow"><div className="t">공통 92일 데이터 살펴보기</div>
+                <div className="s">9월 11일~12월 11일 · 이후 날짜는 미래 시뮬레이션</div></div>
+              <IconChevron width={18} height={18} color="var(--ink-3)" />
+            </button>
+          )}
           <div className="stack">
             {(Object.keys(SCOPES) as (keyof typeof SCOPES)[]).map((k) => (
               <button key={k} className="btn ghost block sm" style={{ color: k === 'all' ? 'var(--danger)' : undefined }} onClick={() => setReset(k)}>{SCOPES[k].title} 지우기</button>
