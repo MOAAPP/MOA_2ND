@@ -91,3 +91,30 @@
   .ob-insight-row { flex-wrap: wrap; gap: 0; }
   .ob-insight-row strong { font-size: 14px; }
 }
+
+
+/* Shared 92-day synthetic data inspector (available only in demo Settings). */
+.moa92-page { display: grid; gap: 12px; align-content: start; padding-bottom: 42px; }
+.moa92-page .card { box-shadow: none; border: 1px solid #E7E9EF; border-radius: 18px; }
+.moa92-notice { margin: 0 2px; padding: 15px; border: 1px solid #DDE3F7; border-radius: 15px; background: #F4F5FF; color: #3C4664; }
+.moa92-notice strong { font-size: 14px; color: #3532BB; }
+.moa92-notice p { margin: 6px 0 0; font-size: 12px; line-height: 1.55; }
+.moa92-picker { padding: 14px; }
+.moa92-picker-head { display: flex; gap: 9px; justify-content: space-between; align-items: center; }
+.moa92-picker-head > button { border: 0; background: #F2F4FA; color: #353B57; border-radius: 9px; width: 36px; height: 42px; font-size: 23px; flex: none; }
+.moa92-picker-head > button:disabled { opacity: .35; }
+.moa92-picker-head label { min-width: 0; display: grid; gap: 3px; font-size: 11px; color: #717A91; text-align: center; font-weight: 650; }
+.moa92-picker-head input { min-width: 0; width: 165px; max-width: 100%; font: inherit; font-size: 15px; font-weight: 750; color: #1F233C; border: 0; background: transparent; }
+.moa92-phase { margin-top: 10px; text-align: center; color: #5D6682; font-size: 12px; font-weight: 650; }
+.moa92-stats { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.moa92-stats section { padding: 14px 12px; min-width: 0; background: #fff; border-radius: 14px; border: 1px solid #E9EBF1; }
+.moa92-stats small { display: block; margin-bottom: 7px; font-size: 11px; color: #7B859C; line-height: 1.5; }
+.moa92-stats b { display: block; font-size: 16px; line-height: 1.35; color: #1D2138; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.moa92-list { padding: 15px 14px; }
+.moa92-list h2 { margin: 0 0 8px; font-size: 16px; }
+.moa92-row { display: flex; gap: 10px; justify-content: space-between; align-items: baseline; padding: 12px 0; border-top: 1px solid #F0F1F4; }
+.moa92-row div { min-width: 0; }
+.moa92-row b { display: block; font-size: 14px; color: #20253B; overflow-wrap: anywhere; }
+.moa92-row small { display: block; margin-top: 3px; font-size: 11px; color: #7C8498; line-height: 1.45; }
+.moa92-row strong { flex: none; font-size: 14px; white-space: nowrap; color: #2D334E; font-variant-numeric: tabular-nums; }
+.moa92-extra,.moa92-foot { margin: 11px 2px 0; font-size: 11px; color: #81899F; line-height: 1.6; }
