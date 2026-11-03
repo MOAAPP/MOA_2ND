@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconFork, IconHome, IconPiggy, IconChartBars, IconReceipt } from './components/Icons';
+import { IconCalendar, IconDots, IconHome, IconReceipt, IconTag } from './components/Icons';
 import { ToastProvider, useKeyboardInset } from './components/ui';
 import { CardNews, CardsList, DailyScreen } from './screens/CardNews';
 import { Decide } from './screens/Decide';
@@ -39,23 +39,26 @@ import { WorldReport } from './screens/WorldReport';
 import { startSession } from './lib/research/log';
 import { Shortfall } from './screens/moa/Shortfall';
 import { MoaSetup, QuickStart } from './screens/moa/MoaSetup';
+import { MoreHub } from './screens/MoreHub';
 import { MoaAlertsDaemon } from './state/moa';
 import { demoMoa, profileFromMoa } from './lib/moa/bridge';
 
+/** 하단 메뉴는 결제일 부족 예측 흐름만. 평행세계·모으기·투자·학습은 '더보기' 안의 연습 기능으로 둔다. */
 const TABS: { id: Tab; label: string; Icon: typeof IconHome }[] = [
   { id: 'home', label: '홈', Icon: IconHome },
-  { id: 'ledger', label: '가계부', Icon: IconReceipt },
-  { id: 'forks', label: '평행세계', Icon: IconFork },
-  { id: 'save', label: '모으기', Icon: IconPiggy },
-  { id: 'invest', label: '투자', Icon: IconChartBars },
+  { id: 'pay', label: '결제일', Icon: IconCalendar },
+  { id: 'ledger', label: '기록', Icon: IconReceipt },
+  { id: 'choose', label: '사기 전에', Icon: IconTag },
+  { id: 'more', label: '더보기', Icon: IconDots },
 ];
+const MORE_TABS: Tab[] = ['more', 'forks', 'save', 'invest', 'learn'];
 
 function BottomNav() {
   const nav = useNav();
   return (
     <nav className="bottom-nav" aria-label="주요 메뉴">
       {TABS.map(({ id, label, Icon }) => (
-        <button key={id} aria-current={nav.tab === id || (id === 'invest' && nav.tab === 'learn') ? 'page' : undefined} onClick={() => nav.setTab(id)}>
+        <button key={id} aria-current={nav.tab === id || (id === 'more' && MORE_TABS.includes(nav.tab)) ? 'page' : undefined} onClick={() => nav.setTab(id)}>
           <Icon />
           {label}
         </button>
@@ -165,7 +168,10 @@ function Shell() {
       <MoaAlertsDaemon />
       <main>
         {nav.tab === 'home' && <V8Home />}
+        {nav.tab === 'pay' && <Shortfall asTab />}
         {nav.tab === 'ledger' && <Ledger />}
+        {nav.tab === 'choose' && <Choose asTab />}
+        {nav.tab === 'more' && <MoreHub />}
         {nav.tab === 'forks' && <WorldTimeline />}
         {nav.tab === 'save' && <SaveHome />}
         {nav.tab === 'invest' && <Practice />}

@@ -43,7 +43,7 @@ interface Outcome {
   moveFailed: boolean;
 }
 
-export function Choose() {
+export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
   const nav = useNav();
   const { state, update } = useStore();
   const bank = useBank();
@@ -128,7 +128,7 @@ export function Choose() {
   if (phase === 'input') {
     return (
       <div className="page t-page has-cta c-page">
-        <TopBar onBack={nav.pop} title="사기 전에" />
+        <TopBar onBack={asTab ? undefined : nav.pop} title="사기 전에" />
         <section className="c-input">
           <label className="c-name">
             <span className="sr-only">무엇을 사고 싶어요?</span>

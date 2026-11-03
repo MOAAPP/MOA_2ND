@@ -126,6 +126,8 @@ export function V8Home() {
   const gap = useMemo(() => { const p = worldHistory(state.worldWallet, 30); return p[p.length - 1]?.gap ?? 0; }, [state.worldWallet]);
   const choices = state.worldWallet.decisions.length;
   const [how, setHow] = useState(false);
+  // 학습용 가상 지갑은 결제계좌(모아 엔진)와 다른 데이터라 기본으로 접어 두고, 펼쳐도 따로 묶어 보여준다
+  const [practiceOpen, setPracticeOpen] = useState(false);
   const usable = Math.max(0, w.monthlyUsable);
   const cashBase = Math.max(1, WORLD_FIXED_BILLS + WORLD_SAFETY_BUFFER + usable);
   const assetRows = [
@@ -142,12 +144,23 @@ export function V8Home() {
 
       <ShortfallCard />
 
+      <HomeSpend />
+
+      {/* ── 여기부터 학습용 가상 지갑 (결제계좌 잔고 계산과 별개) ── */}
+      <section className="t-card t-practice-gate">
+        <button type="button" className="t-card-head as-link" aria-expanded={practiceOpen} onClick={() => setPracticeOpen((v) => !v)}>
+          <h2>연습용 가상 지갑</h2><span className="t-more">{practiceOpen ? '접기' : '펼치기'}<IconChevron /></span>
+        </button>
+        <p className="t-practice-note">위 결제일 잔고와 다른 학습용 데이터예요. 여기 금액은 결제계좌 계산에 들어가지 않아요.</p>
+      </section>
+
+      {practiceOpen && <div className="t-practice">
       <HomeBrief />
 
-      {/* ── 이번 달 쓸 수 있는 돈 ── */}
+      {/* ── 이번 달 쓸 수 있는 돈 (가상) ── */}
       <section className="t-card t-hero">
         <div className="t-hero-top">
-          <span className="t-label">이번 달 쓸 수 있는 돈</span>
+          <span className="t-label">가상 지갑 · 이번 달 쓸 수 있는 돈</span>
           <span className="t-badge">가상</span>
         </div>
         <strong className="t-hero-num num"><Won n={usable} /></strong>
@@ -208,10 +221,9 @@ export function V8Home() {
           <AssetRow kind="invest" title="생활비로 산 ETF" detail={etfDetail} amount={w.stockValue} onClick={() => nav.push({ name: 'budgetInvest' })} />
         </div>
       </section>
+      </div>}
 
-      <HomeSpend />
-
-      <p className="t-foot">모든 금액은 학습용 가상 데이터예요. 실제 금융사와 연동하지 않아요.</p>
+      <p className="t-foot">결제일 잔고는 내가 입력한 결제계좌 잔액·일정·기록으로 계산해요. 연습용 가상 지갑은 실제 금융사와 연동하지 않는 학습용 데이터예요.</p>
     </div>
   );
 }
