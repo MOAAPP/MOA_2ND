@@ -73,12 +73,19 @@ export function analyzePersonalSpending(input: ForecastInput): PersonalModelRepo
   const leading = [...cat.entries()].sort((a, b) => b[1] - a[1])[0];
   const topCategory = leading ? { name: leading[0], amount: leading[1], share: total ? leading[1] / total : 0 } : null;
   const insufficient = (advice: string): PersonalModelReport => ({ status: 'insufficient', historyDays, transactions: history.length, holdoutDays: 0, modelMae: null, baselineMae: null, improvementPct: null, topCategory, busyWeekday: null, advice, forecast: null });
-  if (historyDays < 28 || history.length < 14) return insufficient(`최근 지출 기록 ${history.length}건이에요. 28일 이상·14건 이상 쌓이면 요일별 소비 모델을 학습해요.`);
+  if (historyDays < 28 || history.length < 14) return insufficient('지출 기록이 충분히 쌓이기 전에는 기본 예측을 사용해요.');
   const byDate = new Map<string, number>();
   for (const h of history) byDate.set(h.date, (byDate.get(h.date) ?? 0) + h.amount);
-  const y = Array.from({ length: historyDays }, (_, i) => byDate.get(addDays(earliest, i)) ?? 0);
-  const x = y.map((_, i) => features(addDays(earliest, i), i));
-  const holdoutDays = Math.min(14, Math.max(7, Math.floor(historyDays * 0.2)));
+  // An unrecorded date is UNKNOWN, not automatically a zero-spend day.
+  // Train and evaluate only on dates with observed transactions; never require
+  // users to press a daily "I finished logging" button for ML labels.
+  const observedDates = [...byDate.keys()].sort();
+  if (observedDates.length < 28 || observedDates.length / historyDays < 0.7) {
+    return insufficient('기록이 있는 날짜가 아직 부족해 기본 예측을 사용해요. 기록이 없는 날짜를 0원으로 가정하지 않아요.');
+  }
+  const y = observedDates.map((date) => byDate.get(date)!);
+  const x = observedDates.map((date) => features(date, diffDays(earliest, date)));
+  const holdoutDays = Math.min(14, Math.max(7, Math.floor(observedDates.length * 0.2)));
   const trainLen = y.length - holdoutDays;
   if (trainLen < 21) return insufficient('학습 가능한 기간이 더 필요해요.');
   const scale = Math.max(1000, y.slice(0, trainLen).reduce((s, v) => s + v, 0) / trainLen);
@@ -95,14 +102,14 @@ export function analyzePersonalSpending(input: ForecastInput): PersonalModelRepo
   const improvementPct = baselineMae > 0 ? Math.round((1 - modelMae / baselineMae) * 100) : 0;
   const active = baselineMae > 0 && modelMae < baselineMae * 0.95;
   const weekdays = Array.from({ length: 7 }, (_, wd) => {
-    const entries = y.filter((_, i) => weekdayOf(addDays(earliest, i)) === wd);
+    const entries = y.filter((_, i) => weekdayOf(observedDates[i]) === wd);
     return { day: DAY_NAMES[wd], average: Math.round(entries.reduce((s, v) => s + v, 0) / Math.max(1, entries.length)) };
   });
   weekdays.sort((a, b) => b.average - a.average);
   const busyWeekday = weekdays[0];
   if (!active) return { status: 'baseline', historyDays, transactions: history.length, holdoutDays, modelMae, baselineMae, improvementPct, topCategory, busyWeekday, advice: '최근 기록을 학습해 검증했지만 기존 평균 예측보다 좋아지지 않아 기본 예측을 유지해요.', forecast: null };
-  const reFit = fit(x, y, Math.max(1000, total / historyDays))!;
-  const refScale = Math.max(1000, total / historyDays);
+  const refScale = Math.max(1000, total / observedDates.length);
+  const reFit = fit(x, y, refScale)!;
   const residuals = y.map((val, i) => Math.abs(val - predict(reFit, x[i], refScale))).sort((a, b) => a - b);
   const errorRadius = residuals[Math.floor(residuals.length * 0.8)] ?? 0;
   const days: DailyQuantile[] = [];
