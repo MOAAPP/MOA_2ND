@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { currentStreak, dailyQuizFor, nextLesson } from '../../shared/curriculum';
 import { formatKDate, formatKDateTime, todayKST } from '../../shared/dates';
 import { won, shares } from '../../shared/format';
@@ -83,6 +83,26 @@ function useJob(jobId: string | undefined) {
 export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJob: (j: PublicJob) => void; reload: () => void; onError: (m: string) => void }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const [visibleCard, setVisibleCard] = useState(0);
+  const showCard = (index: number) => {
+    const image = galleryRef.current?.children.item(index) as HTMLElement | null;
+    if (!image) return;
+    setVisibleCard(index);
+    image.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
+  const updateVisibleCard = () => {
+    const gallery = galleryRef.current;
+    if (!gallery) return;
+    const center = gallery.getBoundingClientRect().left + gallery.clientWidth / 2;
+    const cards = Array.from(gallery.children) as HTMLElement[];
+    const next = cards.reduce((best, card, index) => {
+      const rect = card.getBoundingClientRect();
+      const gap = Math.abs(rect.left + rect.width / 2 - center);
+      return gap < best.gap ? { index, gap } : best;
+    }, { index: 0, gap: Number.POSITIVE_INFINITY }).index;
+    setVisibleCard(next);
+  };
   const act = async (path: 'retry-send' | 'regenerate', body?: unknown) => {
     if (busy) return;
     setBusy(true);
@@ -123,14 +143,28 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
       )}
       {job.images.length > 0 && (
         <>
-          <div className="cardnews-viewer" style={{ marginTop: 14 }} aria-label="카드뉴스 4장">
+          <div className="cn-gallery-heading">
+            <strong>카드뉴스 한 장씩 읽기</strong>
+            <span aria-live="polite">{Math.min(visibleCard + 1, job.images.length)} / {job.images.length}</span>
+          </div>
+          <div ref={galleryRef} onScroll={updateVisibleCard} className="cardnews-viewer cn-gallery" aria-label="카드뉴스 ${job.images.length}장">
             {job.images.map((src, i) => (
               <a key={src} href={src} target="_blank" rel="noopener noreferrer" style={{ width: '78%', flex: 'none' }}>
-                <img src={src} alt={`${i + 1}/4 ${job.titles[i] ?? ''}`} style={{ width: '100%' }} loading="lazy" />
+                <img src={src} alt={`${i + 1}/${job.images.length} ${job.titles[i] ?? ''}`} style={{ width: '100%' }} loading="lazy" />
               </a>
             ))}
           </div>
-          <p className="xs muted" style={{ margin: '4px 4px 0' }}>옆으로 넘겨 4장을 볼 수 있어요. 누르면 원본 PNG가 열려요.</p>
+          <div className="cn-gallery-footer">
+            <span className="cn-gallery-caption">{job.titles[visibleCard] || `${visibleCard + 1}번째 카드`}</span>
+            <div className="cn-gallery-pages" role="group" aria-label="카드뉴스 페이지 이동">
+              {job.images.map((_, i) => (
+                <button key={i} type="button" aria-label={`${i + 1}번째 카드 보기`}
+                  aria-current={i === visibleCard ? 'step' : undefined}
+                  onClick={() => showCard(i)}>{i + 1}</button>
+              ))}
+            </div>
+          </div>
+          <p className="xs muted cn-gallery-hint">좌우로 넘기거나 번호를 누르세요 · 카드를 누르면 크게 볼 수 있어요.</p>
         </>
       )}
       <section className="section">
