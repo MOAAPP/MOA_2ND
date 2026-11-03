@@ -21,6 +21,7 @@ import {
   type MoaState,
   type PayMethod,
 } from '../../lib/moa';
+import { profileFromMoa } from '../../lib/moa/bridge';
 import { useNav } from '../../state/nav';
 import { useMoa } from '../../state/moa';
 import { useStore } from '../../state/store';
@@ -60,7 +61,7 @@ const dayLabel = (d?: number) => (d === 31 ? '말일' : `${d}일`);
 
 /** 1분 설정: 결제계좌 잔액 + 가장 가까운 필수결제 1건 → 바로 결과 */
 export function QuickStart({ onDone }: { onDone?: () => void }) {
-  const { set } = useMoa();
+  const { update } = useStore();
   const [step, setStep] = useState<0 | 1>(0);
   const [balance, setBalance] = useState(0);
   const [name, setName] = useState('월세');
@@ -70,7 +71,19 @@ export function QuickStart({ onDone }: { onDone?: () => void }) {
   const warning = suspiciousSetup(balance, amount);
   const finish = () => {
     if (warning && warned !== warning) { setWarned(warning); return; }
-    set((m) => quickStart(m, balance, { name, amount, day }));
+    update((state) => {
+      const moa = quickStart(state.moa, balance, { name, amount, day });
+      return {
+        ...state,
+        moa,
+        profile: state.profile ? profileFromMoa(moa, state.profile) : null,
+        // Initial personal setup starts one unified virtual wallet.
+        // An existing user's world holdings are never reset by replaying setup.
+        worldWallet: !state.profile && !state.demo
+          ? { ...state.worldWallet, cash: balance }
+          : state.worldWallet,
+      };
+    });
     onDone?.();
   };
   return (
