@@ -16,6 +16,7 @@ import {
   rolling7,
   setAnchor,
   setDayStatus,
+  suspiciousSetup,
   settlements,
   upperWidth,
   upsertCard,
@@ -164,6 +165,18 @@ describe('결제계좌 기준 부족', () => {
     expect(assessRisk(m, NOW, TODAY).worst?.grade).toBe('registered');
     m = upsertSchedule(m, { name: 'B계좌에서 옮김', amount: 400_000, recurrence: 'once', date: '2026-11-04', direction: 'in', essential: false, status: 'scheduled', fromOtherAccount: true });
     expect(assessRisk(m, NOW, TODAY).worst?.grade).toBe('ok');
+  });
+  it('잔액 22원·카드값 800만 원 입력이면 부족액은 7,999,978원 (계산은 맞고 입력이 원인)', () => {
+    const m = quickStart(emptyMoa(), 22, { name: '카드값', amount: 8_000_000, day: 8 }, NOW);
+    const r = assessRisk(m, NOW, TODAY);
+    expect(r.worst).toMatchObject({ grade: 'registered', cause: 'schedule', shortBy: 7_999_978, date: '2026-11-08' });
+    expect(suspiciousSetup(22, 8_000_000)).toMatch(/22원/);
+  });
+  it('오타처럼 보이는 1분 설정 입력만 확인을 요청한다', () => {
+    expect(suspiciousSetup(150_000, 300_000)).toBeNull();
+    expect(suspiciousSetup(500_000, 3_000_000)).toBeNull();
+    expect(suspiciousSetup(150_000, 8_000_000)).toMatch(/10배/);
+    expect(suspiciousSetup(0, 350_000)).toBeNull();
   });
   it('급여 3일 지연: 지연 시나리오에서만 부족이면 주의', () => {
     let m = quickStart(emptyMoa(), 150_000, { name: '카드값', amount: 300_000, day: 11 }, NOW);

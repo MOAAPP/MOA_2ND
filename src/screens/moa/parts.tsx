@@ -113,6 +113,10 @@ export function ShortfallCard() {
         <small>{s ? s.body : '월세·카드값처럼 꼭 나가는 돈을 등록하면 결제일 잔고를 미리 봐드려요.'}</small>
         <em>근거 보기 <IconChevron /></em>
       </button>
+      <p className="mo-scope">
+        결제계좌 잔액 {fmt(report.anchorBalance ?? 0)} 기준이에요. 평행세계 현금과는 따로 계산해요.{' '}
+        <button className="mo-link" onClick={() => nav.push({ name: 'moaSetup' })}>잔액 고치기</button>
+      </p>
       {report.stale && <p className="mo-warn">잔액을 확인한 지 {report.staleDays}일 지났어요. 지금 잔액을 한 번 알려주세요.</p>}
       {report.gap && <p className="mo-warn">계산한 잔액과 문자 속 잔액이 달라요. 빠진 기록이 있는지 확인해 주세요.</p>}
       <div className="mo-steps" aria-label="예측 범위">
