@@ -79,7 +79,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
             trade: {
               tradeId: fill.id, code: fill.code, side: fill.side, qty: fill.qty, price: fill.price, filledAt: fill.time,
               avgPriceBefore: fill.avgPriceBefore, holdingQty: pos?.qty ?? 0, holdingAvg: pos?.avgPrice,
-              weightPct: ta.total > 0 ? Math.round((posValue / ta.total) * 1000) / 10 : undefined,
+              weightPct: ta.totalAssets > 0 ? Math.round((posValue / ta.totalAssets) * 1000) / 10 : undefined,
               priceSource: fill.quoteSource ?? 'yahoo',
             },
             level: s.level ?? 1,
