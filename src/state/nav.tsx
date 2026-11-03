@@ -10,6 +10,7 @@ export type Screen =
   | { name: 'record'; id: string }
   | { name: 'past' }
   | { name: 'settings' }
+  | { name: 'demoDataset' }
   | { name: 'finance' }
   | { name: 'insights' }
   | { name: 'future' }
