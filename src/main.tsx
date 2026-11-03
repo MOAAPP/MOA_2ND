@@ -21,7 +21,6 @@ import './ux-v17.css';
 import './ux-v18.css';
 import './ux-v19.css';
 import './ux-moa.css';
-import './ux-v20-cardnews.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
