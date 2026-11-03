@@ -98,7 +98,7 @@ export function Practice() {
         </dl>
         <div className="t-btn-row">
           <button className="t-btn primary" onClick={() => nav.push({ name: 'portfolio' })}>내 보유·주문{pending ? ` · 대기 ${pending}` : ''}</button>
-          <button className="t-btn tonal" onClick={() => nav.push({ name: 'cards' })}>카드뉴스</button>
+          <button className="t-btn tonal" onClick={() => nav.push({ name: 'daily' })}>카드뉴스 보기·받기</button>
         </div>
       </section>
       {intro && <div className="t-tip"><span><b>내 가상 자산 안에서 투자해요</b>홈의 평행세계 지갑과 같은 돈을 써요. 투자하면 현금이 줄고 주식·ETF 평가액이 자산에 포함돼요. 월세·생활비는 지켜둬요.</span><button type="button" aria-label="안내 닫기" onClick={() => setIntro(false)}>×</button></div>}
