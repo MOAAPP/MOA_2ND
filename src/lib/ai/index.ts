@@ -9,7 +9,15 @@ import type { AiInput, AiOutput, AiTask } from '../../../shared/aiPrompts';
 import { exampleAsk, exampleBrief, exampleCategorize, exampleCoach, exampleLedgerSummary, exampleParseSchedule, exampleParseSpend } from './example';
 
 export type AiSource = 'example' | 'live';
-export interface AiResult<T extends AiTask> { data: AiOutput<T>; source: AiSource; ms: number }
+export interface AiResult<T extends AiTask> {
+  data: AiOutput<T>;
+  source: AiSource;
+  ms: number;
+  /** live 모드에서 예시 응답으로 바뀐 이유 (서버 오류 코드). 평가 기록에서 live와 example을 섞지 않기 위해 남긴다. */
+  fallback?: string;
+  /** 실제 모델이 답한 경우 모델 이름 */
+  model?: string;
+}
 
 const EXAMPLE: { [T in AiTask]: (i: AiInput<T>) => AiOutput<T> } = {
   brief: exampleBrief,
@@ -32,18 +40,18 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function runAi<T extends AiTask>(task: T, input: AiInput<T>): Promise<AiResult<T>> {
   const t0 = Date.now();
+  let fallback: string | undefined;
   if (AI_MODE === 'live') {
     try {
       const res = await fetch(`/api/ai/${task}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ input }) });
-      if (res.ok) {
-        const j = (await res.json()) as { data?: AiOutput<T> };
-        if (j.data) return { data: j.data, source: 'live', ms: Date.now() - t0 };
-      }
-    } catch { /* 예시 응답으로 */ }
+      const j = (await res.json().catch(() => ({}))) as { data?: AiOutput<T>; meta?: { model?: string }; error?: { code?: string } | string; code?: string };
+      if (res.ok && j.data) return { data: j.data, source: 'live', ms: Date.now() - t0, model: j.meta?.model };
+      fallback = (typeof j.error === 'object' ? j.error?.code : undefined) ?? j.code ?? `http_${res.status}`;
+    } catch { fallback = 'network'; }
   }
   const d = exampleDelay(task);
   if (d > 0) await sleep(d);
-  return { data: EXAMPLE[task](input), source: 'example', ms: Date.now() - t0 };
+  return { data: EXAMPLE[task](input), source: 'example', ms: Date.now() - t0, fallback };
 }
 
 /** 동기 예시 응답(첫 화면 깜빡임 없이 바로 그릴 때) */

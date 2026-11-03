@@ -20,7 +20,8 @@ const { photosConfigured } = await import('./lib/photos');
 const { getGlobal, getIndex, getQuote, getQuotes, primaryProvider, providerChain, providerSetting, refreshSeconds } = await import('./lib/quotes');
 const { kisConfigured } = await import('./lib/providers/kis');
 const { realtimeStatus } = await import('./lib/providers/kisRealtime');
-const { aiConfigured, runAiTask, AI_TASKS } = await import('./lib/ai');
+const { aiConfigured, aiStats, runAiTask, AI_TASKS } = await import('./lib/ai');
+const { checkAiInput } = await import('../shared/aiSchemas');
 const { rateLimit } = await import('./lib/rateLimit');
 const { purchaseRouter, naverConfigured } = await import('./lib/purchase');
 const { jobDir, store } = await import('./lib/store');
@@ -54,7 +55,7 @@ function marketInfo() {
 api
   .route('/health')
   .get((_req, res) => {
-    res.json({ ok: true, market: marketInfo(), photos: photosConfigured(), ai: aiConfigured(), priceSearch: naverConfigured(), discord: discordStatus().configured, time: Date.now() });
+    res.json({ ok: true, market: marketInfo(), photos: photosConfigured(), ai: aiConfigured(), aiStats: aiStats(), priceSearch: naverConfigured(), discord: discordStatus().configured, time: Date.now() });
   })
   .all(methodNotAllowed(['GET']));
 
@@ -67,11 +68,14 @@ api
     route(async (req, res) => {
       const task = String(req.params.task) as (typeof AI_TASKS)[number];
       if (!AI_TASKS.includes(task)) throw new ApiError(404, 'unknown_task', '알 수 없는 AI 작업이에요.');
-      const input = (req.body as { input?: unknown })?.input;
-      if (!input || typeof input !== 'object') throw new ApiError(400, 'bad_input', '입력이 없어요.');
-      const data = await runAiTask(task, input);
-      if (data === null) throw new ApiError(503, 'ai_unavailable', 'AI를 지금 쓸 수 없어요.');
-      res.json({ data });
+      const raw = (req.body as { input?: unknown })?.input;
+      if (!raw || typeof raw !== 'object') throw new ApiError(400, 'bad_input', '입력이 없어요.');
+      const input = checkAiInput(task, raw);
+      if (!input.ok) throw new ApiError(400, 'bad_input', `입력 형식이 맞지 않아요 (${input.issues.join(' / ')})`);
+      const r = await runAiTask(task, input.data);
+      // 실패 사유는 코드만 내려보낸다. 클라이언트는 예시 응답으로 바꾸고 화면에 '예시 응답'이라고 표시한다.
+      if (!r.ok) throw new ApiError(503, `ai_${r.reason}`, 'AI를 지금 쓸 수 없어요.');
+      res.json({ data: r.data, meta: { source: 'live', task, model: r.model, ms: r.ms } });
     }),
   )
   .all(methodNotAllowed(['POST']));
