@@ -126,6 +126,7 @@ export function V8Home() {
   const gap = useMemo(() => { const p = worldHistory(state.worldWallet, 30); return p[p.length - 1]?.gap ?? 0; }, [state.worldWallet]);
   const choices = state.worldWallet.decisions.length;
   const [how, setHow] = useState(false);
+  const [showBrief, setShowBrief] = useState(false);
   const usable = Math.max(0, w.monthlyUsable);
   const assetRows = [
     { key: 'cash', label: '현금', v: w.cash, c: 'var(--moa)' },
@@ -176,8 +177,6 @@ export function V8Home() {
         </Sheet>
       )}
 
-      <HomeBrief />
-
       {/* ③ 평행세계 자산 — 모으기·투자로 */}
       <section className="t-card">
         <div className="t-card-head"><h2>평행세계 자산</h2><span className="t-badge">가상</span></div>
@@ -185,16 +184,27 @@ export function V8Home() {
         <div className="t-stack" role="img" aria-label={assetRows.map((r) => `${r.label} ${fmt(r.v)}`).join(', ')}>
           {assetRows.map((r) => <span key={r.key} style={{ width: `${pct(r.v, w.totalAssets)}%`, background: r.c }} />)}
         </div>
-        <div className="t-list">
-          <AssetRow kind="saving" title="자유 저축" detail="참은 돈이 먼저 모이는 곳" amount={w.freeSavings} onClick={() => nav.setTab('save')} />
-          <AssetRow kind="deposit" title="정기예금" detail="목돈을 묶어 이자 받기" amount={w.deposit} onClick={() => nav.setTab('save')} />
-          <AssetRow kind="installment" title="적금" detail="매달 같은 금액 모으기" amount={w.installment} onClick={() => nav.setTab('save')} />
-          <AssetRow kind="invest" title="ETF" detail={etfDetail} amount={w.stockValue} onClick={() => nav.setTab('invest')} />
-        </div>
+        <details className="cn-home-assets">
+          <summary>가상 자산 구성 자세히 보기 <IconChevron /></summary>
+          <div className="t-list">
+            <AssetRow kind="saving" title="자유 저축" detail="참은 돈이 먼저 모이는 곳" amount={w.freeSavings} onClick={() => nav.setTab('save')} />
+            <AssetRow kind="deposit" title="정기예금" detail="목돈을 묶어 이자 받기" amount={w.deposit} onClick={() => nav.setTab('save')} />
+            <AssetRow kind="installment" title="적금" detail="매달 같은 금액 모으기" amount={w.installment} onClick={() => nav.setTab('save')} />
+            <AssetRow kind="invest" title="ETF" detail={etfDetail} amount={w.stockValue} onClick={() => nav.setTab('invest')} />
+          </div>
+        </details>
       </section>
 
       {/* ④ 가계부 */}
       <HomeSpend />
+
+      {/* 요청할 때만 AI를 로드해 불필요한 모델 호출과 화면 혼잡을 줄인다. */}
+      <section className="cn-home-help">
+        <button type="button" onClick={() => setShowBrief((v) => !v)} aria-expanded={showBrief}>
+          {showBrief ? '오늘의 AI 브리핑 닫기' : '오늘의 AI 브리핑 확인하기'}
+        </button>
+        {showBrief && <HomeBrief />}
+      </section>
 
       <p className="t-foot">결제일 잔고는 내가 넣은 결제계좌 잔액·일정·기록으로 계산하고, 평행세계는 가상 지갑으로 따로 계산해요. 가상 지갑에서는 실제 돈이 움직이지 않아요.</p>
     </div>
