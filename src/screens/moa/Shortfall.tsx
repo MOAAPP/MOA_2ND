@@ -22,7 +22,7 @@ import { AiLabel, BalanceChart, fmt, GradeBadge, HelpCard, md } from './parts';
  * 부족 가능일 상세 — 근거, 시나리오 전환(급여 지연), 살까 말까(결제 수단별).
  * 시연 시나리오 2~5단계가 이 화면에서 이어진다.
  */
-export function Shortfall() {
+export function Shortfall({ asTab = false }: { asTab?: boolean } = {}) {
   const nav = useNav();
   const { moa, report, now, today, set } = useMoa();
   const [view, setView] = useState<'onTime' | 'late'>('onTime');
@@ -48,7 +48,7 @@ export function Shortfall() {
 
   return (
     <div className="page t-page mo-page">
-      <TopBar onBack={nav.pop} title="결제일 잔고" />
+      <TopBar onBack={asTab ? undefined : nav.pop} title="결제일 잔고" />
       {!report.hasAnchor ? (
         <section className="t-card"><p>결제계좌 잔액을 먼저 알려주세요.</p><Button onClick={() => nav.replace({ name: 'moaSetup' })}>설정하기</Button></section>
       ) : (

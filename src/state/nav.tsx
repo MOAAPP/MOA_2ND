@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-export type Tab = 'home' | 'ledger' | 'forks' | 'save' | 'invest' | 'learn';
+/** 하단 메뉴: home·pay·ledger·choose·more. forks·save·invest·learn은 '더보기'에서 들어가는 연습 기능 */
+export type Tab = 'home' | 'pay' | 'ledger' | 'choose' | 'more' | 'forks' | 'save' | 'invest' | 'learn';
 
 export type Screen =
   | { name: 'lab'; mode?: 'past' | 'future' }

@@ -146,8 +146,19 @@ function quantileOf(xs: number[], q: number): number {
 }
 
 /**
+ * 유한 표본 보정 분위수 수준.
+ * h일 창은 하루씩 겹치므로 창 개수 그대로가 아니라 독립에 가까운 창 수(⌊창 수 / h⌋ + 1)를 표본 수 n으로 보고
+ * ⌈(n+1)·q⌉ / n 수준을 쓴다 (conformal 분위수의 표본 보정). 기록이 짧을수록 더 보수적인 폭이 된다.
+ * 합성 평가에서 보정 전 포함률이 3·7·14일 74%·67%·49%로 목표(80%)보다 낮았던 문제를 고치기 위한 것.
+ */
+export function calibratedLevel(windows: number, h: number, q: number = UPPER_QUANTILE): number {
+  const n = Math.max(1, Math.floor(windows / Math.max(1, h)) + 1);
+  return Math.min(1, Math.ceil((n + 1) * q) / n);
+}
+
+/**
  * 결제일까지 남은 h일의 누적 지출 상단 폭.
- * 과거의 'h일 누적 실제 − h일 누적 예측' 오차의 상위 20% 수준. 날짜별 분위를 더하지 않는다.
+ * 과거의 'h일 누적 실제 − h일 누적 예측' 오차의 보정 분위수(calibratedLevel). 날짜별 분위를 더하지 않는다.
  * 창 안의 모든 날이 정답일이어야 쓴다. 창이 5개 미만이면 공통 비율.
  */
 export function upperWidth(history: LabeledDay[], h: number, baseCum: number, model: BaselineName = 'weekday'): { width: number; basis: 'personal' | 'common'; windows: number } {
@@ -166,16 +177,49 @@ export function upperWidth(history: LabeledDay[], h: number, baseCum: number, mo
     }
     if (ok) errs.push(actual - pred);
   }
-  if (errs.length >= 5) return { width: Math.max(0, quantileOf(errs, UPPER_QUANTILE)), basis: 'personal', windows: errs.length };
+  if (errs.length >= 5) return { width: Math.max(0, quantileOf(errs, calibratedLevel(errs.length, h))), basis: 'personal', windows: errs.length };
   return { width: baseCum * COMMON_UPPER_RATIO(h), basis: 'common', windows: errs.length };
 }
 
 /* ───────── 예측 줄 ───────── */
 
+/**
+ * 외부 예측(ML 추론 API 등)이 날짜별 지출을 줄 때의 형식.
+ * 오프라인 평가에서 채택 조건(ml/train_lgbm.py의 adopt_ml)을 통과한 모델만 넣는다.
+ */
+export interface ExternalForecast {
+  modelVersion: string;
+  /** 모델이 본 마지막 정답일 */
+  inputDataUntil: ISODate;
+  daily: { date: ISODate; amount: number }[];
+}
+
+/** 예측 추적 정보. 어떤 모델이 언제, 어느 날까지의 기록으로 만든 예측인지 남긴다. */
+export interface ForecastMeta {
+  source: 'baseline' | 'ml';
+  modelVersion: string;
+  generatedAt: ISODate;
+  inputDataUntil: ISODate | null;
+  /** 외부 예측을 받았지만 쓰지 않은 이유 (기준선으로 돌아감) */
+  fallbackReason?: 'missing_days' | 'invalid_amount' | 'stale_input';
+}
+
+export const BASELINE_VERSION = (m: BaselineName) => `baseline_${m}_v1`;
+
+/** 외부 예측을 검사한다. 계산 범위의 모든 날이 있고, 금액이 0 이상 유한수이고, 입력 기록이 7일 넘게 묵지 않았을 때만 쓴다. */
+export function validateExternal(ext: ExternalForecast, today: ISODate, until: ISODate): { ok: true; byDate: Map<ISODate, number> } | { ok: false; reason: NonNullable<ForecastMeta['fallbackReason']> } {
+  const byDate = new Map(ext.daily.map((d) => [d.date, d.amount]));
+  for (const v of byDate.values()) if (!Number.isFinite(v) || v < 0) return { ok: false, reason: 'invalid_amount' };
+  for (let d = today; d <= until; d = addDays(d, 1)) if (!byDate.has(d)) return { ok: false, reason: 'missing_days' };
+  if (diffDays(ext.inputDataUntil, today) > 7) return { ok: false, reason: 'stale_input' };
+  return { ok: true, byDate };
+}
+
 export interface ForecastResult {
   ready: ForecastReadiness;
   model: BaselineName;
   runId: string;
+  meta: ForecastMeta;
   shares: MethodShares;
   /** 날짜별 전체 변동 지출 예측 */
   daily: { date: ISODate; total: number }[];
@@ -190,13 +234,23 @@ export interface ForecastResult {
  * today부터 until까지 변동 지출 예측.
  * 오늘은 '오늘 전체 예측 − 오늘 이미 기록된 같은 결제 수단 그룹의 변동 지출'만 남은 예측으로 넣는다(0 미만이면 0).
  */
-export function forecastLines(state: MoaState, today: ISODate, until: ISODate, model: BaselineName = 'weekday'): ForecastResult {
+export function forecastLines(state: MoaState, today: ISODate, until: ISODate, model: BaselineName = 'weekday', external?: ExternalForecast): ForecastResult {
   const ready = readiness(state, today);
   const history = labeledDays(state, today);
   const shares = methodShares(state, today);
-  const runId = `run_${today}_${model}`;
-  const empty: ForecastResult = { ready, model, runId, shares, daily: [], lines: [], creditOutside: 0, history };
+  const ext = external ? validateExternal(external, today, until) : null;
+  const useMl = !!(external && ext?.ok);
+  const meta: ForecastMeta = {
+    source: useMl ? 'ml' : 'baseline',
+    modelVersion: useMl ? external!.modelVersion : BASELINE_VERSION(model),
+    generatedAt: today,
+    inputDataUntil: useMl ? external!.inputDataUntil : (history[history.length - 1]?.date ?? null),
+    ...(ext && !ext.ok ? { fallbackReason: ext.reason } : {}),
+  };
+  const runId = `run_${today}_${meta.modelVersion}`;
+  const empty: ForecastResult = { ready, model, runId, meta, shares, daily: [], lines: [], creditOutside: 0, history };
   if (!ready.ready) return empty;
+  const predict = (d: ISODate) => (ext?.ok ? ext.byDate.get(d)! : BASELINES[model](history, d, today) ?? 0);
 
   const card = shares.creditCardId ? state.cards.find((c) => c.id === shares.creditCardId) : undefined;
   const todaySpent = { pay: 0, credit: 0, outside: 0 };
@@ -207,7 +261,7 @@ export function forecastLines(state: MoaState, today: ISODate, until: ISODate, m
   const creditByBill = new Map<ISODate, number>();
   let creditOutside = 0;
   for (let d = today; d <= until; d = addDays(d, 1)) {
-    const total = Math.max(0, BASELINES[model](history, d, today) ?? 0);
+    const total = Math.max(0, predict(d));
     daily.push({ date: d, total: Math.round(total) });
     let pay = total * shares.pay;
     let credit = total * shares.credit;
@@ -227,5 +281,5 @@ export function forecastLines(state: MoaState, today: ISODate, until: ISODate, m
     lines.push({ date, amount: -Math.round(amt), label: `${card!.name} 예상 사용분`, source: 'forecast_card', certainty: 'forecast', essential: false, cardId: card!.id });
   }
   lines.sort((a, b) => a.date.localeCompare(b.date));
-  return { ready, model, runId, shares, daily, lines, creditOutside: Math.round(creditOutside), history };
+  return { ready, model, runId, meta, shares, daily, lines, creditOutside: Math.round(creditOutside), history };
 }

@@ -155,3 +155,37 @@
   .mo-scn > div { flex-direction: column; gap: 2px; }
 }
 .mo-confirm-top > :nth-child(2) { flex: none; width: 32px; }
+
+/* 홈: 결제계좌 데이터와 학습용 가상 지갑 구분 */
+.t-practice-gate .t-more svg { transition: transform .15s; }
+.t-practice-gate [aria-expanded="true"] .t-more svg { transform: rotate(90deg); }
+.t-practice-note { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--t-g500); }
+.t-practice { display: contents; }
+.t-practice > .t-card, .t-practice > .t-portal, .t-practice > .t-brief { opacity: .96; }
+
+/* 더보기 */
+.more-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--t-g50); color: var(--t-g700); flex: none; }
+.more-ico svg { width: 22px; height: 22px; }
+
+/* 온보딩: 결제일 부족 예시 */
+.ob-hero-fork .ob-zero { stroke: currentColor; opacity: .25; stroke-dasharray: 4 4; stroke-width: 1.5; }
+.ob-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--t-g100, #EEF0F5); margin-bottom: 12px; }
+.ob-seg button { min-height: 44px; border: 0; border-radius: 10px; background: none; font: inherit; font-weight: 600; color: var(--t-g600, #6B7684); }
+.ob-seg button.on { background: #fff; color: var(--t-g900, #191F28); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.ob-pay dl, .ob-parsed { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+.ob-pay dl > div, .ob-parsed > div { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+.ob-pay dt, .ob-parsed dt { color: var(--t-g600, #6B7684); }
+.ob-pay dd, .ob-parsed dd { margin: 0; font-weight: 600; color: var(--t-g900, #191F28); text-align: right; }
+.ob-pay dd.pos { color: var(--t-blue, #3182F6); }
+.ob-pay dl > div.moved dt { color: var(--t-red, #F04452); }
+.ob-pay-result { margin-top: 14px; padding: 14px 16px; border-radius: 14px; display: flex; flex-direction: column; gap: 4px; }
+.ob-pay-result small { font-size: 13px; color: var(--t-g600, #6B7684); }
+.ob-pay-result strong { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.ob-pay-result.ok { background: rgba(49,130,246,.08); }
+.ob-pay-result.ok strong { color: var(--t-blue, #3182F6); }
+.ob-pay-result.short { background: rgba(240,68,82,.08); }
+.ob-pay-result.short strong { color: var(--t-red, #F04452); }
+.ob-sms small { display: block; font-size: 13px; color: var(--t-g600, #6B7684); margin-bottom: 6px; }
+.ob-sms pre { margin: 0; white-space: pre-wrap; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--t-g800, #333D4B); }
+.more-chev { display: grid; place-items: center; flex: none; width: 20px; height: 20px; color: var(--t-g400, #B0B8C1); }
+.more-chev svg { width: 18px; height: 18px; }

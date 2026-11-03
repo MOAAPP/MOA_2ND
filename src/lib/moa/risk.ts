@@ -1,5 +1,5 @@
 import { addDays, diffDays, type ISODate } from '../../../shared/dates';
-import { forecastLines, upperWidth, type BaselineName, type ForecastResult } from './forecast';
+import { forecastLines, upperWidth, type BaselineName, type ExternalForecast, type ForecastResult } from './forecast';
 import { anchorDate, confirmedFlows, type Settlement } from './ledger';
 import { GRADE_RANK, type Grade, type Line, type MoaState, type ScenarioKey } from './types';
 
@@ -106,6 +106,8 @@ const lowOn = (s: DayBalance[], d: ISODate) => s.find((x) => x.date === d)?.low 
 
 export interface RiskOptions {
   model?: BaselineName;
+  /** 채택된 ML 모델의 날짜별 예측. 검사에 실패하면 기준선으로 돌아간다 (forecast.meta.fallbackReason). */
+  external?: ExternalForecast;
   /** 살까 말까 등 가정 줄 추가 */
   extraLines?: Line[];
   delayDays?: number;
@@ -116,7 +118,7 @@ export function assessRisk(state: MoaState, nowMs: number, today: ISODate, opts:
   const until = addDays(today, CHART_HORIZON);
   const riskUntil = addDays(today, RISK_HORIZON);
   const anchor = state.anchor;
-  const fc = forecastLines(state, today, until, opts.model);
+  const fc = forecastLines(state, today, until, opts.model, opts.external);
   const emptySeries = { registered: [], base: [], high: [], delay: [], combo: [] };
   if (!anchor) {
     return {

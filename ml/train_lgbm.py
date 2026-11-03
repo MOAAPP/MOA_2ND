@@ -8,14 +8,18 @@
 
 - 목표: 하루 전체 변동 지출 합계 (0원 이상)
 - 모델: LightGBM 회귀, Tweedie 목적함수(variance power 1.5 고정), 미리 정한 작은 조합 3개 안에서만 고른다
-- 공통 모델 + 사용자 평균 지출 수준(user_mean, 학습 구간에서만 계산)으로 개인 수준 보정
+- 공통 모델 + 사용자 평균 지출 수준(user_mean, as_of 이전 정답일 누적 평균)으로 개인 수준 보정
+- 데이터 출처: features.csv의 source 열(real/synthetic). 실데이터가 있으면 모델 선택·채택 판단·최종 보고는
+  실데이터 행만 쓴다. 합성을 학습에 섞을지는 --train-source로 정하고(기본: real), report.json에 남긴다.
 - 선택: 모델 선택 구간(14일)의 7일 누적 MAE. 4명(또는 전체)의 선택 구간을 합쳐 판단하고,
   ML이 두 기준선보다 모두 낮을 때만 채택. 사용자별로 우열이 엇갈리면 요일별 평균 유지.
 - 보고: 선택에 쓰지 않은 최종 평가 구간 예측만 predictions.csv로 내보내고, run.ts가 같은 표에 넣는다.
 """
+import argparse
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -69,15 +73,36 @@ def add_baselines(df: pd.DataFrame, labeled: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def main() -> None:
+MODEL_VERSION = "lightgbm_tweedie_v1"
+
+
+def parse_args(argv=None):
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--train-source", choices=["real", "synthetic", "all"], default=None,
+                   help="학습에 쓸 행. 기본: 실데이터가 있으면 real, 없으면 synthetic")
+    return p.parse_args(argv)
+
+
+def main(argv=None) -> None:
+    args = parse_args(argv)
     df = pd.read_csv(DATA)
     df["label"] = pd.to_numeric(df["label"], errors="coerce").clip(lower=0)
+    has_real = (df["source"] == "real").any()
+    # 평가·선택은 실데이터가 있으면 실데이터만. 합성 성능이 실사용 성능처럼 보이지 않게 한다.
+    eval_source = "real" if has_real else "synthetic"
+    train_source = args.train_source or eval_source
+    if train_source == "real" and not has_real:
+        sys.exit("실데이터 행이 없어요. --real 로 특징량을 만들거나 --train-source synthetic 을 쓰세요.")
+
     labeled = df.drop_duplicates(["user", "target"]).dropna(subset=["label"])
     df = add_baselines(df, labeled)
 
-    train = df[(df["split"] == "train") & df["label"].notna()]
-    select = df[df["split"] == "select"].copy()
-    final = df[df["split"] == "eval"].copy()
+    train_mask = (df["split"] == "train") & df["label"].notna()
+    if train_source != "all":
+        train_mask &= df["source"] == train_source
+    train = df[train_mask]
+    select = df[(df["split"] == "select") & (df["source"] == eval_source)].copy()
+    final = df[(df["split"] == "eval") & (df["source"] == eval_source)].copy()
 
     best, best_mae, report = None, None, {"grid": []}
     for params in GRID:
@@ -107,11 +132,19 @@ def main() -> None:
     os.makedirs(OUT, exist_ok=True)
     final[["user", "as_of", "target", "pred"]].to_csv(os.path.join(OUT, "predictions.csv"), index=False)
     report.update({
+        "model_version": MODEL_VERSION,
+        "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "train_source": train_source,
+        "eval_source": eval_source,
+        "train_rows": int(len(train)),
+        "train_users": int(train["user"].nunique()),
+        "input_data_until": str(df["target"].max()),
         "chosen": params,
         "select_mae7": {"ml": ml_sel, "rolling7": r7_sel, "weekday": wd_sel},
         "users_ml_wins": users_ml_wins,
         "adopt_ml": bool(adopt),
-        "note": "선택 구간 결과는 탐색적 비교예요. 신청서에는 최종 평가 구간(run.ts 결과표)만 써요.",
+        "note": "선택 구간 결과는 탐색적 비교예요. 신청서에는 최종 평가 구간(run.ts 결과표)만 써요."
+                + ("" if eval_source == "real" else " 합성 데이터로 학습·평가한 결과라 실제 사용자 성능 근거가 아니에요."),
     })
     with open(os.path.join(OUT, "report.json"), "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
