@@ -89,7 +89,7 @@ export interface Detection {
 export function detect(u: SynthUser): Detection {
   const evalStart = addDays(u.start, 21);
   const warned = new Map<string, ISODate>();
-  const byGrade: Record<string, number> = {};
+  const firstGrade = new Map<string, string>();
   for (let d = addDays(evalStart, -14); d <= u.end; d = addDays(d, 1)) {
     const { state, nowMs } = stateAt(u, d);
     const r = assessRisk(state, nowMs, d);
@@ -97,12 +97,20 @@ export function detect(u: SynthUser): Detection {
       if (p.grade !== 'registered' && p.grade !== 'high' && p.grade !== 'caution') continue;
       if (p.date < evalStart) continue;
       const key = `${p.name}:${p.date}`;
-      if (!warned.has(key)) { warned.set(key, d); byGrade[p.grade] = (byGrade[p.grade] ?? 0) + 1; }
+      if (!warned.has(key)) { warned.set(key, d); firstGrade.set(key, p.grade); }
     }
   }
   // 카드값 이름은 엔진('신용 카드값')과 정답('신용카드 대금')이 달라 날짜로 맞춘다
   const norm = (k: string) => k.replace(/^.*카드(값| 대금)/, 'CARD');
-  const warnedNorm = new Map([...warned].map(([k, v]) => [norm(k), v]));
+  const warnedNorm = new Map<string, ISODate>();
+  const gradeNorm = new Map<string, string>();
+  for (const [k, v] of warned) {
+    const n = norm(k);
+    if (!warnedNorm.has(n) || v < warnedNorm.get(n)!) { warnedNorm.set(n, v); gradeNorm.set(n, firstGrade.get(k)!); }
+  }
+  // 등급별 경고 수는 탐지·오경보와 같은 단위(정규화한 결제일 1건 = 경고 1건)로 센다
+  const byGrade: Record<string, number> = {};
+  for (const g of gradeNorm.values()) byGrade[g] = (byGrade[g] ?? 0) + 1;
   const truth = u.payments.filter((p) => p.date >= evalStart);
   const events = truth.filter((p) => p.short);
   const lead: number[] = [];
@@ -190,17 +198,21 @@ export function main(argv = process.argv.slice(2)) {
 
   // 부족 탐지 (합성)
   lines.push('## 부족 탐지 — 합성 사용자 10명 (정답 라벨 있음, 시작 22일째부터 끝까지)', '', '| 사용자 | 상황 | 부족 사건 | 미리 탐지 | 놓침 | 불필요한 경고 | 평균 사전 탐지 일수 |', '|---|---|---|---|---|---|---|');
-  let ev = 0, det = 0, fa = 0; const leads: number[] = [];
+  let ev = 0, det = 0, fa = 0; const leads: number[] = []; const gradeSum: Record<string, number> = {};
   const detail: Record<string, unknown> = {};
   for (const u of synth) {
     const r = detect(u);
     ev += r.events; det += r.detected; fa += r.falseAlarms; leads.push(...r.leadDays);
+    for (const [g, n] of Object.entries(r.byGrade)) gradeSum[g] = (gradeSum[g] ?? 0) + n;
     detail[u.spec.id] = r;
     const lead = r.leadDays.length ? (r.leadDays.reduce((x, y) => x + y, 0) / r.leadDays.length).toFixed(1) : '—';
     lines.push(`| ${u.spec.id} | ${u.spec.scenario} | ${r.events} | ${r.detected} | ${r.missed.length} | ${r.falseAlarms} | ${lead} |`);
   }
   const recall = ev ? Math.round((det / ev) * 100) : null;
   lines.push(`| **합계** | | **${ev}** | **${det}** | **${ev - det}** | **${fa}** | **${leads.length ? (leads.reduce((x, y) => x + y, 0) / leads.length).toFixed(1) : '—'}** |`, '');
+  const warnTotal = Object.values(gradeSum).reduce((x, y) => x + y, 0);
+  const gl: Record<string, string> = { registered: '등록 일정 기준 부족', high: '부족 가능성 높음', caution: '주의' };
+  lines.push(`경고가 뜬 결제일 ${warnTotal}건 = 실제 부족을 미리 잡은 ${det}건 + 불필요한 경고 ${fa}건. 등급별: ${['registered', 'high', 'caution'].map((g) => `${gl[g]} ${gradeSum[g] ?? 0}건`).join(', ')}. (같은 날짜의 카드 대금은 1건으로 센다)`, '');
   lines.push(`재현율 ${recall === null ? '—' : `${recall}%`} (합성 데이터 기준, 실제 청년의 부족 탐지 성능이 아님). 경고는 등록 일정 기준 부족·부족 가능성 높음·주의 등급.`, '');
 
   mkdirSync('docs/eval', { recursive: true });

@@ -1,4 +1,4 @@
-// 평행통장 서비스 워커: 앱 화면(정적 파일)만 캐시. /api 요청은 항상 네트워크로 보낸다.
+// 모아 서비스 워커: 앱 화면(정적 파일)만 캐시. /api 요청은 항상 네트워크로 보낸다.
 const CACHE = 'pb-shell-v1';
 
 self.addEventListener('install', (e) => {

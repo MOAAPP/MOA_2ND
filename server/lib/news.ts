@@ -39,7 +39,7 @@ export function parseNewsRss(xml: string, now: number, maxAgeDays = 7): NewsItem
 export async function fetchNews(query: string): Promise<{ items: NewsItem[]; error: string | null }> {
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(`"${query}" when:3d`)}&hl=ko&gl=KR&ceid=KR:ko`;
   try {
-    const res = await fetchWithTimeout(url, { headers: { 'User-Agent': 'Mozilla/5.0 (parallel-bank)' } }, 8000);
+    const res = await fetchWithTimeout(url, { headers: { 'User-Agent': 'Mozilla/5.0 (moa)' } }, 8000);
     if (!res.ok) return { items: [], error: `기사 검색 응답 오류(${res.status})` };
     const xml = await res.text();
     return { items: parseNewsRss(xml, Date.now(), 4).slice(0, 5), error: null };

@@ -52,7 +52,7 @@ export async function yahooChart(symbol: string, range = '3mo'): Promise<YahooRe
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=1d`;
   let res;
   try {
-    res = await fetchWithTimeout(url, { headers: { 'User-Agent': 'Mozilla/5.0 (parallel-bank)', Accept: 'application/json' } }, 8000);
+    res = await fetchWithTimeout(url, { headers: { 'User-Agent': 'Mozilla/5.0 (moa)', Accept: 'application/json' } }, 8000);
   } catch {
     throw new ApiError(502, 'quote_unreachable', 'Yahoo 시세에 연결하지 못했어요.', true);
   }

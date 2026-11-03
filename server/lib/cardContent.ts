@@ -295,10 +295,10 @@ export function buildDailyCards(d: DailyCardInput): CardSpec[] {
     sections: [
       { heading: '오늘의 퀴즈', lines: [d.quiz.q, ...d.quiz.options.map((o, i) => `${letters[i]}. ${o}`)] },
       ...(d.nextLesson ? [{ heading: '다음 레슨', lines: [`${d.nextLesson.unitTitle} › ${d.nextLesson.title} (약 ${d.nextLesson.minutes}분)`] }] : [{ heading: '학습 경로', lines: ['모든 레슨을 마쳤어요. 복습으로 실력을 다져봐요.'] }]),
-      { heading: '정답은 앱에서', lines: [`평행통장 배움 탭에서 풀면 스트릭이 이어져요.${d.appUrl ? ` ${d.appUrl}` : ''}`] },
+      { heading: '정답은 앱에서', lines: [`모아 배움 탭에서 풀면 스트릭이 이어져요.${d.appUrl ? ` ${d.appUrl}` : ''}`] },
     ],
     photoQuery: pickBy(d.date + 's', ['student studying notebook', 'study desk morning light', 'open book coffee']),
-    footer: `${d.nickname ? `${d.nickname}님을 위한 ` : ''}평행통장 데일리 · 투자 권유가 아닌 학습 자료예요`,
+    footer: `${d.nickname ? `${d.nickname}님을 위한 ` : ''}모아 데일리 · 투자 권유가 아닌 학습 자료예요`,
   };
   return [card1, card2, card3, card4];
 }
@@ -307,7 +307,7 @@ export function buildDailyCards(d: DailyCardInput): CardSpec[] {
 export function discordSummary(trade: TradeInput, name: string, quote: { source: Quote['source']; time: number; live?: boolean }, e?: Explanation): string {
   const action = trade.side === 'buy' ? '매수' : '매도';
   return [
-    `**[평행통장 · 모의투자]** ${name} ${shares(trade.qty)} ${action} (체결가 ${won(trade.price)})`,
+    `**[모아 · 모의투자]** ${name} ${shares(trade.qty)} ${action} (체결가 ${won(trade.price)})`,
     e ? e.headline : '',
     `카드뉴스 4장 · ${formatSourceLabel(quote.source, quote.live)} ${formatKDateTime(quote.time)} 기준`,
     '실제 거래가 아닌 모의투자 기록이에요. 투자 권유가 아닙니다.',
@@ -317,7 +317,7 @@ export function discordSummary(trade: TradeInput, name: string, quote: { source:
 export function dailySummary(d: DailyCardInput): string {
   const k = d.kospi;
   return [
-    `**[평행통장 데일리]** ${formatKDate(d.date, { weekday: true })}${d.nickname ? ` · ${d.nickname}님` : ''}`,
+    `**[모아 데일리]** ${formatKDate(d.date, { weekday: true })}${d.nickname ? ` · ${d.nickname}님` : ''}`,
     k?.changePct != null ? `코스피 ${k.value.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} (${signedPct(k.changePct)})` : '',
     d.focus ? d.focus.explanation.headline : '',
     d.streak > 0 ? `${d.streak}일 연속 학습 중 — 오늘의 퀴즈로 이어가요!` : '오늘의 퀴즈를 풀고 스트릭을 시작해요!',

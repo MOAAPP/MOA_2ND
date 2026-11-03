@@ -47,6 +47,32 @@ export interface PaymentCheck {
   upperBasis: 'personal' | 'common' | 'none';
 }
 
+/** 기록 신뢰도 (기획서 「위험 등급과 기록 신뢰도를 나눠 표시」). 위험 등급과 따로 보여준다. */
+export type ReliabilityLevel = 'enough' | 'check' | 'low';
+export const RELIABILITY_LABEL: Record<ReliabilityLevel, string> = { enough: '충분', check: '확인 필요', low: '부족' };
+export interface Reliability {
+  level: ReliabilityLevel;
+  /** 신뢰도를 낮춘 이유 (화면 문구용) */
+  reasons: { key: 'stale' | 'gap' | 'missing'; text: string }[];
+}
+
+/**
+ * 세 가지를 본다: 마지막 잔액 확인이 오래됐는지, 최근 7일 안 잔액 불일치, 예측에 필요한 정보(카드 결제일·입금 일정) 누락.
+ * 문제 0개 → 충분, 1개 → 확인 필요, 2개 이상 → 부족.
+ */
+export function assessReliability(state: MoaState, flags: { stale: boolean; gap: boolean; staleDays: number }): Reliability {
+  const reasons: Reliability['reasons'] = [];
+  if (flags.stale) reasons.push({ key: 'stale', text: `잔액을 확인한 지 ${flags.staleDays}일 지났어요` });
+  if (flags.gap) reasons.push({ key: 'gap', text: '계산한 잔액과 문자 속 잔액이 달라요' });
+  const missing: string[] = [];
+  const usesCredit = state.cards.some((c) => c.kind === 'credit') || state.txns.some((t) => t.method === 'credit');
+  if (usesCredit && !state.cards.some((c) => c.kind === 'credit' && c.payDay && c.cutoffDay)) missing.push('카드 결제일');
+  if (!state.schedule.some((x) => x.direction === 'in')) missing.push('입금 일정');
+  if (missing.length) reasons.push({ key: 'missing', text: `${missing.join('·')}이 빠져 있어요` });
+  const level: ReliabilityLevel = reasons.length === 0 ? 'enough' : reasons.length === 1 ? 'check' : 'low';
+  return { level, reasons };
+}
+
 export interface RiskReport {
   today: ISODate;
   nowMs: number;
@@ -56,6 +82,7 @@ export interface RiskReport {
   staleDays: number;
   stale: boolean;
   gap: boolean;
+  reliability: Reliability;
   forecast: ForecastResult;
   /** 시나리오별 일별 잔고 (차트용, 30일) */
   series: Record<ScenarioKey, DayBalance[]>;
@@ -122,7 +149,7 @@ export function assessRisk(state: MoaState, nowMs: number, today: ISODate, opts:
   const emptySeries = { registered: [], base: [], high: [], delay: [], combo: [] };
   if (!anchor) {
     return {
-      today, nowMs, hasAnchor: false, anchorAt: null, anchorBalance: null, staleDays: 0, stale: false, gap: false, forecast: fc,
+      today, nowMs, hasAnchor: false, anchorAt: null, anchorBalance: null, staleDays: 0, stale: false, gap: false, reliability: { level: 'low', reasons: [] }, forecast: fc,
       series: emptySeries, payments: [], worst: null,
       evidence: { confirmedOut: 0, confirmedIn: 0, forecastOut: 0, scheduledIn: [], uncertainIn: [], outsideCount: 0 },
       settlements: [], ifUncertainArrives: null, delayDays: delay,
@@ -213,7 +240,8 @@ export function assessRisk(state: MoaState, nowMs: number, today: ISODate, opts:
   }
 
   return {
-    today, nowMs, hasAnchor: true, anchorAt: anchor.at, anchorBalance: anchor.balance, staleDays, stale, gap, forecast: fc, series, payments, worst,
+    today, nowMs, hasAnchor: true, anchorAt: anchor.at, anchorBalance: anchor.balance, staleDays, stale, gap,
+    reliability: assessReliability(state, { stale, gap, staleDays }), forecast: fc, series, payments, worst,
     evidence: { confirmedOut: Math.round(confirmedOut), confirmedIn: Math.round(confirmedIn), forecastOut: Math.round(forecastOut), scheduledIn: pick('scheduled'), uncertainIn, outsideCount: onTime.outsideCount },
     settlements: onTime.settlements, ifUncertainArrives, delayDays: delay,
   };

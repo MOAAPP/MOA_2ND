@@ -1,4 +1,4 @@
-/* 평행통장 v3: 공통 헤더 정렬, 온보딩, 개인화 모델, 퀴즈형 학습 */
+/* 모아 v3: 공통 헤더 정렬, 온보딩, 개인화 모델, 퀴즈형 학습 */
 :root { --v3-brand:#3765ee; --v3-ink:#18243b; --v3-muted:#77839b; }
 /* Root pages have 20px horizontal padding; the sticky header must extend
    to both edges rather than ending as an inset floating rectangle. */

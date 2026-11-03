@@ -20,7 +20,7 @@ export function discordStatus() {
     lastSuccessAt: d.lastSuccessAt,
     lastErrorAt: d.lastErrorAt,
     lastError: d.lastError,
-    destination: '평행통장 Discord 서버의 카드뉴스 채널',
+    destination: '모아 Discord 서버의 카드뉴스 채널',
   };
 }
 
