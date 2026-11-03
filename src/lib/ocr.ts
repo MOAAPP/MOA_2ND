@@ -60,11 +60,67 @@ export function parsePurchaseText(text: string): Omit<OcrResult, 'engine'> {
   });
 
   const ranked = [...scored.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]).map(([n]) => n);
-  // 이름: 돈처럼 생긴 숫자가 없고 배송·쿠폰 같은 안내 문구가 아닌 첫 줄
+  const isReceipt = lines.some((l) => TOTAL_WORDS.slice(0, 9).some((w) => lower(l).includes(w)));
+  const clean = lines.map(cleanLine).filter((l) => l && isReadable(l) && !isMeta(l));
   const money = /\d{1,3}(,\d{3})+|\d+\s*원/;
-  const NOISE = ['배송', '쿠폰', '리뷰', '적립', '혜택', '장바구니', '구매하기', '바로구매'];
-  const name = lines.find((l) => /[가-힣a-zA-Z]{2,}/.test(l) && !money.test(l) && l.length <= 30 && ![...TOTAL_WORDS, ...SKIP_WORDS, ...NOISE].some((w) => lower(l).includes(w)));
-  return { amount: ranked[0], name, candidates: ranked.slice(0, 4) };
+  const store = clean.slice(0, 3).find((l) => /(점|매장|마트|편의점)$/.test(l) || /^(GS25|CU|세븐일레븐|이마트24|스타벅스|투썸|이디야|메가커피|컴포즈|빽다방|올리브영|다이소)/i.test(l));
+
+  let name: string | undefined;
+  if (isReceipt) {
+    // 영수증: '품목 수량 금액' 줄에서 앞의 품목명만
+    const items = clean.filter((l) => money.test(l) || /\s\d{3,}$/.test(l)).map(itemName).filter((x): x is string => !!x);
+    if (items.length === 1) name = items[0];
+    else if (items.length > 1) name = `${items[0]} 외 ${items.length - 1}건`;
+  }
+  if (!name) {
+    // 상품 페이지·가격표: 금액 없는 줄 중 가장 상품명다운 줄
+    const cands = clean.filter((l) => !money.test(l) && l !== store && l.length <= 30);
+    name = cands.sort((a, b) => nameScore(b, clean.indexOf(b)) - nameScore(a, clean.indexOf(a)))[0];
+  }
+  return { amount: ranked[0], name: name ?? store, store, candidates: ranked.slice(0, 4) };
+}
+
+const NOISE = ['배송', '쿠폰', '리뷰', '적립', '혜택', '장바구니', '구매하기', '바로구매', '정가', '할인'];
+const META = /(사업자|대표|주소|전화|tel|fax|영수증|일시|날짜|카드|승인|pos|고객|감사|교환|환불|반품|www\.|http|\.com|가맹|단말|거래|매출|과세|면세|부가세|합계|총액|결제|받은|거스름|포인트|멤버십|회원|번호|no\.|계산원|담당)/i;
+
+function cleanLine(l: string): string {
+  return l
+    .replace(/[|_~^`¦“”"'‘’•·*#@<>{}[\]\\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** OCR 잡음 걸러내기: 자모 낱자, 기호 범벅, 한 글자 조각이 많은 줄은 버린다 */
+export function isReadable(l: string): boolean {
+  if (/[ㄱ-ㅎㅏ-ㅣ]/.test(l)) return false;
+  const good = (l.match(/[가-힣a-zA-Z0-9\s,.()+%/-]/g) ?? []).length;
+  if (good / l.length < 0.85) return false;
+  const tokens = l.split(' ').filter(Boolean);
+  const words = tokens.filter((t) => /[가-힣]{2,}|[a-zA-Z]{3,}/.test(t));
+  if (!words.length) return false;
+  const tiny = tokens.filter((t) => t.replace(/[^가-힣a-zA-Z]/g, '').length === 1 && !/\d/.test(t)).length;
+  if (tiny / tokens.length > 0.34) return false;
+  // 영문 자음만 늘어선 잡음 (rlll, tttnn)
+  if (!/[가-힣]/.test(l) && !/[aeiouAEIOU]/.test(l)) return false;
+  return true;
+}
+
+function isMeta(l: string): boolean {
+  if (META.test(l) || NOISE.some((w) => l.includes(w))) return true;
+  if (/\d{2,4}[-./]\d{1,2}[-./]\d{1,2}|\d{1,2}:\d{2}/.test(l)) return true; // 날짜·시각
+  if (/(시|도)\s?\S+(구|군)\s|\S+(로|길)\s?\d+(-\d+)?(?=\s|,|$)/.test(l)) return true; // 주소
+  return false;
+}
+
+/** '아이스 아메리카노 2 9,000' → '아이스 아메리카노' */
+function itemName(l: string): string | undefined {
+  const n = l.replace(/(\s+[\d,]+\s*(원|개|ea)?)+$/i, '').replace(/^\d+\s*[.)]?\s*/, '').trim();
+  return n.length >= 2 && /[가-힣]{2,}|[a-zA-Z]{3,}/.test(n) && n.length <= 30 ? n : undefined;
+}
+
+function nameScore(l: string, idx: number): number {
+  const hangul = (l.match(/[가-힣]/g) ?? []).length;
+  return Math.min(l.length, 20) + hangul * 0.5 - idx * 1.5 + (/[a-zA-Z]+\s?\d+/.test(l) ? 3 : 0);
 }
 
 /** 사진을 줄여 전송량을 줄인다 (긴 변 1400px, JPEG) */
@@ -91,7 +147,9 @@ async function downscale(file: File, maxSide = 1400): Promise<{ dataUrl: string;
   }
 }
 
-type TesseractGlobal = { createWorker: (langs: string[]) => Promise<{ recognize: (img: HTMLCanvasElement) => Promise<{ data: { text: string } }>; terminate: () => Promise<void> }> };
+type TesseractGlobal = { createWorker: (langs: string[]) => Promise<{ recognize: (img: HTMLCanvasElement) => Promise<{ data: { text: string; lines?: { text: string; confidence: number }[] } }>; terminate: () => Promise<void> }> };
+/** 이보다 신뢰도가 낮은 줄은 잡음으로 보고 버린다 */
+const MIN_LINE_CONFIDENCE = 55;
 const TESSERACT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 
 function loadTesseract(): Promise<TesseractGlobal> {
@@ -126,7 +184,8 @@ export async function readPurchaseImage(file: File, onStage?: (s: string) => voi
   const worker = await T.createWorker(['kor', 'eng']);
   try {
     const { data } = await worker.recognize(canvas);
-    const parsed = parsePurchaseText(data.text);
+    const text = data.lines?.length ? data.lines.filter((l) => l.confidence >= MIN_LINE_CONFIDENCE).map((l) => l.text).join('\n') : data.text;
+    const parsed = parsePurchaseText(text);
     if (!parsed.amount) throw new Error('사진에서 금액을 찾지 못했어요. 금액이 잘 보이게 다시 찍어볼까요?');
     return { ...parsed, engine: 'browser' };
   } finally {
