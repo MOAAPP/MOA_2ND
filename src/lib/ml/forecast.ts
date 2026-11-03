@@ -51,17 +51,12 @@ export function ruleForecast(input: ForecastInput): SpendingForecast {
   const hist = input.history.filter((h) => h.date >= since && h.date <= input.today && h.amount > 0);
   const dummy = hist.length > 0 && hist.every((h) => h.from === 'demo');
 
-  // 날짜별 합계 (기록이 없는 날은 0원)
-  let historyDays = 0;
-  const daily: number[] = [];
-  if (hist.length) {
-    const first = hist.reduce((m, h) => (h.date < m ? h.date : m), hist[0].date);
-    historyDays = diffDays(first, input.today) + 1;
-    const byDate = new Map<ISODate, number>();
-    for (const h of hist) byDate.set(h.date, (byDate.get(h.date) ?? 0) + h.amount);
-    for (let i = 0; i < historyDays; i++) daily.push(byDate.get(addDays(first, i)) ?? 0);
-  }
-  daily.sort((a, b) => a - b);
+  // 기록이 없는 날짜는 0원이 아니라 관측되지 않은 날이다.
+  // 사용자가 별도 완료 버튼을 누르지 않아도, 실제 저장된 지출 기록만 기준선에 반영한다.
+  const byDate = new Map<ISODate, number>();
+  for (const h of hist) byDate.set(h.date, (byDate.get(h.date) ?? 0) + h.amount);
+  const historyDays = byDate.size;
+  const daily = [...byDate.values()].sort((a, b) => a - b);
 
   const hasPrior = (input.dailySpend ?? 0) > 0;
   const enough = hist.length >= MIN_PERSONAL_RECORDS;
@@ -70,7 +65,7 @@ export function ruleForecast(input: ForecastInput): SpendingForecast {
   const emp = enough
     ? { p10: quantile(daily, 0.1), p50: quantile(daily, 0.5), p90: quantile(daily, 0.9) }
     : { p10: 0, p50: 0, p90: 0 };
-  // 기록이 0원인 날이 많으면 P50이 0이 될 수 있어 평균으로 하한을 둔다
+  // 관측 지출에 대한 분위수. 관측되지 않은 날짜에는 가짜 0원 정답을 넣지 않는다.
   if (enough) {
     const mean = daily.reduce((s, v) => s + v, 0) / daily.length;
     emp.p50 = Math.max(emp.p50, mean * 0.6);
