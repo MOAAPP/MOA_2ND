@@ -1,6 +1,4 @@
-import { JobView, type PublicJob } from './CardNews';
-import { Notice, TopBar } from '../components/ui';
-import { useNav } from '../state/nav';
+import type { PublicJob } from './CardNews';
 
 const titles = ['시장 한눈에', '관심 종목', '변화 읽기', '오늘의 퀴즈'];
 const cards = titles.map((title, index) => {
@@ -15,7 +13,7 @@ const cards = titles.map((title, index) => {
   return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
 });
 
-const job: PublicJob = {
+export const sampleCardNewsJob: PublicJob = {
   id: 'sample-ui', kind: 'daily', tradeId: 'sample-ui', dailyDate: null,
   createdAt: 0, updatedAt: 0, status: 'generated', stage: null, error: null,
   retryable: false, code: null, name: '카드뉴스 화면 샘플', side: null,
@@ -24,11 +22,3 @@ const job: PublicJob = {
   summary: '', headline: null, notice: null, sends: [],
 };
 
-export function CardNewsDemo() {
-  const nav = useNav();
-  return <div className="page no-nav">
-    <TopBar onBack={nav.pop} title="카드뉴스 화면 미리보기" center />
-    <Notice kind="info">장 마감에도 확인하는 UI 샘플이에요. 실제 주가나 내 거래 기록이 아니며 서버 요청이나 Discord 전송은 하지 않아요.</Notice>
-    <JobView job={job} setJob={() => undefined} reload={() => undefined} onError={() => undefined} />
-  </div>;
-}
