@@ -135,9 +135,12 @@ def verify():
     demo=json.loads(front.decode("utf-8"))
     assert demo["user_id"]=="S01" and len(demo["daily"])==92
     assert demo["start"]==DAYS[0] and demo["end"]==DAYS[-1]
-    assert demo["transactions"]==[t for t in transactions if t["user_id"]=="S01"]
-    assert demo["investments"]==[t for t in trades if t["user_id"]=="S01"]
-    assert demo["choices"]==[t for t in choices if t["user_id"]=="S01"]
+    # CSV loader returns strings; JSON retains original integer types.
+    for key, source in (("transactions",transactions),("investments",trades),("choices",choices)):
+        expected=[r for r in source if r["user_id"]=="S01"]
+        assert len(demo[key])==len(expected)
+        for found, wanted in zip(demo[key],expected):
+            assert {k:str(v) for k,v in found.items()}==wanted, (key,found["id"])
 
     print("PASS: 10 × 92 days; unique IDs; positive amounts; daily bank reconciliation;")
     print("      recorded != actual; risk flags; valid investment positions; temporal ML features;")
