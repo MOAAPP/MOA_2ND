@@ -11,6 +11,7 @@ import {
   nextPaymentDate,
   quickStart,
   removeCard,
+  suspiciousSetup,
   removeSchedule,
   setAnchor,
   upsertCard,
@@ -65,6 +66,13 @@ export function QuickStart({ onDone }: { onDone?: () => void }) {
   const [name, setName] = useState('월세');
   const [amount, setAmount] = useState(0);
   const [day, setDay] = useState(() => Number(addDays(todayKST(), 5).slice(8)));
+  const [warned, setWarned] = useState<string | null>(null);
+  const warning = suspiciousSetup(balance, amount);
+  const finish = () => {
+    if (warning && warned !== warning) { setWarned(warning); return; }
+    set((m) => quickStart(m, balance, { name, amount, day }));
+    onDone?.();
+  };
   return (
     <div className="mo-qs">
       {step === 0 ? (
@@ -86,7 +94,8 @@ export function QuickStart({ onDone }: { onDone?: () => void }) {
           <label className="mo-field">매달 <input type="number" min={1} max={31} value={day} onChange={(e) => setDay(Math.max(1, Math.min(31, Number(e.target.value) || 1)))} />일 <small>다음 출금 {formatKDate(nextMonthly(day, todayKST()))}</small></label>
           <p className="mo-amount num">{fmt(amount)}</p>
           <NumberPad value={amount} onChange={setAmount} max={10_000_000} />
-          <Button disabled={!amount} onClick={() => { set((m) => quickStart(m, balance, { name, amount, day })); onDone?.(); }}>결과 보기</Button>
+          {warning && warned === warning && <p className="mo-warn" role="alert">{warning} 맞으면 한 번 더 눌러 주세요.</p>}
+          <Button disabled={!amount} onClick={finish}>{warning && warned === warning ? '이대로 결과 보기' : '결과 보기'}</Button>
           <button className="mo-link" onClick={() => setStep(0)}>잔액 다시 입력</button>
         </>
       )}

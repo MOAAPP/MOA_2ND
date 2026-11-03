@@ -93,6 +93,17 @@ export function quickStart(m: MoaState, balance: number, payment: { name: string
   return upsertSchedule(withAnchor, { name: payment.name, amount: payment.amount, day: payment.day, recurrence: 'monthly', direction: 'out', essential: true });
 }
 
+/**
+ * 1분 설정 입력이 오타처럼 보이는지. 계산은 맞아도 입력이 틀리면 엉뚱한 경고가 뜬다.
+ * (예: 잔액 22원·카드값 800만 원 → "7,999,978원이 모자라요")
+ * 막지는 않고, 한 번 더 확인할 문장만 돌려준다.
+ */
+export function suspiciousSetup(balance: number, amount: number): string | null {
+  if (balance > 0 && balance < 1_000) return `결제계좌 잔액을 ${balance.toLocaleString('ko-KR')}원으로 넣었어요. 맞나요?`;
+  if (amount >= 1_000_000 && amount > Math.max(balance, 1) * 10) return `필수결제 ${amount.toLocaleString('ko-KR')}원이 잔액의 10배가 넘어요. 0을 더 누르지 않았나요?`;
+  return null;
+}
+
 /** 카드 이름으로 찾거나 새로 만든다 (문자에서 처음 보는 카드) */
 export function findCardByName(m: MoaState, name: string, kind?: MoaCard['kind']): MoaCard | undefined {
   const norm = (s: string) => s.toUpperCase().replace(/\s|카드|체크|신용|KB|뱅크|은행/g, '');
