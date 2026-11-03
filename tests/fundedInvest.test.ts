@@ -106,6 +106,8 @@ describe('한 가상 지갑을 사용하는 투자', () => {
     expect(bought.wallet.cash).toBe(750_000);
     expect(fundedAvailableCash(bought.wallet, bought.journal)).toBe(70_000);
     expect(transactWorldWallet(bought.wallet, { type: 'save', amount: 75_000 })).toBeNull();
+    const spending = { id: 'locked-shares', title: '매도 전 소비 시도', price: 760_000, paid: 760_000, choice: 'buy' as const, at: now, note: '' };
+    expect(transactWorldWallet(bought.wallet, { type: 'spend', decision: spending })).toBeNull();
     const sold = placeFundedOrder(bought.wallet, bought.journal, { ...buy('sell-profit'), side: 'sell' }, ctx(80_000));
     if (!sold.ok) throw new Error('sell');
     expect(sold.wallet.cash).toBe(830_000);
