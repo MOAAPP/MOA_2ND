@@ -5,7 +5,7 @@
  * 계산은 전부 src/lib/futureCost.ts (테스트: tests/futureCost.test.ts).
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { formatKDate, todayKST } from '../../shared/dates';
+import { addDays, formatKDate, todayKST } from '../../shared/dates';
 import { BetterPrice } from '../components/BetterPrice';
 import { IconCamera, IconCheck, IconChevron } from '../components/Icons';
 import { usePhotoReader } from '../components/PhotoReader';
@@ -24,6 +24,9 @@ import { AiCard } from '../components/Ai';
 import { useAi } from '../lib/ai';
 import { coachInput } from '../lib/ai/context';
 import { useSpending } from './Ledger';
+import { useMoa } from '../state/moa';
+import { assessRisk, billingDate, RISK_HORIZON, type Line, type ScenarioKey } from '../lib/moa';
+import { GradeBadge, md } from './moa/parts';
 
 type Phase = 'input' | 'preview' | 'done';
 type Pick = 'hold' | 'alt' | 'buy';
@@ -43,7 +46,7 @@ interface Outcome {
   moveFailed: boolean;
 }
 
-export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
+export function Choose() {
   const nav = useNav();
   const { state, update } = useStore();
   const bank = useBank();
@@ -128,7 +131,8 @@ export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
   if (phase === 'input') {
     return (
       <div className="page t-page has-cta c-page">
-        <TopBar onBack={asTab ? undefined : nav.pop} title="사기 전에" />
+        <TopBar onBack={nav.pop} title="이거 사도 될까?" />
+        <p className="mo-intro">무엇을 얼마에 살지 넣으면, 다음 결제일 잔고와 평행세계 1년 뒤를 같이 보여줘요.</p>
         <section className="c-input">
           <label className="c-name">
             <span className="sr-only">무엇을 사고 싶어요?</span>
@@ -149,7 +153,7 @@ export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
             </Chips>
           </div>
           <div className="d-pad-dock"><NumberPad value={price} onChange={setPrice} max={100_000_000} /></div>
-          <button type="button" className="c-lab-link" onClick={() => nav.push({ name: 'lab' })}>예시 상황으로 먼저 연습해 볼래요 <IconChevron width={14} height={14} /></button>
+          <button type="button" className="c-lab-link" onClick={() => nav.push({ name: 'lab' })}>예시 상황으로 먼저 해 볼래요 <IconChevron width={14} height={14} /></button>
         </section>
         <CtaBar>
           <Button disabled={price <= 0} onClick={() => {
@@ -163,7 +167,6 @@ export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
   }
 
   /* ───────── 2~3. 미래 비용 미리보기 + 선택 ───────── */
-  const short = fc.buy.usable < 0;
   const yearGap = fc.year.net;
   const p = getProduct(fc.year.productId);
 
@@ -176,13 +179,15 @@ export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
         </button>
         {control
           ? <h1>{title},<br />살까요?</h1>
-          : <h1>{freq === 'once' ? '지금 사면,' : `${FREQ_LABEL[freq]} 사면,`}<br />1년 뒤 두 세계는<br />{yearGap > 0 ? <Won n={yearGap} /> : '같아요'}{yearGap > 0 && ' 벌어져요'}</h1>}
+          : <h1>{freq === 'once' ? '지금 사면' : `${FREQ_LABEL[freq]} 사면`}<br />어떻게 달라질까요?</h1>}
       </header>
 
       {!control && <>
-      <Coach item={title} price={price} freq={freq} usableNow={fc.now.usable} usableAfter={fc.buy.usable} afterBills={fc.buy.afterBills} yearGap={fc.year.net} memory={state.categoryMemory} />
+      <PayDayImpact price={price} freq={freq} />
 
       <section className="c-fork" aria-label="1년 동안 두 세계의 차이">
+        <div className="h-tag-row"><span className="h-tag world">평행세계 · 1년 뒤</span><span className="t-badge">가상 지갑</span></div>
+        <p className="c-sec-title">{yearGap > 0 ? <>두 세계가 <Won n={yearGap} /> 벌어져요</> : '1년 뒤에도 차이가 없어요'}</p>
         <ForkChart spend={fc.yearSpend} keep={yearGap} holdName={holdName} />
         <dl className="c-legend">
           <div className="keep"><dt>{holdName}</dt><dd><Won n={yearGap} sign="+" /></dd></div>
@@ -195,24 +200,7 @@ export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
         ) : null}
       </section>
 
-      <section className="c-soon" aria-label="당장 달라지는 것">
-        <div className="c-soon-row">
-          <span className="c-soon-label">이번 달 쓸 수 있는 돈</span>
-          <span className="c-soon-val">
-            <s className="num">{signed(fc.now.usable)}</s>
-            <b className={`v17-num ${short ? 'neg' : ''}`}><Won n={fc.buy.usable} /></b>
-          </span>
-          <small>{freq !== 'once' ? `이번 달 남은 ${fc.timesThisMonth}번 동안 ${fmt(fc.buy.spendThisMonth)}을 써요` : `${fmt(price)}이 바로 빠져요`}{short ? `. 지켜둘 생활비에서 ${fmt(-fc.buy.usable)}을 꺼내 써요` : ''}</small>
-        </div>
-        <div className="c-soon-row">
-          <span className="c-soon-label">{formatKDate(fc.nextBillDate)} 월세·통신비 내고 남는 돈</span>
-          <div className="c-two">
-            <div className="buy"><small>사면</small><b className={fc.buy.afterBills < 0 ? 'neg' : ''}><Won n={fc.buy.afterBills} /></b></div>
-            <div className="keep"><small>{hasAlt ? '더 싸게 사면' : '참으면'}</small><b><Won n={fc.hold.afterBills} /></b></div>
-          </div>
-          <small>{fc.buy.afterBills < 0 ? `사면 ${fmt(-fc.buy.afterBills)}이 모자라요. ` : ''}{fc.daysToBill}일 뒤예요.</small>
-        </div>
-      </section>
+      <Coach item={title} price={price} freq={freq} usableNow={fc.now.usable} usableAfter={fc.buy.usable} afterBills={fc.buy.afterBills} yearGap={fc.year.net} memory={state.categoryMemory} />
       </>}
 
       <Card title="어떻게 할래요?" className="c-pick-card">
@@ -232,7 +220,7 @@ export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
         )}
       </Card>
 
-      <p className="t-foot">학습용 가상 계좌 기준이에요. 실제 결제나 이체는 일어나지 않아요.</p>
+      <p className="t-foot">결제일 잔고는 내 결제계좌 기준, 1년 뒤는 평행세계 가상 지갑 기준이에요. 고른 결과는 평행세계에 기록되고, 실제 결제나 이체는 일어나지 않아요.</p>
       {error && <p className="t-error" role="alert">{error}</p>}
 
       <CtaBar>
@@ -251,6 +239,61 @@ export function Choose({ asTab = false }: { asTab?: boolean } = {}) {
         />
       )}
     </div>
+  );
+}
+
+/** 내 결제계좌 기준: 사면 다음 필수결제일 잔고가 어떻게 되는지 (모아 계산 엔진) */
+function PayDayImpact({ price, freq }: { price: number; freq: Frequency }) {
+  const nav = useNav();
+  const { moa, report, now, today } = useMoa();
+  const card = moa.cards.find((c) => c.kind === 'credit' && c.payDay && c.cutoffDay);
+  const [method, setMethod] = useState<'debit' | 'credit'>('debit');
+  const after = useMemo(() => {
+    if (!report.hasAnchor || price <= 0) return null;
+    const days = freq === 'once' ? [0] : freq === 'weekly' ? [0, 7] : Array.from({ length: RISK_HORIZON }, (_, i) => i);
+    const lines: Line[] = days.map((i) => {
+      const d = addDays(today, i);
+      return method === 'credit' && card
+        ? { date: billingDate(card, d), amount: -price, label: '사면', source: 'card_bill', certainty: 'confirmed', essential: false, cardId: card.id }
+        : { date: d, amount: -price, label: '사면', source: 'txn', certainty: 'confirmed', essential: false };
+    });
+    return assessRisk(moa, now, today, { extraLines: lines });
+  }, [report.hasAnchor, price, freq, method, card, moa, now, today]);
+
+  if (!report.hasAnchor) {
+    return (
+      <section className="c-sec">
+        <div className="h-tag-row"><span className="h-tag real">내 결제계좌 · 다음 결제일</span></div>
+        <p className="c-sec-title">결제계좌 잔액을 넣으면 다음 결제일에 괜찮은지도 같이 봐드려요</p>
+        <button className="t-btn" onClick={() => nav.push({ name: 'moaSetup' })}>1분 설정하기</button>
+      </section>
+    );
+  }
+  const target = report.worst ?? report.payments[0];
+  const before = target ? report.payments.find((p) => p.key === target.key) : undefined;
+  const buy = target && after ? after.payments.find((p) => p.key === target.key) : undefined;
+  const k: ScenarioKey = report.forecast.ready.ready ? 'base' : 'registered';
+  const left = (v: number) => (v < 0 ? `${fmt(-v)} 모자라요` : `${fmt(v)} 남아요`);
+  return (
+    <section className="c-sec">
+      <div className="h-tag-row"><span className="h-tag real">내 결제계좌 · 다음 결제일</span></div>
+      {target && before && buy ? (
+        <>
+          <p className="c-sec-title">{md(target.date)} {target.name} 빠진 직후</p>
+          <div className="c-two">
+            <div className="buy"><small>사면</small><b className={buy.balances[k] < 0 ? 'neg' : ''}>{left(buy.balances[k])}</b><GradeBadge grade={buy.grade} /></div>
+            <div className="keep"><small>참으면</small><b className={before.balances[k] < 0 ? 'neg' : ''}>{left(before.balances[k])}</b><GradeBadge grade={before.grade} /></div>
+          </div>
+          {card && (
+            <Chips label="결제 수단">
+              <Chip on={method === 'debit'} onClick={() => setMethod('debit')}>체크카드</Chip>
+              <Chip on={method === 'credit'} onClick={() => setMethod('credit')}>신용카드</Chip>
+            </Chips>
+          )}
+          <small className="c-sec-note">{method === 'credit' && card ? `신용카드는 ${formatKDate(billingDate(card, today))}에 청구돼요.` : '체크카드·이체는 사는 날 바로 결제계좌에서 빠져요.'}</small>
+        </>
+      ) : <p className="c-sec-title">14일 안에 등록된 필수결제가 없어서 결제일 영향은 없어요</p>}
+    </section>
   );
 }
 

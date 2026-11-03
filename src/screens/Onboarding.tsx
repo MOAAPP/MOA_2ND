@@ -1,11 +1,10 @@
 /**
  * 첫 실행 온보딩 — 모아의 핵심 문제(7~14일 안 필수결제 부족)를 실제 엔진으로 보여준다.
  *  0) 약속: 결제일 전에 잔고가 모자랄지 먼저 알려준다 + 믿을 수 있는 이유
- *  1) 같은 사람, 입금만 3일 늦어지면 (assessRisk 등록 일정·입금 지연 시나리오)
- *  2) 체크카드는 오늘, 신용카드는 청구일에 (billingDate + extraLines)
+ *  1) 내 결제계좌: 같은 사람, 입금만 3일 늦어지면 (assessRisk 등록 일정·입금 지연 시나리오)
+ *  2) 평행세계: 사고 싶은 게 생기면 산 나와 참은 나의 1년 뒤 (futureCost)
  *  3) AI는 결제 문자를 기록으로, 계산은 코드가 (exampleParseSpend + maskText)
- *  4) 위험 등급과 기록 신뢰도를 따로 보여준다
- *  5) 시작 방법 고르기
+ *  4) 시작 방법 고르기
  * 화면 숫자는 전부 src/lib/moa 계산 결과다(하드코딩 없음). 예시 상황은 기획서 시연 시나리오와 같다.
  */
 import { useMemo, useState, type ReactNode } from 'react';
@@ -14,14 +13,16 @@ import { maskText } from '../../shared/mask';
 import { AiMark } from '../components/Ai';
 import { Logo } from '../components/Glyph';
 import { exampleNow } from '../lib/ai';
-import { assessRisk, billingDate, emptyMoa, kstMs, setAnchor, upsertCard, upsertSchedule, type Line, type MoaState } from '../lib/moa';
+import { Won } from '../components/ds';
+import { FREQ_LABEL, futureCost, type Frequency } from '../lib/futureCost';
+import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_SAFETY_BUFFER } from '../lib/worldWallet';
+import { ForkChart } from './Choose';
+import { assessRisk, emptyMoa, kstMs, setAnchor, upsertCard, upsertSchedule, type MoaState } from '../lib/moa';
 
 const fmt = (n: number) => `${Math.round(Math.abs(n)).toLocaleString('ko-KR')}원`;
 const dayOf = (d: ISODate) => `${Number(d.slice(8, 10))}일`;
-const mdOf = (d: ISODate) => `${Number(d.slice(5, 7))}월 ${Number(d.slice(8, 10))}일`;
 
-const STEPS = 6;
-const BUY = 24_000;
+const STEPS = 5;
 
 /** 기획서 시연 시나리오: 잔액 15만원, 10일 알바비 20만원 입금 예정, 11일 카드값 30만원 */
 function demoState(today: ISODate, month: ISODate): MoaState {
@@ -38,15 +39,10 @@ function useDemo() {
     const today = addDays(month, 2);
     const state = demoState(today, month);
     const now = kstMs(today, 10);
-    const pay = (extra?: Line[]) => assessRisk(state, now, today, extra ? { extraLines: extra } : {}).payments.find((p) => p.key.includes('ob-card')) ?? null;
-    const credit = state.cards[0];
-    const bill = billingDate(credit, today);
-    const base = pay();
-    const debit = pay([{ date: today, amount: -BUY, label: '살까 말까', source: 'txn', certainty: 'confirmed', essential: false }]);
-    const onCredit = pay([{ date: bill, amount: -BUY, label: '살까 말까', source: 'card_bill', certainty: 'confirmed', essential: false, cardId: credit.id }]);
+    const base = assessRisk(state, now, today).payments.find((p) => p.key.includes('ob-card')) ?? null;
     const income = state.schedule.find((x) => x.id === 'ob-in')!;
     const card = state.schedule.find((x) => x.id === 'ob-card')!;
-    return { today, base, debit, onCredit, bill, income, card, delayDays: state.delayDays, balance: state.anchor!.balance };
+    return { today, base, income, card, delayDays: state.delayDays, balance: state.anchor!.balance };
   }, []);
 }
 type Demo = ReturnType<typeof useDemo>;
@@ -56,6 +52,7 @@ export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () 
   const [agree, setAgree] = useState(true);
   const [start, setStart] = useState<'demo' | 'mine'>('demo');
   const demo = useDemo();
+  const [itemId, setItemId] = useState(ITEMS[2].id);
 
   const next = () => setStep((s) => Math.min(STEPS - 1, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
@@ -63,24 +60,24 @@ export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () 
 
   const screens: { kicker: string; title: ReactNode; sub: ReactNode; body: ReactNode; cta: string }[] = [
     {
-      kicker: '20대를 위한 결제일 부족 예측',
-      title: <>결제일 전에,<br />잔고가 모자랄지<br />먼저 알려줘요</>,
-      sub: '월세·카드값 나가는 날 결제계좌에 돈이 있을지, 앞으로 2주를 미리 계산해요.',
+      kicker: '20대를 위한 소비 결정 앱',
+      title: <>이번 결제일은 괜찮은지,<br />다르게 골랐다면<br />어땠을지 보여줘요</>,
+      sub: '내 결제계좌로는 다가오는 결제일을 미리 계산하고, 평행세계 가상 지갑으로는 산 나와 참은 나를 나란히 보여줘요.',
       body: <Pledge />,
       cta: '어떻게 계산하는지 볼게요',
     },
     {
-      kicker: '1 · 입금이 늦어지면',
+      kicker: '1 · 내 결제계좌',
       title: <>같은 사람이어도<br />입금 날짜에 따라 달라져요</>,
       sub: `입금이 ${demo.delayDays}일만 늦어져도 카드값 날 잔고가 모자랄 수 있어요. 아래를 눌러 비교해 보세요.`,
       body: <PayDay demo={demo} />,
       cta: '다음',
     },
     {
-      kicker: '2 · 결제 수단',
-      title: <>체크카드는 오늘,<br />신용카드는 청구일에 빠져요</>,
-      sub: `${fmt(BUY)}짜리를 살 때 무엇으로 결제하느냐에 따라 ${dayOf(demo.card.date!)} 잔고가 달라져요.`,
-      body: <PayMethod demo={demo} />,
+      kicker: '2 · 평행세계',
+      title: <>사고 싶은 게 생기면<br />두 세계로 나눠 봐요</>,
+      sub: '하나 골라 보세요. 산 나와 참은 나가 1년 동안 얼마나 벌어지는지 가상 지갑으로 바로 계산해요.',
+      body: <World itemId={itemId} setItemId={setItemId} />,
       cta: '다음',
     },
     {
@@ -88,13 +85,6 @@ export function Onboarding({ onDone, onDemo }: { onDone: () => void; onDemo: () 
       title: <>결제 문자는 AI가 정리하고,<br />계산은 앱이 해요</>,
       sub: '번호·이름을 가린 문장만 AI가 읽어 거래로 정리해요. 잔고와 위험 등급은 AI가 아니라 계산 엔진이 정해요.',
       body: <AiDemo />,
-      cta: '다음',
-    },
-    {
-      kicker: '4 · 믿을 수 있는 경고',
-      title: <>얼마나 위험한지와<br />얼마나 믿을 만한지를<br />따로 보여줘요</>,
-      sub: '잔액을 오래 확인하지 않았거나 기록이 빠진 것 같으면, 경고를 키우지 않고 확인을 먼저 부탁해요.',
-      body: <Trust demo={demo} />,
       cta: '다음',
     },
     {
@@ -154,9 +144,9 @@ function Pledge() {
         </svg>
       </div>
       <ul className="ob-trust">
-        <li><span className="ob-ic">14</span><span><b>14일 안의 필수결제 확인</b><small>월세·카드값·통신비가 빠지는 날, 결제계좌에 돈이 남는지 봐요.</small></span></li>
-        <li><span className="ob-ic">⇄</span><span><b>결제 전 선택 비교</b><small>살까 말까 고민될 때 넣어 보면 결제일 잔고가 어떻게 바뀌는지 보여줘요.</small></span></li>
-        <li><span className="ob-ic">✓</span><span><b>위험 근거와 기록 신뢰도</b><small>왜 이런 판단이 나왔는지, 그 판단을 얼마나 믿어도 되는지 같이 보여줘요.</small></span></li>
+        <li><span className="ob-ic">14</span><span><b>다가오는 결제일 미리 보기</b><small>월세·카드값이 빠지는 날 결제계좌에 돈이 남는지, 입금이 늦어지면 어떤지 봐요.</small></span></li>
+        <li><span className="ob-ic">⑂</span><span><b>평행세계</b><small>사거나 참은 선택마다 두 세계가 갈라지고, 참은 돈은 가상 예금·적금·투자로 굴려 봐요.</small></span></li>
+        <li><span className="ob-ic">AI</span><span><b>숫자는 앱이, 정리는 AI가</b><small>결제 문자를 거래로 정리하고, 계산 결과를 쉬운 말로 풀어줘요.</small></span></li>
       </ul>
       <p className="ob-note">기록은 이 기기에만 남고, 은행·카드와 연결하지 않아요.</p>
     </>
@@ -186,33 +176,6 @@ function PayDay({ demo }: { demo: Demo }) {
         </div>
       </div>
       <p className="ob-note">모아는 이런 상황을 결제일 7일·3일 전에 알려주고, 무엇을 바꾸면 되는지 선택지를 보여줘요. 추가 변동 지출이 없다고 둔 단순 예시예요.</p>
-    </>
-  );
-}
-
-/* ───────── 2. 결제 수단 ───────── */
-function PayMethod({ demo }: { demo: Demo }) {
-  const [m, setM] = useState<'debit' | 'credit'>('debit');
-  const p = m === 'debit' ? demo.debit : demo.onCredit;
-  const bal = p?.balances.registered ?? 0;
-  const before = demo.base?.balances.registered ?? 0;
-  return (
-    <>
-      <div className="ob-seg" role="radiogroup" aria-label="결제 수단">
-        <button type="button" role="radio" aria-checked={m === 'debit'} className={m === 'debit' ? 'on' : ''} onClick={() => setM('debit')}>체크카드</button>
-        <button type="button" role="radio" aria-checked={m === 'credit'} className={m === 'credit' ? 'on' : ''} onClick={() => setM('credit')}>신용카드</button>
-      </div>
-      <div className="ob-card ob-pay">
-        <dl>
-          <div><dt>{fmt(BUY)} 결제가 빠지는 날</dt><dd>{m === 'debit' ? '오늘' : `${mdOf(demo.bill)} (청구일)`}</dd></div>
-          <div><dt>{dayOf(demo.card.date!)} {demo.card.name} 직후 · 사기 전</dt><dd className="num">{fmt(before)}</dd></div>
-        </dl>
-        <div className={`ob-pay-result ${bal < 0 ? 'short' : 'ok'}`} aria-live="polite">
-          <small>{dayOf(demo.card.date!)} {demo.card.name} 직후 · 산 뒤</small>
-          <strong className="num">{bal < 0 ? `${fmt(bal)} 모자라요` : `${fmt(bal)} 남아요`}</strong>
-        </div>
-      </div>
-      <p className="ob-note">신용카드는 지금 잔고를 지켜주지만 {mdOf(demo.bill)} 청구액에 더해져요. 모아는 그 청구일까지 함께 계산해요.</p>
     </>
   );
 }
@@ -248,32 +211,44 @@ function AiDemo() {
   );
 }
 
-/* ───────── 4. 위험 등급 vs 기록 신뢰도 ───────── */
-function Trust({ demo }: { demo: Demo }) {
-  const card = `${dayOf(demo.card.date!)} ${demo.card.name}`;
+/* ───────── 2. 평행세계 ───────── */
+const ITEMS: { id: string; emoji: string; name: string; price: number; freq: Frequency }[] = [
+  { id: 'latte', emoji: '☕️', name: '카페 라떼', price: 4_500, freq: 'daily' },
+  { id: 'buds', emoji: '🎧', name: '무선 이어폰', price: 159_000, freq: 'once' },
+  { id: 'delivery', emoji: '🍗', name: '배달 치킨', price: 24_000, freq: 'weekly' },
+];
+
+function World({ itemId, setItemId }: { itemId: string; setItemId: (id: string) => void }) {
+  const item = ITEMS.find((i) => i.id === itemId)!;
+  const day = addDays(startOfMonth(todayKST()), 9);
+  const fc = useMemo(() => futureCost({
+    price: item.price, frequency: item.freq, today: day,
+    wallet: { cash: WORLD_MONTHLY_INCOME, fixedBills: WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
+  }), [item, day]);
   return (
-    <div className="ob-card ob-trust2">
-      <div className="row">
-        <small>자금 부족 위험</small>
-        <span className="mo-grade g-caution">주의</span>
-        <p>"{card}, 입금이 늦어지면 모자랄 수 있어요"</p>
+    <>
+      <div className="ob-items" role="radiogroup" aria-label="예시 고르기">
+        {ITEMS.map((i) => (
+          <button key={i.id} type="button" role="radio" aria-checked={i.id === itemId} className={i.id === itemId ? 'on' : ''} onClick={() => setItemId(i.id)}>
+            <span className="e" aria-hidden="true">{i.emoji}</span>
+            <b>{i.name}</b>
+            <small className="num">{fmt(i.price)} · {FREQ_LABEL[i.freq]}</small>
+          </button>
+        ))}
       </div>
-      <div className="row">
-        <small>기록 신뢰도</small>
-        <span className="mo-rel r-check">기록 신뢰도 · 확인 필요</span>
-        <p>"잔액을 확인한 지 9일 지났어요. 지금 잔액을 입력하면 다시 판단해요"</p>
+      <div className="ob-card ob-fork">
+        <div className="ob-fork-head">
+          <span>1년 뒤 두 세계 차이</span>
+          <strong className="num" key={item.id}><Won n={fc.year.net} /></strong>
+        </div>
+        <ForkChart key={item.id} spend={fc.yearSpend} keep={fc.year.net} holdName="참은 나" />
       </div>
-      <ul className="ob-levels">
-        <li><span className="mo-rel r-enough">충분</span>최근 잔액 확인과 기록이 맞아요</li>
-        <li><span className="mo-rel r-check">확인 필요</span>잔액 확인이 오래됐거나, 기록이 어긋났거나, 카드 결제일·입금 일정이 빠졌어요</li>
-        <li><span className="mo-rel r-low">부족</span>위 문제가 두 가지 이상 겹쳐요</li>
-      </ul>
-      <p className="tip">잔액 확인이 7일을 넘기거나 기록이 어긋나면 등급은 '주의'보다 올라가지 않아요.</p>
-    </div>
+      <p className="ob-note">참은 돈은 평행세계의 자유 저축으로 옮겨지고, 가상 예금·적금이나 모의투자로 굴려볼 수 있어요.</p>
+    </>
   );
 }
 
-/* ───────── 5. 시작 ───────── */
+/* ───────── 4. 시작 ───────── */
 function StartPick({ start, setStart, agree, setAgree }: { start: 'demo' | 'mine'; setStart: (v: 'demo' | 'mine') => void; agree: boolean; setAgree: (v: boolean) => void }) {
   return (
     <>

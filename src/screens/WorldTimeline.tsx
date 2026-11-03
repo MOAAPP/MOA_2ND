@@ -33,7 +33,7 @@ export function WorldTimeline() {
   return (
     <div className="page t-page t-world">
       <header className="t-head">
-        <h1>평행세계</h1>
+        <div><h1>평행세계</h1><p className="t-head-sub">샀을 때와 참았을 때, 두 세계의 돈을 나란히 보여줘요</p></div>
         <button className="t-head-icon" aria-label="설정" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
       </header>
 

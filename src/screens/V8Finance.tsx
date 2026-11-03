@@ -122,14 +122,11 @@ export function V8Home() {
   const nav = useNav();
   const { summary: w, wallet } = useWallet();
   const held = Object.entries(wallet.etfs || {}).filter(([, h]) => h.qty > 0);
-  const etfDetail = held.length ? held.map(([c, h]) => `${INSTRUMENT_BY_CODE[c]?.name ?? c} ${h.qty}주`).join(' · ') : '모의투자와 같은 ETF로 연습';
+  const etfDetail = held.length ? held.map(([c, h]) => `${INSTRUMENT_BY_CODE[c]?.name ?? c} ${h.qty}주`).join(' · ') : '실제 시세로 사고팔아요';
   const gap = useMemo(() => { const p = worldHistory(state.worldWallet, 30); return p[p.length - 1]?.gap ?? 0; }, [state.worldWallet]);
   const choices = state.worldWallet.decisions.length;
   const [how, setHow] = useState(false);
-  // 학습용 가상 지갑은 결제계좌(모아 엔진)와 다른 데이터라 기본으로 접어 두고, 펼쳐도 따로 묶어 보여준다
-  const [practiceOpen, setPracticeOpen] = useState(false);
   const usable = Math.max(0, w.monthlyUsable);
-  const cashBase = Math.max(1, WORLD_FIXED_BILLS + WORLD_SAFETY_BUFFER + usable);
   const assetRows = [
     { key: 'cash', label: '현금', v: w.cash, c: 'var(--moa)' },
     { key: 'save', label: '자유 저축', v: w.freeSavings, c: '#9B9AFA' },
@@ -140,47 +137,37 @@ export function V8Home() {
 
   return (
     <div className="page t-page t-home">
-      <TopHeader title="모아" logo />
+      <TopHeader title="모아" logo sub="이번 결제일은 괜찮은지, 다르게 골랐다면 얼마가 달라지는지 보여줘요" />
 
+      {/* ① 내 결제계좌 — 다가오는 필수결제 */}
       <ShortfallCard />
 
-      <HomeSpend />
-
-      {/* ── 여기부터 학습용 가상 지갑 (결제계좌 잔고 계산과 별개) ── */}
-      <section className="t-card t-practice-gate">
-        <button type="button" className="t-card-head as-link" aria-expanded={practiceOpen} onClick={() => setPracticeOpen((v) => !v)}>
-          <h2>연습용 가상 지갑</h2><span className="t-more">{practiceOpen ? '접기' : '펼치기'}<IconChevron /></span>
+      {/* ② 평행세계 — 다르게 골랐다면 */}
+      <section className="t-card h-world">
+        <div className="h-tag-row"><span className="h-tag world">평행세계</span><span className="t-badge">가상 지갑</span></div>
+        <button type="button" className="h-world-main" onClick={() => nav.setTab('forks')}>
+          <span>
+            <small>다르게 선택해서 지킨 돈</small>
+            <strong className="num"><Won n={Math.abs(gap)} sign={gap >= 0 ? '+' : '−'} /></strong>
+            <em>{choices}번의 선택 · 두 세계 보기 <IconChevron /></em>
+          </span>
+          <svg className="v17-mini-fork" width="96" height="56" viewBox="0 0 96 56" aria-hidden="true">
+            <path d="M4 28 C 34 28, 58 8, 88 8" fill="none" stroke="#8D8CFF" strokeWidth="3" strokeLinecap="round" />
+            <path d="M4 28 C 34 28, 58 46, 88 46" fill="none" stroke="#FF4F6E" strokeWidth="3" strokeLinecap="round" />
+            <circle cx="4" cy="28" r="4" fill="#fff" /><circle cx="88" cy="8" r="4.5" fill="#8D8CFF" /><circle cx="88" cy="46" r="4.5" fill="#FF4F6E" />
+          </svg>
         </button>
-        <p className="t-practice-note">위 결제일 잔고와 다른 학습용 데이터예요. 여기 금액은 결제계좌 계산에 들어가지 않아요.</p>
-      </section>
-
-      {practiceOpen && <div className="t-practice">
-      <HomeBrief />
-
-      {/* ── 이번 달 쓸 수 있는 돈 (가상) ── */}
-      <section className="t-card t-hero">
-        <div className="t-hero-top">
-          <span className="t-label">가상 지갑 · 이번 달 쓸 수 있는 돈</span>
-          <span className="t-badge">가상</span>
-        </div>
-        <strong className="t-hero-num num"><Won n={usable} /></strong>
-        <div className="t-meter" role="img" aria-label={`현금 ${fmt(w.cash)} 중 결제 예정 ${fmt(WORLD_FIXED_BILLS)}, 생활비 안전선 ${fmt(WORLD_SAFETY_BUFFER)}, 쓸 수 있는 돈 ${fmt(usable)}`}>
-          <span className="m-bill" style={{ width: `${pct(WORLD_FIXED_BILLS, cashBase)}%` }} />
-          <span className="m-safe" style={{ width: `${pct(WORLD_SAFETY_BUFFER, cashBase)}%` }} />
-          <span className="m-free" style={{ width: `${Math.max(2, pct(usable, cashBase))}%` }} />
-        </div>
-        <dl className="t-meter-key">
-          <div><dt><i className="m-bill" />월세·통신비 등 결제 예정</dt><dd className="num">{fmt(WORLD_FIXED_BILLS)}</dd></div>
-          <div><dt><i className="m-safe" />지켜둘 생활비</dt><dd className="num">{fmt(WORLD_SAFETY_BUFFER)}</dd></div>
-          <div><dt><i className="m-free" />자유롭게 쓸 수 있는 돈</dt><dd className="num strong">{fmt(usable)}</dd></div>
+        <dl className="h-world-stats">
+          <div><dt>이번 달 쓸 수 있는 돈</dt><dd className="num">{fmt(usable)}</dd></div>
+          <div><dt>평행세계 자산</dt><dd className="num">{fmt(w.totalAssets)}</dd></div>
         </dl>
-        <button type="button" className="t-how" onClick={() => setHow(true)}>어떻게 계산했어요?</button>
-        <button className="t-btn primary" onClick={() => nav.push({ name: 'choose' })}>사기 전에 두 세계 비교하기</button>
+        <button className="t-btn primary" onClick={() => nav.push({ name: 'choose' })}>사고 싶은 게 있어요</button>
+        <button type="button" className="t-how" onClick={() => setHow(true)}>쓸 수 있는 돈은 어떻게 계산해요?</button>
       </section>
       {how && (
         <Sheet title="쓸 수 있는 돈 계산" onClose={() => setHow(false)}>
           <dl className="ob-calc t-how-calc">
-            <div><dt>지금 가상 계좌 현금</dt><dd className="num">{fmt(w.cash)}</dd></div>
+            <div><dt>지금 가상 지갑 현금</dt><dd className="num">{fmt(w.cash)}</dd></div>
             <div><dt>{Number(addMonths(startOfMonth(todayKST()), 1).slice(5, 7))}월 1일 나갈 월세·통신비</dt><dd className="num">−{fmt(WORLD_FIXED_BILLS)}</dd></div>
             <div><dt>지켜둘 생활비</dt><dd className="num">−{fmt(WORLD_SAFETY_BUFFER)}</dd></div>
             <div className="total"><dt>이번 달 쓸 수 있는 돈</dt><dd className="num">{w.monthlyUsable < 0 ? '−' : ''}{fmt(Math.abs(w.monthlyUsable))}</dd></div>
@@ -189,41 +176,27 @@ export function V8Home() {
         </Sheet>
       )}
 
-      {/* ── 평행세계 티저 ── */}
-      <button className="t-portal" onClick={() => nav.setTab('forks')}>
-        <span className="t-portal-text">
-          <small>다르게 선택해서 지킨 돈</small>
-          <strong className="num"><Won n={Math.abs(gap)} sign={gap >= 0 ? '+' : '−'} /></strong>
-          <em>{choices}번의 선택 · 평행세계 보기 <IconChevron /></em>
-        </span>
-        <svg className="v17-mini-fork" width="96" height="56" viewBox="0 0 96 56" aria-hidden="true">
-          <path d="M4 28 C 34 28, 58 8, 88 8" fill="none" stroke="#8D8CFF" strokeWidth="3" strokeLinecap="round" />
-          <path d="M4 28 C 34 28, 58 46, 88 46" fill="none" stroke="#FF4F6E" strokeWidth="3" strokeLinecap="round" />
-          <circle cx="4" cy="28" r="4" fill="#fff" /><circle cx="88" cy="8" r="4.5" fill="#8D8CFF" /><circle cx="88" cy="46" r="4.5" fill="#FF4F6E" />
-        </svg>
-      </button>
+      <HomeBrief />
 
-      {/* ── 내 자산 ── */}
+      {/* ③ 평행세계 자산 — 모으기·투자로 */}
       <section className="t-card">
-        <div className="t-card-head"><h2>내 가상 자산</h2></div>
+        <div className="t-card-head"><h2>평행세계 자산</h2><span className="t-badge">가상</span></div>
         <strong className="t-big num"><Won n={w.totalAssets} /></strong>
         <div className="t-stack" role="img" aria-label={assetRows.map((r) => `${r.label} ${fmt(r.v)}`).join(', ')}>
           {assetRows.map((r) => <span key={r.key} style={{ width: `${pct(r.v, w.totalAssets)}%`, background: r.c }} />)}
         </div>
-        <div className="t-stack-key">
-          {assetRows.map((r) => <span key={r.key}><i style={{ background: r.c }} />{r.label} {Math.round(pct(r.v, w.totalAssets))}%</span>)}
-        </div>
         <div className="t-list">
-          <AssetRow kind="cash" title="현금 · 가상 계좌" detail="결제 예정금 포함" amount={w.cash} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
-          <AssetRow kind="saving" title="자유 저축" detail="언제든 꺼낼 수 있어요" amount={w.freeSavings} onClick={() => nav.setTab('save')} />
-          <AssetRow kind="deposit" title="가상 정기예금" detail="목돈을 묶어두는 연습" amount={w.deposit} onClick={() => nav.setTab('save')} />
-          <AssetRow kind="installment" title="가상 적금" detail="매달 조금씩 모으기" amount={w.installment} onClick={() => nav.setTab('save')} />
-          <AssetRow kind="invest" title="생활비로 산 ETF" detail={etfDetail} amount={w.stockValue} onClick={() => nav.push({ name: 'budgetInvest' })} />
+          <AssetRow kind="saving" title="자유 저축" detail="참은 돈이 먼저 모이는 곳" amount={w.freeSavings} onClick={() => nav.setTab('save')} />
+          <AssetRow kind="deposit" title="정기예금" detail="목돈을 묶어 이자 받기" amount={w.deposit} onClick={() => nav.setTab('save')} />
+          <AssetRow kind="installment" title="적금" detail="매달 같은 금액 모으기" amount={w.installment} onClick={() => nav.setTab('save')} />
+          <AssetRow kind="invest" title="ETF" detail={etfDetail} amount={w.stockValue} onClick={() => nav.setTab('invest')} />
         </div>
       </section>
-      </div>}
 
-      <p className="t-foot">결제일 잔고는 내가 입력한 결제계좌 잔액·일정·기록으로 계산해요. 연습용 가상 지갑은 실제 금융사와 연동하지 않는 학습용 데이터예요.</p>
+      {/* ④ 가계부 */}
+      <HomeSpend />
+
+      <p className="t-foot">결제일 잔고는 내가 넣은 결제계좌 잔액·일정·기록으로 계산하고, 평행세계는 가상 지갑으로 따로 계산해요. 가상 지갑에서는 실제 돈이 움직이지 않아요.</p>
     </div>
   );
 }

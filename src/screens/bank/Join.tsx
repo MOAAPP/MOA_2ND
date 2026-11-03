@@ -128,7 +128,7 @@ export function Join({ id, initialAmount }: { id: string; initialAmount?: number
             <ul className="b-terms">
               {p.terms.map((t) => <li key={t}>{t}</li>)}
               <li>만기가 지나면 원금과 세후 이자를 현금으로 자동으로 돌려받아요. 만기 후 이자는 없어요.</li>
-              <li>학습용 가상 상품이에요. 실제 돈이 움직이지 않아요.</li>
+              <li>평행세계 가상 상품이에요. 실제 돈이 움직이지 않아요.</li>
             </ul>
           </div>
           <label className="b-agree">
