@@ -110,3 +110,15 @@ describe('FactChat 게이트웨이 (OpenAI 호환)', () => {
     expect(r).toMatchObject({ ok: false, reason: 'http_error' });
   });
 });
+
+describe('AI_ENABLED 스위치', () => {
+  afterEach(() => { delete process.env.AI_ENABLED; delete process.env.FACTCHAT_API_KEY; resetAiStats(); });
+  it('AI_ENABLED=off면 키가 있어도 부르지 않는다', async () => {
+    process.env.FACTCHAT_API_KEY = 'fc_test';
+    process.env.AI_ENABLED = 'off';
+    let called = false;
+    const r = await runAiTask('parseSpend', sms, (async () => { called = true; return new Response('{}'); }) as never);
+    expect(r).toMatchObject({ ok: false, reason: 'not_configured' });
+    expect(called).toBe(false);
+  });
+});

@@ -27881,6 +27881,7 @@ var init_krx = __esm({
 
 // server/lib/llm.ts
 function llmProvider() {
+  if (/^(off|false|0)$/i.test(process.env.AI_ENABLED ?? "")) return null;
   if (process.env.FACTCHAT_API_KEY) return "factchat";
   if (process.env.ANTHROPIC_API_KEY) return "anthropic";
   return null;
