@@ -13,7 +13,7 @@ export function InvestHead() {
       </div>
       <button className="t-head-icon" aria-label="설정" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
     </header>
-    <p className="mo-intro ih-intro">{nav.tab === 'invest' ? '1,000만 원 가상 자금으로 실제 시세에 사고팔아 봐요' : '투자하기 전에 알아두면 좋은 걸 짧게 배워요'}</p>
+    <p className="mo-intro ih-intro">{nav.tab === 'invest' ? '평행세계 가상 지갑의 남는 돈으로 주식·ETF를 연습해요' : '투자하기 전에 알아두면 좋은 걸 짧게 배워요'}</p>
     </>
   );
 }

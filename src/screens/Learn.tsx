@@ -9,7 +9,9 @@ import { IconTile } from '../components/Glyph';
 import { ChangeText, LiveBadge } from '../components/QuoteBits';
 import { Empty, Notice, Spinner, useToast } from '../components/ui';
 import { answerDailyQuiz } from '../lib/learning';
-import { availableCash, totalAssets } from '../lib/trading';
+import { availableCash } from '../lib/trading';
+import { fundedPortfolio } from '../lib/fundedInvest';
+import { useWallet } from '../state/wallet';
 import { useLiveQuotes, useMarket } from '../state/market';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
@@ -55,7 +57,8 @@ export function Practice() {
   const nav = useNav();
   const [q, setQ] = useState('');
   const [view, setView] = useState<'all' | 'watch'>('all');
-  const p = state.portfolio;
+  const p = fundedPortfolio(state.worldWallet, state.investJournal);
+  const { summary: walletSummary } = useWallet();
   const allCodes = useMemo(() => INSTRUMENTS.map((i) => i.code), []);
   const m = useLiveQuotes(allCodes);
 
@@ -64,11 +67,9 @@ export function Practice() {
     return view === 'watch' ? r.filter((i) => p.watchlist.includes(i.code)) : r;
   }, [q, view, p.watchlist]);
 
-  const prices = Object.fromEntries(Object.values(m.quotes).map((x) => [x.code, x.price]));
-  const ta = totalAssets(p, prices);
-  const pnl = ta.total - p.initialCash;
+  const pnl = walletSummary.stockProfit;
   const toggleWatch = (code: string) =>
-    update((s) => ({ ...s, portfolio: { ...s.portfolio, watchlist: s.portfolio.watchlist.includes(code) ? s.portfolio.watchlist.filter((c) => c !== code) : [...s.portfolio.watchlist, code] } }));
+    update((s) => ({ ...s, investJournal: { ...s.investJournal, watchlist: s.investJournal.watchlist.includes(code) ? s.investJournal.watchlist.filter((c) => c !== code) : [...s.investJournal.watchlist, code] } }));
   const pending = p.orders.filter((o) => o.status === 'pending').length;
   const anyQuote = Object.values(m.quotes)[0];
 
@@ -84,23 +85,23 @@ export function Practice() {
 
       <section className="t-card t-invest-hero">
         <div className="t-hero-top">
-          <span className="t-label">모의 총자산</span>
+          <span className="t-label">평행세계 총자산</span>
           <span className="t-badge amber">실제 돈 아님</span>
         </div>
-        <strong className="t-hero-num num">{won(ta.total)}</strong>
-        <span className={`t-pnl num ${pnl > 0 ? 'up' : pnl < 0 ? 'down' : ''}`}>{pnl === 0 ? '시작 금액 그대로' : `시작 대비 ${signedWon(pnl)} (${signedPct((100 * pnl) / p.initialCash)})`}</span>
-        {ta.missing.length > 0 && <p className="t-note">시세를 못 받은 {ta.missing.length}개 종목은 매수가로 계산했어요.</p>}
+        <strong className="t-hero-num num">{won(walletSummary.totalAssets)}</strong>
+        <span className={`t-pnl num ${pnl > 0 ? 'up' : pnl < 0 ? 'down' : ''}`}>주식·ETF 평가손익 {signedWon(pnl)} (매수가 대비)</span>
+        {Object.keys(state.worldWallet.etfs).some((c) => !m.quotes[c]) && <p className="t-note">시세가 없는 보유 종목은 매수가로 평가해요.</p>}
         <dl className="t-summary">
-          <div><dt>현금</dt><dd className="num">{won(p.cash)}</dd></div>
-          <div><dt>주문 가능</dt><dd className="num">{won(availableCash(p))}</dd></div>
-          <div><dt>주식 평가</dt><dd className="num">{won(ta.stockValue)}</dd></div>
+          <div><dt>가상 현금</dt><dd className="num">{won(walletSummary.cash)}</dd></div>
+          <div><dt>투자 가능</dt><dd className="num">{won(Math.max(0, availableCash(p)))}</dd></div>
+          <div><dt>주식·ETF 평가</dt><dd className="num">{won(walletSummary.stockValue)}</dd></div>
         </dl>
         <div className="t-btn-row">
           <button className="t-btn primary" onClick={() => nav.push({ name: 'portfolio' })}>내 보유·주문{pending ? ` · 대기 ${pending}` : ''}</button>
           <button className="t-btn tonal" onClick={() => nav.push({ name: 'cards' })}>카드뉴스</button>
         </div>
       </section>
-      {intro && <div className="t-tip"><span><b>진짜 돈 없이, 투자 감각부터</b>1,000만 원 가상 자금은 홈의 생활비와 따로 관리돼요.</span><button type="button" aria-label="안내 닫기" onClick={() => setIntro(false)}>×</button></div>}
+      {intro && <div className="t-tip"><span><b>내 가상 자산 안에서 투자해요</b>홈의 평행세계 지갑과 같은 돈을 써요. 투자하면 현금이 줄고 주식·ETF 평가액이 자산에 포함돼요. 월세·생활비는 지켜둬요.</span><button type="button" aria-label="안내 닫기" onClick={() => setIntro(false)}>×</button></div>}
 
       <section className="t-card t-stocks">
         <label className="t-search">

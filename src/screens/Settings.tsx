@@ -12,8 +12,8 @@ import { useNav } from '../state/nav';
 import { resetScope, useStore } from '../state/store';
 
 const SCOPES = {
-  finance: { title: '생활비 정보와 기록', body: '잔고·수입·지출·목표와 가계부·선택 기록이 지워지고 생활비 설정부터 다시 시작해요. 모의투자는 그대로예요.' },
-  invest: { title: '모의투자와 학습', body: '모의 자금이 1,000만 원으로 돌아가고 보유 종목·주문 내역·학습 기록이 지워져요.' },
+  finance: { title: '생활비 정보와 기록', body: '잔고·수입·지출·목표와 가계부·선택 기록이 지워지고 생활비 설정부터 다시 시작해요. 가상 투자 자산도 그대로예요.' },
+  invest: { title: '투자 주문 기록과 학습', body: '투자 주문·체결 기록과 학습만 초기화해요. 평행세계 가상 지갑의 현금·주식·ETF 자산은 없어지지 않고 그대로 남아요.' },
   all: { title: '전체 데이터', body: '이 기기에 저장된 모아 데이터가 모두 지워져요. 되돌릴 수 없어요.' },
 } as const;
 

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Level } from '../../shared/knowledge';
 import type { LessonRecord, Streak } from '../../shared/curriculum';
 import { emptyPortfolio, type PortfolioState } from '../lib/trading';
+import { emptyInvestJournal, type InvestJournal } from '../lib/fundedInvest';
 import { memoryKey } from '../lib/ml/classify';
 import type { SpendEntry } from '../lib/ml/types';
 import type { DecisionRecord, Goal, Profile, ScheduleItem } from '../lib/types';
@@ -73,6 +74,8 @@ export interface AppState {
   /** 예시 데이터로 보는 중 */
   demo: boolean;
   portfolio: PortfolioState;
+  /** 단일 가상 지갑 투자 주문·체결 장부. 구형 독립 1,000만 원 기록은 portfolio에 보존. */
+  investJournal: InvestJournal;
   level: Level | null;
   learning: Learning;
   daily: DailySettings;
@@ -124,6 +127,7 @@ export function initialState(): AppState {
     categoryMemory: {},
     demo: false,
     portfolio: emptyPortfolio(),
+    investJournal: emptyInvestJournal(),
     level: null,
     learning: emptyLearning(),
     daily: { enabled: false, time: '08:30', nickname: '', includePhotos: true },
@@ -149,6 +153,7 @@ function load(): { state: AppState; error: string | null } {
         ...parsed,
         settings: { ...base.settings, ...(parsed.settings ?? {}) },
         portfolio: { ...base.portfolio, ...(parsed.portfolio ?? {}) },
+        investJournal: { ...emptyInvestJournal(parsed.portfolio?.watchlist), ...(parsed.investJournal ?? {}) },
         worldWallet,
         bank: loadBank(parsed),
         learning: { ...base.learning, ...(parsed.learning ?? {}) },
@@ -225,7 +230,8 @@ export function withEvent(s: AppState, body: ResearchEventBody, now = Date.now()
 export function resetScope(s: AppState, scope: 'finance' | 'invest' | 'all'): AppState {
   if (scope === 'all') return { ...initialState(), introSeen: true, research: { ...s.research, events: s.research.joined ? s.research.events : [] } };
   if (scope === 'finance') return { ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null, moa: emptyMoa() };
-  return { ...s, portfolio: emptyPortfolio(), cardJobIds: {}, level: null, learning: emptyLearning() };
+  // 투자 내역을 지워도 세계 지갑의 주식·현금은 보존한다.
+  return { ...s, portfolio: emptyPortfolio(), investJournal: emptyInvestJournal(s.investJournal.watchlist), cardJobIds: {}, level: null, learning: emptyLearning() };
 }
 
 /** 사용자가 직접 고친 분류를 기억 (다음 자동 분류 1순위, 재학습 데이터) */
