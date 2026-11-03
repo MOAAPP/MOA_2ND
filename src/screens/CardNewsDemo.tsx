@@ -1,4 +1,6 @@
-import type { PublicJob } from './CardNews';
+import { JobView, type PublicJob } from './CardNews';
+import { Notice, TopBar } from '../components/ui';
+import { useNav } from '../state/nav';
 
 const titles = ['시장 한눈에', '관심 종목', '변화 읽기', '오늘의 퀴즈'];
 const cards = titles.map((title, index) => {
@@ -22,3 +24,15 @@ export const sampleCardNewsJob: PublicJob = {
   summary: '', headline: null, notice: null, sends: [],
 };
 
+
+/** Purely illustrative 4-page viewer available outside market hours. No API calls. */
+export function CardNewsDemo() {
+  const nav = useNav();
+  return (
+    <div className="page no-nav">
+      <TopBar onBack={nav.pop} title="카드뉴스 화면 체험" center />
+      <Notice kind="info">장 마감에도 볼 수 있는 화면 예시예요. 실제 가격이나 거래 내역이 아니며, 서버 요청·가상 매매·Discord 발송은 하지 않아요.</Notice>
+      <JobView job={sampleCardNewsJob} setJob={() => undefined} reload={() => undefined} onError={() => undefined} />
+    </div>
+  );
+}

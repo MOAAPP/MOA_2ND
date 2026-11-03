@@ -16,7 +16,7 @@ const ctx = (price: number, time = now) => ({
     candles: [],
   } satisfies Quote,
 });
-const buy = (id = 'funded-o1', price = 50_000) => ({
+const buy = (id = 'funded-o1') => ({
   id, code: '005930', name: '삼성전자', side: 'buy' as const,
   type: 'market' as const, qty: 1,
 });
