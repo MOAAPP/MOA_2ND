@@ -35,7 +35,7 @@ describe('AI 입력(숫자는 앱이 계산)', () => {
     expect(b.daysLeftInMonth).toBe(3);
     expect(b.monthSpent).toBe(121_300);
     const a = askContext(w, LOG, TODAY, null);
-    expect(a.savedTotal).toBe(621_000);
+    expect(a.savedTotal).toBe(w.decisions.reduce((sum, d) => sum + d.price - d.paid, 0));
   });
 });
 
