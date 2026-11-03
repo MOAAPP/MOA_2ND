@@ -23576,10 +23576,10 @@ function cleanParams(params, data) {
   const p2 = typeof p === "string" ? { message: p } : p;
   return p2;
 }
-function custom(check, _params = {}, fatal) {
-  if (check)
+function custom(check2, _params = {}, fatal) {
+  if (check2)
     return ZodAny.create().superRefine((data, ctx) => {
-      const r = check(data);
+      const r = check2(data);
       if (r instanceof Promise) {
         return r.then((r2) => {
           if (!r2) {
@@ -23766,7 +23766,7 @@ var init_types = __esm({
         const result = await (isAsync(maybeAsyncResult) ? maybeAsyncResult : Promise.resolve(maybeAsyncResult));
         return handleResult(ctx, result);
       }
-      refine(check, message) {
+      refine(check2, message) {
         const getIssueProperties = (val) => {
           if (typeof message === "string" || typeof message === "undefined") {
             return { message };
@@ -23777,7 +23777,7 @@ var init_types = __esm({
           }
         };
         return this._refinement((val, ctx) => {
-          const result = check(val);
+          const result = check2(val);
           const setError = () => ctx.addIssue({
             code: ZodIssueCode.custom,
             ...getIssueProperties(val)
@@ -23800,9 +23800,9 @@ var init_types = __esm({
           }
         });
       }
-      refinement(check, refinementData) {
+      refinement(check2, refinementData) {
         return this._refinement((val, ctx) => {
-          if (!check(val)) {
+          if (!check2(val)) {
             ctx.addIssue(typeof refinementData === "function" ? refinementData(val, ctx) : refinementData);
             return false;
           } else {
@@ -23961,70 +23961,70 @@ var init_types = __esm({
         }
         const status = new ParseStatus();
         let ctx = void 0;
-        for (const check of this._def.checks) {
-          if (check.kind === "min") {
-            if (input.data.length < check.value) {
+        for (const check2 of this._def.checks) {
+          if (check2.kind === "min") {
+            if (input.data.length < check2.value) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.too_small,
-                minimum: check.value,
+                minimum: check2.value,
                 type: "string",
                 inclusive: true,
                 exact: false,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "max") {
-            if (input.data.length > check.value) {
+          } else if (check2.kind === "max") {
+            if (input.data.length > check2.value) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.too_big,
-                maximum: check.value,
+                maximum: check2.value,
                 type: "string",
                 inclusive: true,
                 exact: false,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "length") {
-            const tooBig = input.data.length > check.value;
-            const tooSmall = input.data.length < check.value;
+          } else if (check2.kind === "length") {
+            const tooBig = input.data.length > check2.value;
+            const tooSmall = input.data.length < check2.value;
             if (tooBig || tooSmall) {
               ctx = this._getOrReturnCtx(input, ctx);
               if (tooBig) {
                 addIssueToContext(ctx, {
                   code: ZodIssueCode.too_big,
-                  maximum: check.value,
+                  maximum: check2.value,
                   type: "string",
                   inclusive: true,
                   exact: true,
-                  message: check.message
+                  message: check2.message
                 });
               } else if (tooSmall) {
                 addIssueToContext(ctx, {
                   code: ZodIssueCode.too_small,
-                  minimum: check.value,
+                  minimum: check2.value,
                   type: "string",
                   inclusive: true,
                   exact: true,
-                  message: check.message
+                  message: check2.message
                 });
               }
               status.dirty();
             }
-          } else if (check.kind === "email") {
+          } else if (check2.kind === "email") {
             if (!emailRegex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "email",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "emoji") {
+          } else if (check2.kind === "emoji") {
             if (!emojiRegex) {
               emojiRegex = new RegExp(_emojiRegex, "u");
             }
@@ -24033,61 +24033,61 @@ var init_types = __esm({
               addIssueToContext(ctx, {
                 validation: "emoji",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "uuid") {
+          } else if (check2.kind === "uuid") {
             if (!uuidRegex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "uuid",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "nanoid") {
+          } else if (check2.kind === "nanoid") {
             if (!nanoidRegex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "nanoid",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "cuid") {
+          } else if (check2.kind === "cuid") {
             if (!cuidRegex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "cuid",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "cuid2") {
+          } else if (check2.kind === "cuid2") {
             if (!cuid2Regex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "cuid2",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "ulid") {
+          } else if (check2.kind === "ulid") {
             if (!ulidRegex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "ulid",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "url") {
+          } else if (check2.kind === "url") {
             try {
               new URL(input.data);
             } catch {
@@ -24095,153 +24095,153 @@ var init_types = __esm({
               addIssueToContext(ctx, {
                 validation: "url",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "regex") {
-            check.regex.lastIndex = 0;
-            const testResult = check.regex.test(input.data);
+          } else if (check2.kind === "regex") {
+            check2.regex.lastIndex = 0;
+            const testResult = check2.regex.test(input.data);
             if (!testResult) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "regex",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "trim") {
+          } else if (check2.kind === "trim") {
             input.data = input.data.trim();
-          } else if (check.kind === "includes") {
-            if (!input.data.includes(check.value, check.position)) {
+          } else if (check2.kind === "includes") {
+            if (!input.data.includes(check2.value, check2.position)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.invalid_string,
-                validation: { includes: check.value, position: check.position },
-                message: check.message
+                validation: { includes: check2.value, position: check2.position },
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "toLowerCase") {
+          } else if (check2.kind === "toLowerCase") {
             input.data = input.data.toLowerCase();
-          } else if (check.kind === "toUpperCase") {
+          } else if (check2.kind === "toUpperCase") {
             input.data = input.data.toUpperCase();
-          } else if (check.kind === "startsWith") {
-            if (!input.data.startsWith(check.value)) {
+          } else if (check2.kind === "startsWith") {
+            if (!input.data.startsWith(check2.value)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.invalid_string,
-                validation: { startsWith: check.value },
-                message: check.message
+                validation: { startsWith: check2.value },
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "endsWith") {
-            if (!input.data.endsWith(check.value)) {
+          } else if (check2.kind === "endsWith") {
+            if (!input.data.endsWith(check2.value)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.invalid_string,
-                validation: { endsWith: check.value },
-                message: check.message
+                validation: { endsWith: check2.value },
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "datetime") {
-            const regex = datetimeRegex(check);
+          } else if (check2.kind === "datetime") {
+            const regex = datetimeRegex(check2);
             if (!regex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.invalid_string,
                 validation: "datetime",
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "date") {
+          } else if (check2.kind === "date") {
             const regex = dateRegex;
             if (!regex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.invalid_string,
                 validation: "date",
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "time") {
-            const regex = timeRegex(check);
+          } else if (check2.kind === "time") {
+            const regex = timeRegex(check2);
             if (!regex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.invalid_string,
                 validation: "time",
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "duration") {
+          } else if (check2.kind === "duration") {
             if (!durationRegex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "duration",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "ip") {
-            if (!isValidIP(input.data, check.version)) {
+          } else if (check2.kind === "ip") {
+            if (!isValidIP(input.data, check2.version)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "ip",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "jwt") {
-            if (!isValidJWT(input.data, check.alg)) {
+          } else if (check2.kind === "jwt") {
+            if (!isValidJWT(input.data, check2.alg)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "jwt",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "cidr") {
-            if (!isValidCidr(input.data, check.version)) {
+          } else if (check2.kind === "cidr") {
+            if (!isValidCidr(input.data, check2.version)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "cidr",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "base64") {
+          } else if (check2.kind === "base64") {
             if (!base64Regex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "base64",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "base64url") {
+          } else if (check2.kind === "base64url") {
             if (!base64urlRegex.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "base64url",
                 code: ZodIssueCode.invalid_string,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
           } else {
-            util.assertNever(check);
+            util.assertNever(check2);
           }
         }
         return { status: status.value, value: input.data };
@@ -24253,10 +24253,10 @@ var init_types = __esm({
           ...errorUtil.errToObj(message)
         });
       }
-      _addCheck(check) {
+      _addCheck(check2) {
         return new _ZodString({
           ...this._def,
-          checks: [...this._def.checks, check]
+          checks: [...this._def.checks, check2]
         });
       }
       email(message) {
@@ -24513,67 +24513,67 @@ var init_types = __esm({
         }
         let ctx = void 0;
         const status = new ParseStatus();
-        for (const check of this._def.checks) {
-          if (check.kind === "int") {
+        for (const check2 of this._def.checks) {
+          if (check2.kind === "int") {
             if (!util.isInteger(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.invalid_type,
                 expected: "integer",
                 received: "float",
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "min") {
-            const tooSmall = check.inclusive ? input.data < check.value : input.data <= check.value;
+          } else if (check2.kind === "min") {
+            const tooSmall = check2.inclusive ? input.data < check2.value : input.data <= check2.value;
             if (tooSmall) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.too_small,
-                minimum: check.value,
+                minimum: check2.value,
                 type: "number",
-                inclusive: check.inclusive,
+                inclusive: check2.inclusive,
                 exact: false,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "max") {
-            const tooBig = check.inclusive ? input.data > check.value : input.data >= check.value;
+          } else if (check2.kind === "max") {
+            const tooBig = check2.inclusive ? input.data > check2.value : input.data >= check2.value;
             if (tooBig) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.too_big,
-                maximum: check.value,
+                maximum: check2.value,
                 type: "number",
-                inclusive: check.inclusive,
+                inclusive: check2.inclusive,
                 exact: false,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "multipleOf") {
-            if (floatSafeRemainder(input.data, check.value) !== 0) {
+          } else if (check2.kind === "multipleOf") {
+            if (floatSafeRemainder(input.data, check2.value) !== 0) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.not_multiple_of,
-                multipleOf: check.value,
-                message: check.message
+                multipleOf: check2.value,
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "finite") {
+          } else if (check2.kind === "finite") {
             if (!Number.isFinite(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.not_finite,
-                message: check.message
+                message: check2.message
               });
               status.dirty();
             }
           } else {
-            util.assertNever(check);
+            util.assertNever(check2);
           }
         }
         return { status: status.value, value: input.data };
@@ -24604,10 +24604,10 @@ var init_types = __esm({
           ]
         });
       }
-      _addCheck(check) {
+      _addCheck(check2) {
         return new _ZodNumber({
           ...this._def,
-          checks: [...this._def.checks, check]
+          checks: [...this._def.checks, check2]
         });
       }
       int(message) {
@@ -24742,45 +24742,45 @@ var init_types = __esm({
         }
         let ctx = void 0;
         const status = new ParseStatus();
-        for (const check of this._def.checks) {
-          if (check.kind === "min") {
-            const tooSmall = check.inclusive ? input.data < check.value : input.data <= check.value;
+        for (const check2 of this._def.checks) {
+          if (check2.kind === "min") {
+            const tooSmall = check2.inclusive ? input.data < check2.value : input.data <= check2.value;
             if (tooSmall) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.too_small,
                 type: "bigint",
-                minimum: check.value,
-                inclusive: check.inclusive,
-                message: check.message
+                minimum: check2.value,
+                inclusive: check2.inclusive,
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "max") {
-            const tooBig = check.inclusive ? input.data > check.value : input.data >= check.value;
+          } else if (check2.kind === "max") {
+            const tooBig = check2.inclusive ? input.data > check2.value : input.data >= check2.value;
             if (tooBig) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.too_big,
                 type: "bigint",
-                maximum: check.value,
-                inclusive: check.inclusive,
-                message: check.message
+                maximum: check2.value,
+                inclusive: check2.inclusive,
+                message: check2.message
               });
               status.dirty();
             }
-          } else if (check.kind === "multipleOf") {
-            if (input.data % check.value !== BigInt(0)) {
+          } else if (check2.kind === "multipleOf") {
+            if (input.data % check2.value !== BigInt(0)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.not_multiple_of,
-                multipleOf: check.value,
-                message: check.message
+                multipleOf: check2.value,
+                message: check2.message
               });
               status.dirty();
             }
           } else {
-            util.assertNever(check);
+            util.assertNever(check2);
           }
         }
         return { status: status.value, value: input.data };
@@ -24820,10 +24820,10 @@ var init_types = __esm({
           ]
         });
       }
-      _addCheck(check) {
+      _addCheck(check2) {
         return new _ZodBigInt({
           ...this._def,
-          checks: [...this._def.checks, check]
+          checks: [...this._def.checks, check2]
         });
       }
       positive(message) {
@@ -24943,35 +24943,35 @@ var init_types = __esm({
         }
         const status = new ParseStatus();
         let ctx = void 0;
-        for (const check of this._def.checks) {
-          if (check.kind === "min") {
-            if (input.data.getTime() < check.value) {
+        for (const check2 of this._def.checks) {
+          if (check2.kind === "min") {
+            if (input.data.getTime() < check2.value) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.too_small,
-                message: check.message,
+                message: check2.message,
                 inclusive: true,
                 exact: false,
-                minimum: check.value,
+                minimum: check2.value,
                 type: "date"
               });
               status.dirty();
             }
-          } else if (check.kind === "max") {
-            if (input.data.getTime() > check.value) {
+          } else if (check2.kind === "max") {
+            if (input.data.getTime() > check2.value) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 code: ZodIssueCode.too_big,
-                message: check.message,
+                message: check2.message,
                 inclusive: true,
                 exact: false,
-                maximum: check.value,
+                maximum: check2.value,
                 type: "date"
               });
               status.dirty();
             }
           } else {
-            util.assertNever(check);
+            util.assertNever(check2);
           }
         }
         return {
@@ -24979,10 +24979,10 @@ var init_types = __esm({
           value: new Date(input.data.getTime())
         };
       }
-      _addCheck(check) {
+      _addCheck(check2) {
         return new _ZodDate({
           ...this._def,
-          checks: [...this._def.checks, check]
+          checks: [...this._def.checks, check2]
         });
       }
       min(minDate2, message) {
@@ -28153,12 +28153,140 @@ var init_mask = __esm({
   }
 });
 
+// shared/aiSchemas.ts
+var aiSchemas_exports = {};
+__export(aiSchemas_exports, {
+  AI_SCHEMAS: () => AI_SCHEMAS,
+  LOW_CONFIDENCE: () => LOW_CONFIDENCE,
+  MAX_AMOUNT: () => MAX_AMOUNT,
+  checkAiInput: () => checkAiInput,
+  checkAiOutput: () => checkAiOutput,
+  isoDate: () => isoDate,
+  parsedSpend: () => parsedSpend
+});
+function check(schema, value) {
+  const r = schema.safeParse(value);
+  if (r.success) return { ok: true, data: r.data };
+  return { ok: false, issues: r.error.issues.slice(0, 5).map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`) };
+}
+var isoDate, MAX_AMOUNT, won, wonSigned, positiveWon, shortText, confidence, named, briefIn, coachIn, ledgerSummaryIn, textIn, categorizeIn, askIn, briefOut, coachOut, ledgerSummaryOut, parsedSpend, parseSpendOut, parsedSchedule, parseScheduleOut, categorizeOut, askOut, AI_SCHEMAS, checkAiInput, checkAiOutput, LOW_CONFIDENCE;
+var init_aiSchemas = __esm({
+  "shared/aiSchemas.ts"() {
+    "use strict";
+    init_zod();
+    isoDate = external_exports.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD \uD615\uC2DD\uC774\uC5B4\uC57C \uD574\uC694").refine((s) => {
+      const d = /* @__PURE__ */ new Date(`${s}T00:00:00Z`);
+      return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+    }, "\uC5C6\uB294 \uB0A0\uC9DC\uC608\uC694");
+    MAX_AMOUNT = 1e8;
+    won = external_exports.number().int().min(0).max(MAX_AMOUNT);
+    wonSigned = external_exports.number().int().min(-MAX_AMOUNT * 10).max(MAX_AMOUNT * 10);
+    positiveWon = won.min(1);
+    shortText = (max) => external_exports.string().trim().min(1).max(max);
+    confidence = external_exports.number().min(0).max(1);
+    named = external_exports.object({ name: shortText(40), amount: wonSigned }).strict();
+    briefIn = external_exports.object({
+      usable: wonSigned,
+      daysLeftInMonth: external_exports.number().int().min(0).max(31),
+      monthSpent: won.max(MAX_AMOUNT * 10),
+      lastMonthSameDay: won.max(MAX_AMOUNT * 10).nullable(),
+      topCategory: named.nullable(),
+      savedThisMonth: won.max(MAX_AMOUNT * 10),
+      holdsThisMonth: external_exports.number().int().min(0).max(1e4),
+      nextBill: external_exports.object({ date: isoDate, amount: won }).strict().nullable()
+    });
+    coachIn = external_exports.object({
+      item: shortText(60),
+      category: shortText(30),
+      price: positiveWon,
+      frequency: external_exports.enum(["once", "weekly", "daily"]),
+      usableNow: wonSigned,
+      usableAfter: wonSigned,
+      afterBills: wonSigned,
+      yearGap: wonSigned,
+      categorySpentThisMonth: won.max(MAX_AMOUNT * 10),
+      categoryCount30: external_exports.number().int().min(0).max(1e4)
+    });
+    ledgerSummaryIn = external_exports.object({
+      month: external_exports.string().regex(/^\d{4}-\d{2}$/),
+      total: won.max(MAX_AMOUNT * 10),
+      prevTotal: won.max(MAX_AMOUNT * 10).nullable(),
+      count: external_exports.number().int().min(0).max(1e5),
+      elapsedDays: external_exports.number().int().min(0).max(31),
+      byCategory: external_exports.array(named).max(30),
+      busiestWeekday: external_exports.object({ day: shortText(10), average: won }).strict().nullable(),
+      biggest: named.nullable()
+    });
+    textIn = external_exports.object({ text: external_exports.string().trim().min(1).max(4e3), today: isoDate });
+    categorizeIn = external_exports.object({ name: shortText(60), categories: external_exports.array(shortText(30)).min(1).max(40) });
+    askIn = external_exports.object({
+      question: shortText(500),
+      context: external_exports.object({
+        usable: wonSigned,
+        monthSpent: won.max(MAX_AMOUNT * 10),
+        topCategories: external_exports.array(named).max(10),
+        savedTotal: won.max(MAX_AMOUNT * 10),
+        holdRate: external_exports.number().min(0).max(1).nullable(),
+        goal: external_exports.object({ name: shortText(40), target: won, saved: won }).strict().nullable()
+      })
+    });
+    briefOut = external_exports.object({
+      headline: shortText(80),
+      body: shortText(300),
+      action: external_exports.object({ label: shortText(20), to: external_exports.enum(["choose", "ledger", "save", "forks"]) }).strict().nullable()
+    }).strict();
+    coachOut = external_exports.object({ tone: external_exports.enum(["ok", "careful", "warn"]), message: shortText(300), tip: shortText(200).nullable() }).strict();
+    ledgerSummaryOut = external_exports.object({ title: shortText(80), points: external_exports.array(shortText(200)).min(1).max(6) }).strict();
+    parsedSpend = external_exports.object({
+      date: isoDate.nullable(),
+      time: external_exports.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
+      amount: positiveWon,
+      name: shortText(60),
+      category: shortText(30),
+      method: external_exports.enum(["debit", "credit", "transfer", "cash", "atm"]).nullable().optional(),
+      kind: external_exports.enum(["spend", "income", "card_payment", "transfer_self", "saving", "refund"]).optional(),
+      issuer: external_exports.string().trim().max(30).nullable().optional(),
+      installments: external_exports.number().int().min(1).max(60).nullable().optional(),
+      balanceAfter: wonSigned.nullable().optional(),
+      essential: external_exports.boolean().optional(),
+      confidence
+    }).strict();
+    parseSpendOut = external_exports.object({ items: external_exports.array(parsedSpend).max(50), skipped: external_exports.number().int().min(0).max(1e3) }).strict();
+    parsedSchedule = external_exports.object({
+      name: shortText(40),
+      amount: positiveWon.nullable(),
+      direction: external_exports.enum(["in", "out"]).nullable(),
+      date: isoDate.nullable(),
+      day: external_exports.number().int().min(1).max(31).nullable(),
+      recurrence: external_exports.enum(["monthly", "once"]).nullable()
+    }).strict();
+    parseScheduleOut = external_exports.object({ items: external_exports.array(parsedSchedule).max(30) }).strict();
+    categorizeOut = external_exports.object({ category: shortText(30), confidence, reason: shortText(200) }).strict();
+    askOut = external_exports.object({ answer: shortText(800), followUps: external_exports.array(shortText(80)).max(4) }).strict();
+    AI_SCHEMAS = {
+      brief: { input: briefIn, output: briefOut },
+      coach: { input: coachIn, output: coachOut },
+      ledgerSummary: { input: ledgerSummaryIn, output: ledgerSummaryOut },
+      parseSpend: { input: textIn, output: parseSpendOut },
+      parseSchedule: { input: textIn, output: parseScheduleOut },
+      categorize: { input: categorizeIn, output: categorizeOut },
+      ask: { input: askIn, output: askOut }
+    };
+    checkAiInput = (task, input) => check(AI_SCHEMAS[task].input, input);
+    checkAiOutput = (task, output) => check(AI_SCHEMAS[task].output, output);
+    LOW_CONFIDENCE = 0.6;
+  }
+});
+
 // server/lib/ai.ts
 var ai_exports = {};
 __export(ai_exports, {
   AI_TASKS: () => AI_TASKS,
   aiConfigured: () => aiConfigured,
+  aiModel: () => aiModel,
+  aiStats: () => aiStats,
   aiSummary: () => aiSummary,
+  resetAiStats: () => resetAiStats,
   runAiTask: () => runAiTask,
   sanitizeInput: () => sanitizeInput
 });
@@ -28201,35 +28329,69 @@ function sanitizeInput(task, input) {
   }
   return input;
 }
-async function runAiTask(task, input) {
-  if (!aiConfigured()) return null;
+function record2(task, r) {
+  const s = stats.get(task) ?? { ok: 0, fail: {}, totalMs: 0 };
+  if (r.ok) s.ok += 1;
+  else s.fail[r.reason] = (s.fail[r.reason] ?? 0) + 1;
+  s.totalMs += r.ms;
+  stats.set(task, s);
+}
+function aiStats() {
+  const out = {};
+  for (const [task, s] of stats) {
+    const n2 = s.ok + Object.values(s.fail).reduce((a, b) => a + (b ?? 0), 0);
+    out[task] = { ok: s.ok, fail: s.fail, avgMs: n2 ? Math.round(s.totalMs / n2) : null };
+  }
+  return out;
+}
+function resetAiStats() {
+  stats.clear();
+}
+async function runAiTask(task, input, fetcher = fetchWithTimeout) {
+  const t0 = Date.now();
+  const done = (r) => {
+    record2(task, r);
+    return r;
+  };
+  if (!aiConfigured()) return done({ ok: false, reason: "not_configured", ms: 0 });
   const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);
   try {
-    const res = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
+    const res = await fetcher("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL ?? "claude-haiku-5-5", max_tokens: p.maxTokens, system: p.system, messages: [{ role: "user", content: buildUserMessage(task, input) }] })
+      body: JSON.stringify({ model: aiModel(), max_tokens: p.maxTokens, system: p.system, messages: [{ role: "user", content: buildUserMessage(task, input) }] })
     }, 2e4);
-    if (!res.ok) return null;
+    if (!res.ok) return done({ ok: false, reason: "http_error", ms: Date.now() - t0 });
     const j = await res.json();
     const text = j.content?.find((c) => c.type === "text")?.text ?? "";
     const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return null;
-    const out = JSON.parse(m[0]);
-    return numbersGrounded(task, input, out) && extractionGrounded(task, input, out) ? out : null;
+    if (!m) return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
+    let raw;
+    try {
+      raw = JSON.parse(m[0]);
+    } catch {
+      return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
+    }
+    const checked = checkAiOutput(task, raw);
+    if (!checked.ok) return done({ ok: false, reason: "invalid_output", ms: Date.now() - t0, issues: checked.issues });
+    if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: "ungrounded", ms: Date.now() - t0 });
+    return done({ ok: true, data: checked.data, model: aiModel(), ms: Date.now() - t0 });
   } catch {
-    return null;
+    return done({ ok: false, reason: "network", ms: Date.now() - t0 });
   }
 }
-var AI_TASKS;
+var AI_TASKS, stats, aiModel;
 var init_ai = __esm({
   "server/lib/ai.ts"() {
     "use strict";
     init_http();
     init_aiPrompts();
     init_mask();
+    init_aiSchemas();
     AI_TASKS = Object.keys(AI_PROMPTS);
+    stats = /* @__PURE__ */ new Map();
+    aiModel = () => process.env.ANTHROPIC_MODEL ?? "claude-haiku-5-5";
   }
 });
 
@@ -28253,7 +28415,7 @@ var init_sources = __esm({
 });
 
 // shared/format.ts
-function won(n2) {
+function won2(n2) {
   return `${Math.round(n2).toLocaleString("ko-KR")}\uC6D0`;
 }
 function signedWon(n2) {
@@ -28401,16 +28563,16 @@ function buildCards(input) {
     index: 1,
     eyebrow: `\uBAA8\uC758\uD22C\uC790 \xB7 ${action} \uCCB4\uACB0 \xB7 ${formatKDateTime(trade.filledAt)}`,
     title: `${inst.name} ${shares(trade.qty)}\uB97C
-${won(trade.price)}\uC5D0 ${verb}`,
+${won2(trade.price)}\uC5D0 ${verb}`,
     stats: [
-      { label: "\uCD5C\uC2E0 \uAC00\uACA9", value: won(quote.price), sub: quoteAt },
-      quote.prevClose !== null ? { label: "\uC804 \uAC70\uB798\uC77C \uC885\uAC00", value: won(quote.prevClose), sub: quote.prevCloseDate ? formatKDate(quote.prevCloseDate) : void 0 } : { label: "\uC804 \uAC70\uB798\uC77C \uC885\uAC00", value: "\uD655\uC778 \uBD88\uAC00", sub: "\uB370\uC774\uD130 \uC5C6\uC74C" },
+      { label: "\uCD5C\uC2E0 \uAC00\uACA9", value: won2(quote.price), sub: quoteAt },
+      quote.prevClose !== null ? { label: "\uC804 \uAC70\uB798\uC77C \uC885\uAC00", value: won2(quote.prevClose), sub: quote.prevCloseDate ? formatKDate(quote.prevCloseDate) : void 0 } : { label: "\uC804 \uAC70\uB798\uC77C \uC885\uAC00", value: "\uD655\uC778 \uBD88\uAC00", sub: "\uB370\uC774\uD130 \uC5C6\uC74C" },
       quote.change !== null && quote.changePct !== null ? { label: "\uC804 \uAC70\uB798\uC77C \uB300\uBE44", value: signedWon(quote.change), sub: signedPct(quote.changePct), tone: tone(quote.change) } : { label: "\uC804 \uAC70\uB798\uC77C \uB300\uBE44", value: "\uACC4\uC0B0 \uBD88\uAC00", sub: "\uBE44\uAD50 \uAE30\uC900 \uC5C6\uC74C" }
     ],
     sections: [
       {
         heading: trade.side === "buy" ? "\uB0B4 \uB9E4\uC218\uAC00\uC640 \uBE44\uAD50" : "\uD310 \uAC00\uACA9\uACFC \uBE44\uAD50",
-        lines: vsTrade ? [`\uCCB4\uACB0\uAC00 ${won(trade.price)} \u2192 \uCD5C\uC2E0 ${won(quote.price)}`, trade.side === "buy" ? `${shares(trade.qty)} \uAE30\uC900 ${signedWon(vsTrade.change * trade.qty)} (${signedPct(vsTrade.pct)})` : `\uD310 \uB4A4 \uAC00\uACA9 \uBCC0\uD654 \uC8FC\uB2F9 ${signedWon(vsTrade.change)} (${signedPct(vsTrade.pct)})`] : ["\uBE44\uAD50\uD560 \uAC00\uACA9\uC774 \uC5C6\uC5B4\uC694."]
+        lines: vsTrade ? [`\uCCB4\uACB0\uAC00 ${won2(trade.price)} \u2192 \uCD5C\uC2E0 ${won2(quote.price)}`, trade.side === "buy" ? `${shares(trade.qty)} \uAE30\uC900 ${signedWon(vsTrade.change * trade.qty)} (${signedPct(vsTrade.pct)})` : `\uD310 \uB4A4 \uAC00\uACA9 \uBCC0\uD654 \uC8FC\uB2F9 ${signedWon(vsTrade.change)} (${signedPct(vsTrade.pct)})`] : ["\uBE44\uAD50\uD560 \uAC00\uACA9\uC774 \uC5C6\uC5B4\uC694."]
       }
     ],
     photoQuery: inst.photoTopics[0],
@@ -28427,7 +28589,7 @@ ${won(trade.price)}\uC5D0 ${verb}`,
     index: 2,
     eyebrow: `\uBCC0\uB3D9\uD3ED\uACFC \uBCC0\uB3D9\uC131 \xB7 ${formatKDate(quote.date)}`,
     title: "\uC624\uB298 \uAC00\uACA9\uC740\n\uC5BC\uB9C8\uB098 \uD754\uB4E4\uB838\uC744\uAE4C\uC694",
-    stats: range ? [{ label: "\uB2F9\uC77C \uACE0\uAC00", value: won(quote.dayHigh) }, { label: "\uB2F9\uC77C \uC800\uAC00", value: won(quote.dayLow) }, { label: "\uD558\uB8E8 \uBCC0\uB3D9\uD3ED", value: won(range.width), sub: range.pct !== null ? `\uC804 \uAC70\uB798\uC77C \uC885\uAC00\uC758 ${pct(range.pct)}` : void 0 }] : [{ label: "\uB2F9\uC77C \uACE0\uAC00\xB7\uC800\uAC00", value: "\uB370\uC774\uD130 \uC5C6\uC74C", sub: "\uC81C\uACF5\uCC98\uAC00 \uAC12\uC744 \uC8FC\uC9C0 \uC54A\uC558\uC5B4\uC694" }],
+    stats: range ? [{ label: "\uB2F9\uC77C \uACE0\uAC00", value: won2(quote.dayHigh) }, { label: "\uB2F9\uC77C \uC800\uAC00", value: won2(quote.dayLow) }, { label: "\uD558\uB8E8 \uBCC0\uB3D9\uD3ED", value: won2(range.width), sub: range.pct !== null ? `\uC804 \uAC70\uB798\uC77C \uC885\uAC00\uC758 ${pct(range.pct)}` : void 0 }] : [{ label: "\uB2F9\uC77C \uACE0\uAC00\xB7\uC800\uAC00", value: "\uB370\uC774\uD130 \uC5C6\uC74C", sub: "\uC81C\uACF5\uCC98\uAC00 \uAC12\uC744 \uC8FC\uC9C0 \uC54A\uC558\uC5B4\uC694" }],
     sections: [{ heading: "\uCD5C\uADFC \uD750\uB984", lines: volLines }, { heading: CONCEPTS.volatility[level].title, lines: [CONCEPTS.volatility[level].body] }],
     photoQuery: pickBy(trade.tradeId + "c2", ["stock market chart screen", "trading charts monitor", "financial graph screen"]),
     footer
@@ -28470,7 +28632,7 @@ ${won(trade.price)}\uC5D0 ${verb}`,
       eyebrow: `\uB0B4 \uD589\uB3D9 \uBCF5\uAE30 \xB7 \uC218\uC900: ${LEVEL_LABEL[level]}`,
       title: "\uD310 \uB098\uC640\n\uACC4\uC18D \uBCF4\uC720\uD55C \uB098",
       stats: [
-        realized !== null ? { label: "\uC2E4\uD604\uC190\uC775(\uD655\uC815)", value: signedWon(realized), sub: `\uD3C9\uADE0\uB2E8\uAC00 ${won(trade.avgPriceBefore)}`, tone: tone(realized) } : { label: "\uC2E4\uD604\uC190\uC775", value: "\uACC4\uC0B0 \uBD88\uAC00" },
+        realized !== null ? { label: "\uC2E4\uD604\uC190\uC775(\uD655\uC815)", value: signedWon(realized), sub: `\uD3C9\uADE0\uB2E8\uAC00 ${won2(trade.avgPriceBefore)}`, tone: tone(realized) } : { label: "\uC2E4\uD604\uC190\uC775", value: "\uACC4\uC0B0 \uBD88\uAC00" },
         { label: "\uACC4\uC18D \uBCF4\uC720\uD588\uB2E4\uBA74(\uD3C9\uAC00)", value: signedWon(holdDiff), sub: "\uD310 \uB4A4 \uAC00\uACA9 \uBCC0\uD654 \xD7 \uC218\uB7C9", tone: tone(holdDiff) }
       ],
       sections: [{ heading: "\uB2F9\uC2DC \uD310\uB2E8 \uBCF5\uAE30", lines: ["\uD314\uAE30\uB85C \uD55C \uC774\uC720\uAC00 \uAC00\uACA9\uC774\uC5C8\uB098\uC694, \uBBF8\uB9AC \uC815\uD55C \uACC4\uD68D\uC774\uC5C8\uB098\uC694?", "\uACB0\uACFC\uBCF4\uB2E4 \uADF8\uB54C\uC758 \uADFC\uAC70\uB97C \uAE30\uC900\uC73C\uB85C \uB3CC\uC544\uBD10\uC694."] }, { heading: c.title, lines: [c.body] }],
@@ -28529,7 +28691,7 @@ ${downs ? `${downs}\uAC1C \uD558\uB77D` : "\uBAA8\uB450 \uC0C1\uC2B9\xB7\uBCF4\u
       sections: [
         {
           heading: "\uC885\uBAA9\uBCC4",
-          lines: d.holdings.slice(0, 4).map((h2) => h2.quote && h2.quote.changePct !== null ? `${h2.inst.name} ${won(h2.quote.price)} ${signedPct(h2.quote.changePct)} \xB7 ${shares(h2.qty)} \uD3C9\uAC00 ${signedWon((h2.quote.price - h2.avgPrice) * h2.qty)}` : `${h2.inst.name} \xB7 \uC2DC\uC138 \uD655\uC778 \uBD88\uAC00`)
+          lines: d.holdings.slice(0, 4).map((h2) => h2.quote && h2.quote.changePct !== null ? `${h2.inst.name} ${won2(h2.quote.price)} ${signedPct(h2.quote.changePct)} \xB7 ${shares(h2.qty)} \uD3C9\uAC00 ${signedWon((h2.quote.price - h2.avgPrice) * h2.qty)}` : `${h2.inst.name} \xB7 \uC2DC\uC138 \uD655\uC778 \uBD88\uAC00`)
         },
         ...d.holdings.length > 4 ? [{ heading: "", lines: [`\uC678 ${d.holdings.length - 4}\uC885\uBAA9\uC740 \uC571\uC5D0\uC11C \uBCFC \uC218 \uC788\uC5B4\uC694.`] }] : []
       ],
@@ -28543,7 +28705,7 @@ ${downs ? `${downs}\uAC1C \uD558\uB77D` : "\uBAA8\uB450 \uC0C1\uC2B9\xB7\uBCF4\u
       title: "\uC544\uC9C1 \uBCF4\uC720 \uC885\uBAA9\uC774\n\uC5C6\uC5B4\uC694",
       stats: [],
       sections: [
-        { heading: "\uAD00\uC2EC \uC885\uBAA9", lines: d.watch.slice(0, 4).map((w) => w.quote && w.quote.changePct !== null ? `${w.inst.name} ${won(w.quote.price)} ${signedPct(w.quote.changePct)}` : `${w.inst.name} \xB7 \uC2DC\uC138 \uD655\uC778 \uBD88\uAC00`) },
+        { heading: "\uAD00\uC2EC \uC885\uBAA9", lines: d.watch.slice(0, 4).map((w) => w.quote && w.quote.changePct !== null ? `${w.inst.name} ${won2(w.quote.price)} ${signedPct(w.quote.changePct)}` : `${w.inst.name} \xB7 \uC2DC\uC138 \uD655\uC778 \uBD88\uAC00`) },
         { heading: "\uD574\uBCFC\uAE4C\uC694", lines: ["\uC5F0\uC2B5\uC7A5\uC5D0\uC11C 1\uC8FC\uB9CC \uBAA8\uC758 \uB9E4\uC218\uD574 \uBCF4\uBA74, \uB0B4 \uC885\uBAA9 \uC18C\uC2DD\uC774 \uB9E4\uC77C \uC5EC\uAE30\uB85C \uC640\uC694."] }
       ],
       photoQuery: d.watch[0]?.inst.photoTopics[0] ?? "stock market chart screen",
@@ -28591,7 +28753,7 @@ ${downs ? `${downs}\uAC1C \uD558\uB77D` : "\uBAA8\uB450 \uC0C1\uC2B9\xB7\uBCF4\u
 function discordSummary(trade, name, quote, e) {
   const action = trade.side === "buy" ? "\uB9E4\uC218" : "\uB9E4\uB3C4";
   return [
-    `**[\uD3C9\uD589\uD1B5\uC7A5 \xB7 \uBAA8\uC758\uD22C\uC790]** ${name} ${shares(trade.qty)} ${action} (\uCCB4\uACB0\uAC00 ${won(trade.price)})`,
+    `**[\uD3C9\uD589\uD1B5\uC7A5 \xB7 \uBAA8\uC758\uD22C\uC790]** ${name} ${shares(trade.qty)} ${action} (\uCCB4\uACB0\uAC00 ${won2(trade.price)})`,
     e ? e.headline : "",
     `\uCE74\uB4DC\uB274\uC2A4 4\uC7A5 \xB7 ${formatSourceLabel(quote.source, quote.live)} ${formatKDateTime(quote.time)} \uAE30\uC900`,
     "\uC2E4\uC81C \uAC70\uB798\uAC00 \uC544\uB2CC \uBAA8\uC758\uD22C\uC790 \uAE30\uB85D\uC774\uC5D0\uC694. \uD22C\uC790 \uAD8C\uC720\uAC00 \uC544\uB2D9\uB2C8\uB2E4."
@@ -34715,7 +34877,7 @@ var require_opentype = __commonJS({
           fail2(message);
         }
       }
-      var check = { fail: fail2, argument, assert: argument };
+      var check2 = { fail: fail2, argument, assert: argument };
       function getPathDefinition(glyph, path) {
         var _path = path || new Path();
         return {
@@ -34834,7 +34996,7 @@ var require_opentype = __commonJS({
             currentContour = [];
           }
         }
-        check.argument(
+        check2.argument(
           currentContour.length === 0,
           "There are still points left in the current contour."
         );
@@ -35167,7 +35329,7 @@ var require_opentype = __commonJS({
             }
             if (create) {
               var index = allFeatures.length;
-              check.assert(
+              check2.assert(
                 index === 0 || feature >= allFeatures[index - 1].tag,
                 "Features must be added in alphabetical order."
               );
@@ -35476,7 +35638,7 @@ var require_opentype = __commonJS({
           coverage: { format: 1, glyphs: [] },
           substitute: []
         });
-        check.assert(
+        check2.assert(
           subtable.coverage.format === 1,
           "Single: unable to modify coverage table format " + subtable.coverage.format
         );
@@ -35490,7 +35652,7 @@ var require_opentype = __commonJS({
         subtable.substitute[pos] = substitution.by;
       };
       Substitution.prototype.addMultiple = function(feature, substitution, script, language) {
-        check.assert(
+        check2.assert(
           substitution.by instanceof Array && substitution.by.length > 1,
           'Multiple: "by" must be an array of two or more ids'
         );
@@ -35507,7 +35669,7 @@ var require_opentype = __commonJS({
           coverage: { format: 1, glyphs: [] },
           sequences: []
         });
-        check.assert(
+        check2.assert(
           subtable.coverage.format === 1,
           "Multiple: unable to modify coverage table format " + subtable.coverage.format
         );
@@ -35534,7 +35696,7 @@ var require_opentype = __commonJS({
           coverage: { format: 1, glyphs: [] },
           alternateSets: []
         });
-        check.assert(
+        check2.assert(
           subtable.coverage.format === 1,
           "Alternate: unable to modify coverage table format " + subtable.coverage.format
         );
@@ -35565,7 +35727,7 @@ var require_opentype = __commonJS({
           };
           lookupTable.subtables[0] = subtable;
         }
-        check.assert(
+        check2.assert(
           subtable.coverage.format === 1,
           "Ligature: unable to modify coverage table format " + subtable.coverage.format
         );
@@ -36098,7 +36260,7 @@ var require_opentype = __commonJS({
       Parser.prototype.parseLookupList = function(lookupTableParsers) {
         return this.parsePointer(Parser.list(Parser.pointer(function() {
           var lookupType = this.parseUShort();
-          check.argument(1 <= lookupType && lookupType <= 9, "GPOS/GSUB lookup type " + lookupType + " unknown.");
+          check2.argument(1 <= lookupType && lookupType <= 9, "GPOS/GSUB lookup type " + lookupType + " unknown.");
           var lookupFlag = this.parseUShort();
           var useMarkFilteringSet = lookupFlag & 16;
           return {
@@ -36113,7 +36275,7 @@ var require_opentype = __commonJS({
         return this.parsePointer32(function() {
           var majorVersion = this.parseUShort();
           var minorVersion = this.parseUShort();
-          check.argument(majorVersion === 1 && minorVersion < 1, "GPOS/GSUB feature variations table unknown.");
+          check2.argument(majorVersion === 1 && minorVersion < 1, "GPOS/GSUB feature variations table unknown.");
           var featureVariations = this.parseRecordList32({
             conditionSetOffset: Parser.offset32,
             featureTableSubstitutionOffset: Parser.offset32
@@ -36184,7 +36346,7 @@ var require_opentype = __commonJS({
               }
             }
           }
-          check.argument(flags.length === numberOfCoordinates, "Bad flags.");
+          check2.argument(flags.length === numberOfCoordinates, "Bad flags.");
           if (endPointIndices.length > 0) {
             var points = [];
             var point;
@@ -36296,7 +36458,7 @@ var require_opentype = __commonJS({
             currentContour = [];
           }
         }
-        check.argument(currentContour.length === 0, "There are still points left in the current contour.");
+        check2.argument(currentContour.length === 0, "There are still points left in the current contour.");
         return contours;
       }
       function getPath(points) {
@@ -39837,11 +39999,11 @@ var require_opentype = __commonJS({
         arabicSentenceCheck
       };
       function registerContextChecker(checkId) {
-        var check2 = this.contextChecks[checkId + "Check"];
+        var check3 = this.contextChecks[checkId + "Check"];
         return this.tokenizer.registerContextChecker(
           checkId,
-          check2.startCheck,
-          check2.endCheck
+          check3.startCheck,
+          check3.endCheck
         );
       }
       function tokenizeText() {
@@ -40291,7 +40453,7 @@ var require_opentype = __commonJS({
       function parseCmapTable(data, start) {
         var cmap2 = {};
         cmap2.version = parse.getUShort(data, start);
-        check.argument(cmap2.version === 0, "cmap table version should be 0.");
+        check2.argument(cmap2.version === 0, "cmap table version should be 0.");
         cmap2.numTables = parse.getUShort(data, start + 2);
         var offset = -1;
         for (var i2 = cmap2.numTables - 1; i2 >= 0; i2 -= 1) {
@@ -41304,7 +41466,7 @@ var require_opentype = __commonJS({
       function parseFvarTable(data, start, names) {
         var p = new parse.Parser(data, start);
         var tableVersion = p.parseULong();
-        check.argument(
+        check2.argument(
           tableVersion === 65536,
           "Unsupported fvar table version."
         );
@@ -41343,7 +41505,7 @@ var require_opentype = __commonJS({
       };
       var caretValue = function() {
         var format = this.parseUShort();
-        check.argument(
+        check2.argument(
           format === 1 || format === 2 || format === 3,
           "Unsupported CaretValue table version."
         );
@@ -41372,7 +41534,7 @@ var require_opentype = __commonJS({
         start = start || 0;
         var p = new Parser(data, start);
         var tableVersion = p.parseVersion(1);
-        check.argument(
+        check2.argument(
           tableVersion === 1 || tableVersion === 1.2 || tableVersion === 1.3,
           "Unsupported GDEF table version."
         );
@@ -41406,7 +41568,7 @@ var require_opentype = __commonJS({
             values: this.parseValueRecordList()
           };
         }
-        check.assert(
+        check2.assert(
           false,
           "0x" + start.toString(16) + ": GPOS lookup type 1 format must be 1 or 2."
         );
@@ -41414,7 +41576,7 @@ var require_opentype = __commonJS({
       subtableParsers[2] = function parseLookup2() {
         var start = this.offset + this.relativeOffset;
         var posFormat = this.parseUShort();
-        check.assert(
+        check2.assert(
           posFormat === 1 || posFormat === 2,
           "0x" + start.toString(16) + ": GPOS lookup type 2 format must be 1 or 2."
         );
@@ -41492,7 +41654,7 @@ var require_opentype = __commonJS({
         start = start || 0;
         var p = new Parser(data, start);
         var tableVersion = p.parseVersion(1);
-        check.argument(
+        check2.argument(
           tableVersion === 1 || tableVersion === 1.1,
           "Unsupported GPOS table version " + tableVersion
         );
@@ -41531,14 +41693,14 @@ var require_opentype = __commonJS({
             substitute: this.parseOffset16List()
           };
         }
-        check.assert(
+        check2.assert(
           false,
           "0x" + start.toString(16) + ": lookup type 1 format must be 1 or 2."
         );
       };
       subtableParsers$1[2] = function parseLookup2() {
         var substFormat = this.parseUShort();
-        check.argument(
+        check2.argument(
           substFormat === 1,
           "GSUB Multiple Substitution Subtable identifier-format must be 1"
         );
@@ -41550,7 +41712,7 @@ var require_opentype = __commonJS({
       };
       subtableParsers$1[3] = function parseLookup3() {
         var substFormat = this.parseUShort();
-        check.argument(
+        check2.argument(
           substFormat === 1,
           "GSUB Alternate Substitution Subtable identifier-format must be 1"
         );
@@ -41562,7 +41724,7 @@ var require_opentype = __commonJS({
       };
       subtableParsers$1[4] = function parseLookup4() {
         var substFormat = this.parseUShort();
-        check.argument(
+        check2.argument(
           substFormat === 1,
           "GSUB ligature table identifier-format must be 1"
         );
@@ -41629,7 +41791,7 @@ var require_opentype = __commonJS({
             lookupRecords: this.parseRecordList(substCount, lookupRecordDesc)
           };
         }
-        check.assert(
+        check2.assert(
           false,
           "0x" + start.toString(16) + ": lookup type 5 format must be 1, 2 or 3."
         );
@@ -41675,14 +41837,14 @@ var require_opentype = __commonJS({
             lookupRecords: this.parseRecordList(lookupRecordDesc)
           };
         }
-        check.assert(
+        check2.assert(
           false,
           "0x" + start.toString(16) + ": lookup type 6 format must be 1, 2 or 3."
         );
       };
       subtableParsers$1[7] = function parseLookup7() {
         var substFormat = this.parseUShort();
-        check.argument(
+        check2.argument(
           substFormat === 1,
           "GSUB Extension Substitution subtable identifier-format must be 1"
         );
@@ -41699,7 +41861,7 @@ var require_opentype = __commonJS({
       };
       subtableParsers$1[8] = function parseLookup8() {
         var substFormat = this.parseUShort();
-        check.argument(
+        check2.argument(
           substFormat === 1,
           "GSUB Reverse Chaining Contextual Single Substitution Subtable identifier-format must be 1"
         );
@@ -41715,7 +41877,7 @@ var require_opentype = __commonJS({
         start = start || 0;
         var p = new Parser(data, start);
         var tableVersion = p.parseVersion(1);
-        check.argument(
+        check2.argument(
           tableVersion === 1 || tableVersion === 1.1,
           "Unsupported GSUB table version."
         );
@@ -41744,7 +41906,7 @@ var require_opentype = __commonJS({
         head2.fontRevision = Math.round(p.parseFixed() * 1e3) / 1e3;
         head2.checkSumAdjustment = p.parseULong();
         head2.magicNumber = p.parseULong();
-        check.argument(
+        check2.argument(
           head2.magicNumber === 1594834165,
           "Font header has wrong magic number."
         );
@@ -41826,7 +41988,7 @@ var require_opentype = __commonJS({
         var pairs = {};
         p.skip("uShort");
         var subtableVersion = p.parseUShort();
-        check.argument(subtableVersion === 0, "Unsupported kern sub-table version.");
+        check2.argument(subtableVersion === 0, "Unsupported kern sub-table version.");
         p.skip("uShort", 2);
         var nPairs = p.parseUShort();
         p.skip("uShort", 3);
@@ -41876,7 +42038,7 @@ var require_opentype = __commonJS({
       function parseLtagTable(data, start) {
         var p = new parse.Parser(data, start);
         var tableVersion = p.parseULong();
-        check.argument(tableVersion === 1, "Unsupported ltag table version.");
+        check2.argument(tableVersion === 1, "Unsupported ltag table version.");
         p.skip("uLong", 1);
         var numTags = p.parseULong();
         var tags = [];
@@ -42096,7 +42258,7 @@ var require_opentype = __commonJS({
       function parseMetaTable(data, start) {
         var p = new parse.Parser(data, start);
         var tableVersion = p.parseULong();
-        check.argument(tableVersion === 1, "Unsupported META table version.");
+        check2.argument(tableVersion === 1, "Unsupported META table version.");
         p.parseULong();
         p.parseULong();
         var numDataMaps = p.parseULong();
@@ -53351,7 +53513,7 @@ function cardTree(card, photo) {
       )
     )
   );
-  const stats = card.stats.length > 0 ? h(
+  const stats2 = card.stats.length > 0 ? h(
     "div",
     { width: "100%", borderBottom: `2px solid ${C.line}`, paddingBottom: 26, marginBottom: 26 },
     ...card.stats.map(
@@ -53375,7 +53537,7 @@ function cardTree(card, photo) {
   const panel = h(
     "div",
     { flexDirection: "column", backgroundColor: C.panel, padding: "40px 56px 30px", width: "100%" },
-    stats,
+    stats2,
     ...sections,
     h("div", { fontSize: 20, color: C.faint, marginTop: 8, lineHeight: 1.4 }, card.footer)
   );
@@ -54004,7 +54166,7 @@ function ownJob(req) {
   if (!job || job.deviceHash !== hashDevice2(device)) throw new ApiError2(404, "not_found", "\uCE74\uB4DC\uB274\uC2A4\uB97C \uCC3E\uC9C0 \uBABB\uD588\uC5B4\uC694.");
   return job;
 }
-var import_express2, INSTRUMENT_BY_CODE2, ALL_LESSONS2, discordStatus2, sendToDiscord2, DiscordError2, ApiError2, errorHandler2, methodNotAllowed2, route2, sendError2, createJob2, ensureDailyJob2, getJob2, hashDevice2, isRunning2, listJobs2, runGenerate2, sendJob2, isDue2, nextRunAt2, startScheduler2, fetchNews2, photosConfigured2, getGlobal2, getIndex2, getQuote2, getQuotes2, primaryProvider2, providerChain2, providerSetting2, refreshSeconds2, kisConfigured2, realtimeStatus2, aiConfigured2, runAiTask2, AI_TASKS2, rateLimit2, purchaseRouter2, naverConfigured2, jobDir2, store2, publicJob2, todayKST2, app, DeviceId, api, aiLimiter, quoteLimiter, slim, streamsByIp, SubSchema, TradeSchema, CreateSchema, dist, port;
+var import_express2, INSTRUMENT_BY_CODE2, ALL_LESSONS2, discordStatus2, sendToDiscord2, DiscordError2, ApiError2, errorHandler2, methodNotAllowed2, route2, sendError2, createJob2, ensureDailyJob2, getJob2, hashDevice2, isRunning2, listJobs2, runGenerate2, sendJob2, isDue2, nextRunAt2, startScheduler2, fetchNews2, photosConfigured2, getGlobal2, getIndex2, getQuote2, getQuotes2, primaryProvider2, providerChain2, providerSetting2, refreshSeconds2, kisConfigured2, realtimeStatus2, aiConfigured2, aiStats2, runAiTask2, AI_TASKS2, checkAiInput2, rateLimit2, purchaseRouter2, naverConfigured2, jobDir2, store2, publicJob2, todayKST2, app, DeviceId, api, aiLimiter, quoteLimiter, slim, streamsByIp, SubSchema, TradeSchema, CreateSchema, dist, port;
 var init_index = __esm({
   async "server/index.ts"() {
     "use strict";
@@ -54025,7 +54187,8 @@ var init_index = __esm({
     ({ getGlobal: getGlobal2, getIndex: getIndex2, getQuote: getQuote2, getQuotes: getQuotes2, primaryProvider: primaryProvider2, providerChain: providerChain2, providerSetting: providerSetting2, refreshSeconds: refreshSeconds2 } = await Promise.resolve().then(() => (init_quotes(), quotes_exports)));
     ({ kisConfigured: kisConfigured2 } = await Promise.resolve().then(() => (init_kis(), kis_exports)));
     ({ realtimeStatus: realtimeStatus2 } = await Promise.resolve().then(() => (init_kisRealtime(), kisRealtime_exports)));
-    ({ aiConfigured: aiConfigured2, runAiTask: runAiTask2, AI_TASKS: AI_TASKS2 } = await Promise.resolve().then(() => (init_ai(), ai_exports)));
+    ({ aiConfigured: aiConfigured2, aiStats: aiStats2, runAiTask: runAiTask2, AI_TASKS: AI_TASKS2 } = await Promise.resolve().then(() => (init_ai(), ai_exports)));
+    ({ checkAiInput: checkAiInput2 } = await Promise.resolve().then(() => (init_aiSchemas(), aiSchemas_exports)));
     ({ rateLimit: rateLimit2 } = await Promise.resolve().then(() => (init_rateLimit(), rateLimit_exports)));
     ({ purchaseRouter: purchaseRouter2, naverConfigured: naverConfigured2 } = await Promise.resolve().then(() => (init_purchase(), purchase_exports)));
     ({ jobDir: jobDir2, store: store2 } = await Promise.resolve().then(() => (init_store(), store_exports)));
@@ -54039,7 +54202,7 @@ var init_index = __esm({
     DeviceId = external_exports.string().regex(/^[0-9a-f-]{20,64}$/i, "\uAE30\uAE30 ID \uD615\uC2DD \uC624\uB958");
     api = import_express2.default.Router();
     api.route("/health").get((_req, res) => {
-      res.json({ ok: true, market: marketInfo(), photos: photosConfigured2(), ai: aiConfigured2(), priceSearch: naverConfigured2(), discord: discordStatus2().configured, time: Date.now() });
+      res.json({ ok: true, market: marketInfo(), photos: photosConfigured2(), ai: aiConfigured2(), aiStats: aiStats2(), priceSearch: naverConfigured2(), discord: discordStatus2().configured, time: Date.now() });
     }).all(methodNotAllowed2(["GET"]));
     aiLimiter = rateLimit2("ai", 30, 6e4);
     api.route("/ai/:task").post(
@@ -54047,11 +54210,13 @@ var init_index = __esm({
       route2(async (req, res) => {
         const task = String(req.params.task);
         if (!AI_TASKS2.includes(task)) throw new ApiError2(404, "unknown_task", "\uC54C \uC218 \uC5C6\uB294 AI \uC791\uC5C5\uC774\uC5D0\uC694.");
-        const input = req.body?.input;
-        if (!input || typeof input !== "object") throw new ApiError2(400, "bad_input", "\uC785\uB825\uC774 \uC5C6\uC5B4\uC694.");
-        const data = await runAiTask2(task, input);
-        if (data === null) throw new ApiError2(503, "ai_unavailable", "AI\uB97C \uC9C0\uAE08 \uC4F8 \uC218 \uC5C6\uC5B4\uC694.");
-        res.json({ data });
+        const raw = req.body?.input;
+        if (!raw || typeof raw !== "object") throw new ApiError2(400, "bad_input", "\uC785\uB825\uC774 \uC5C6\uC5B4\uC694.");
+        const input = checkAiInput2(task, raw);
+        if (!input.ok) throw new ApiError2(400, "bad_input", `\uC785\uB825 \uD615\uC2DD\uC774 \uB9DE\uC9C0 \uC54A\uC544\uC694 (${input.issues.join(" / ")})`);
+        const r = await runAiTask2(task, input.data);
+        if (!r.ok) throw new ApiError2(503, `ai_${r.reason}`, "AI\uB97C \uC9C0\uAE08 \uC4F8 \uC218 \uC5C6\uC5B4\uC694.");
+        res.json({ data: r.data, meta: { source: "live", task, model: r.model, ms: r.ms } });
       })
     ).all(methodNotAllowed2(["POST"]));
     quoteLimiter = rateLimit2("quotes", 240, 6e4);
