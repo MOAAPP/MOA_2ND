@@ -5,6 +5,7 @@ import { won, shares } from '../../shared/format';
 import { LEVEL_LABEL, type Level } from '../../shared/knowledge';
 import type { QuoteSource } from '../../shared/market';
 import { DiscordPanel } from '../components/DiscordPanel';
+import { CardNewsReader } from '../components/CardNewsReader';
 import { IconRefresh, IconImage, IconChevron, IconSend } from '../components/Icons';
 import { Empty, Notice, Spinner, TopBar, useToast } from '../components/ui';
 import { api, errorMessage } from '../lib/api';
@@ -100,7 +101,7 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
   return (
     <>
       {job.notice && <p className="xs muted" style={{ margin: '8px 4px 0' }}>{job.notice}</p>}
-      {job.headline && <p className="bold" style={{ fontSize: 16, margin: '10px 4px 0' }}>{job.headline}</p>}
+      {job.headline && !job.images.length && <p className="bold" style={{ fontSize: 16, margin: '10px 4px 0' }}>{job.headline}</p>
       {(job.status === 'generating' || job.status === 'sending') && <div className="card" style={{ marginTop: 12 }}><Spinner label={STAGE_LABEL[job.stage ?? 'data']} /></div>}
       {job.status === 'failed' && (
         <div style={{ marginTop: 12 }}>
@@ -122,20 +123,16 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
         </div>
       )}
       {job.images.length > 0 && (
-        <>
-          <div className="cardnews-viewer" style={{ marginTop: 14 }} aria-label="카드뉴스 4장">
-            {job.images.map((src, i) => (
-              <a key={src} href={src} target="_blank" rel="noopener noreferrer" style={{ width: '78%', flex: 'none' }}>
-                <img src={src} alt={`${i + 1}/4 ${job.titles[i] ?? ''}`} style={{ width: '100%' }} loading="lazy" />
-              </a>
-            ))}
-          </div>
-          <p className="xs muted" style={{ margin: '4px 4px 0' }}>옆으로 넘겨 4장을 볼 수 있어요. 누르면 원본 PNG가 열려요.</p>
-        </>
+        <CardNewsReader
+          images={job.images}
+          titles={job.titles}
+          headline={job.headline}
+          summary={job.summary}
+        />
       )}
-      <section className="section">
-        <div className="section-head"><h2>출처와 기준</h2></div>
-        <div className="card small">
+      <details className="cn-expand">
+        <summary>분석 근거 · 기사 · 사진 출처</summary>
+        <div className="cn-expand-panel small">
           {job.quoteMeta && <p style={{ marginTop: 0 }}>{formatKDateTime(job.quoteMeta.time)} 기준 시세</p>}
           <div className="bold">사진</div>
           {job.noPhoto ? <p className="ink2" style={{ marginTop: 2 }}>사진 없이 만들었어요.</p> : job.photos.length ? (
@@ -152,11 +149,11 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
           ) : <p className="muted" style={{ marginTop: 2 }}>관련 기사를 찾지 못했어요.</p>}
           <p className="xs muted">'왜 움직였을까'는 코스피·같은 업종·미국 증시·환율·거래량·기사 제목을 코드로 비교한 추정이에요. 원인을 단정하지 않아요.</p>
         </div>
-      </section>
+      </details>
       {job.sends.length > 0 && (
-        <section className="section">
-          <div className="section-head"><h2>전송 기록</h2></div>
-          <div className="card" style={{ padding: '4px 18px' }}>
+        <details className="cn-expand">
+          <summary>전송 기록 {job.sends.length}건 확인</summary>
+          <div className="cn-expand-panel">
             {job.sends.slice().reverse().map((s, i) => (
               <div key={i} className="list-item">
                 <div className="grow"><div className="t" style={{ fontSize: 15 }}>{s.ok ? '전송 완료' : '전송 실패'}</div><div className="s">{formatKDateTime(s.at)} · {s.auto ? '자동' : '다시 시도'}{s.error ? ` · ${s.error}` : ''}</div></div>
@@ -164,7 +161,7 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
               </div>
             ))}
           </div>
-        </section>
+        </details>
       )}
     </>
   );
@@ -251,7 +248,7 @@ export function DailyScreen() {
   return (
     <div className="page no-nav">
       <TopBar onBack={nav.pop} title="데일리 카드뉴스" center />
-      <p className="small ink2" style={{ margin: '0 4px 12px' }}>매일 정해진 시각, 시장·내 종목·움직인 이유·오늘의 퀴즈를 4장 카드로 Discord에 보내드려요. 앱에서도 같은 카드를 볼 수 있어요.</p>
+      <p className="cn-daily-intro">시황과 내 종목의 변화를 4장으로 읽어요. 궁금한 근거와 전송 설정은 아래에서 확인할 수 있어요.</p>
       {err && <Notice kind="danger">{err}</Notice>}
       <section className="card">
         <div className="row between">
@@ -277,13 +274,10 @@ export function DailyScreen() {
         {todayJob && <JobView job={todayJob} setJob={(j) => setLatest((l) => (l ? { ...l, job: j } : l))} reload={load} onError={setErr} />}
       </section>
 
-      <section className="section">
-        <div className="section-head"><h2>오늘의 퀴즈</h2><span className="xs muted">카드 4장째 문제</span></div>
-        <DailyQuizCard quiz={quiz} />
-        <p className="xs muted" style={{ margin: '6px 4px 0' }}>연속 학습 {currentStreak(state.learning.streak, today)}일</p>
-      </section>
-
-      <section className="section"><DiscordPanel /></section>
+      <details className="cn-expand">
+        <summary>오늘의 퀴즈 풀기 · 연속 {currentStreak(state.learning.streak, today)}일</summary>
+        <div className="cn-expand-panel"><DailyQuizCard quiz={quiz} /></div>
+      </details>
 
       {latest && latest.history.filter((h) => h.dailyDate !== today).length > 0 && (
         <section className="section">
@@ -303,6 +297,10 @@ export function DailyScreen() {
           </div>
         </section>
       )}
+      <details className="cn-expand">
+        <summary>Discord 카드뉴스 전송 설정</summary>
+        <div className="cn-expand-panel"><DiscordPanel /></div>
+      </details>
     </div>
   );
 }
