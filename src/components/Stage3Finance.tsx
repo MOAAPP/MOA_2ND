@@ -222,7 +222,8 @@ function PathCard({path}:{path:ScenarioPath}) {
     <div className="st3-world-grid"><span>기간 최저 {W(path.minimum_balance)}</span>
       <span>{path.minimum_balance_met?'최소잔액 충족':'최소잔액 부족'}</span></div>
     <div className="st3-world-grid"><span>가상 저축 {W(path.virtual_savings)}</span>
-      <span>투자 평가 {W(path.virtual_investment_value)}</span></div>
+      <span>투자 평가 {W(path.virtual_investment_value)} · 평가/실현손익 {W(path.virtual_investment_profit_loss)}</span></div>
+    {path.virtual_investment_realized_profit_loss!==0&&<small>매도 실현손익 {W(path.virtual_investment_realized_profit_loss)}</small>}
     {path.first_shortfall_date&&<p className="st3-warning">부족 발생: {path.first_shortfall_date}</p>}
     {path.savings_goal_reached_date&&<p>목표 저축 달성 예상일: {path.savings_goal_reached_date}</p>}
     {path.purchase_delay_days>0&&<small>구매 {path.purchase_delay_days}일 연기</small>}
@@ -286,6 +287,18 @@ export function Stage3Worlds() {
             onChange={minimum_required_balance=>updateParams({minimum_required_balance})}/>
           <label>주식·ETF 검색 <input type="search" placeholder="종목명 또는 코드"
             value={instrumentQuery} onChange={e=>setInstrumentQuery(e.target.value)}/></label>
+          <MoneyControl title="모의 매도 수량 (주 · 미매도 0)" value={params.virtual_sell_qty??0}
+            onChange={virtual_sell_qty=>updateParams({virtual_sell_qty})}/>
+          <label>모의 매도 1주당 가정 체결가 (원) <input type="number" min="1"
+            value={params.virtual_sell_unit_price??''}
+            onChange={e=>updateParams({virtual_sell_unit_price:e.target.value?Number(e.target.value):undefined})}/></label>
+          <label>모의 매도일 <input type="date"
+            min={params.purchase_date} value={params.virtual_sell_date??shiftDate(params.purchase_date,1)}
+            onChange={e=>updateParams({virtual_sell_date:e.target.value})}/></label>
+          <label>가상 매도 정산일 <input type="date"
+            min={params.virtual_sell_date??shiftDate(params.purchase_date,1)}
+            value={params.virtual_sell_settlement_date??params.virtual_sell_date??shiftDate(params.purchase_date,1)}
+            onChange={e=>updateParams({virtual_sell_settlement_date:e.target.value})}/></label>
           <label>투자 검증 종목 <select value={params.investment_code??''}
             onChange={e=>updateParams({investment_code:e.target.value})}>
               {instruments.filter(x=>x.name.toLowerCase().includes(instrumentQuery.toLowerCase())||x.code.includes(instrumentQuery)).map(x=><option key={x.code} value={x.code}>{x.name} ({x.code})</option>)}
