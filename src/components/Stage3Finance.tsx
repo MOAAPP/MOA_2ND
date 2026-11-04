@@ -263,22 +263,32 @@ export function Stage3Worlds() {
             <option value="debit">체크카드 (즉시)</option><option value="transfer">계좌이체</option>
             <option value="credit">신용카드 (출금일 확인 필요)</option>
           </select></label>
-          {params.payment_method==='credit'&&<label>지금 구매 신용카드 출금일 <input type="date" value={params.credit_debit_date??''}
-            min={params.purchase_date} onChange={e=>updateParams({credit_debit_date:e.target.value||undefined})}/></label>}
+          {params.payment_method==='credit'&&<>
+            <label>지금 구매 신용카드 출금일 <input type="date" value={params.credit_debit_date??''}
+              min={params.purchase_date} onChange={e=>updateParams({credit_debit_date:e.target.value||undefined})}/></label>
+            <label>연기 구매의 카드 출금일 <input type="date" value={params.delayed_credit_debit_date??''}
+              min={shiftDate(params.purchase_date,params.purchase_delay_days)}
+              onChange={e=>updateParams({delayed_credit_debit_date:e.target.value||undefined})}/></label>
+          </>}
         </div>
       </Info>
       <Info title="저축 · 투자 조건">
         <div className="st3-formgrid">
           <MoneyControl title="저축 경로 납입" value={params.savings_amount} onChange={savings_amount=>updateParams({savings_amount})}/>
           <MoneyControl title="투자 경로 배분" value={params.investment_amount} onChange={investment_amount=>updateParams({investment_amount})}/>
+          <label>가상 저축 납입일 <input type="date" min={shiftDate(params.as_of,1)}
+            value={params.savings_date??params.purchase_date}
+            onChange={e=>updateParams({savings_date:e.target.value})}/></label>
           <MoneyControl title="매월 정기 저축" value={params.savings_monthly_amount} onChange={savings_monthly_amount=>updateParams({savings_monthly_amount})}/>
           <MoneyControl title="저축 목표 (미설정은 0)" value={params.savings_goal_target??0}
             onChange={savings_goal_target=>updateParams({savings_goal_target:savings_goal_target||undefined})}/>
           <MoneyControl title="보호할 최소 잔액" value={params.minimum_required_balance}
             onChange={minimum_required_balance=>updateParams({minimum_required_balance})}/>
+          <label>주식·ETF 검색 <input type="search" placeholder="종목명 또는 코드"
+            value={instrumentQuery} onChange={e=>setInstrumentQuery(e.target.value)}/></label>
           <label>투자 검증 종목 <select value={params.investment_code??''}
             onChange={e=>updateParams({investment_code:e.target.value})}>
-              {instruments.map(x=><option key={x.code} value={x.code}>{x.name} ({x.code})</option>)}
+              {instruments.filter(x=>x.name.toLowerCase().includes(instrumentQuery.toLowerCase())||x.code.includes(instrumentQuery)).map(x=><option key={x.code} value={x.code}>{x.name} ({x.code})</option>)}
             </select></label>
         </div>
       </Info>
@@ -298,8 +308,9 @@ export function Stage3Worlds() {
           <option value="delayed_income">소득 입금 지연</option><option value="combined">지출 증가 + 입금 지연</option>
           <option value="investment_loss">가상 투자 손실</option>
         </select></label>
-        {params.stress==='investment_loss'&&<label>투자 수익률 가정 (%) <input type="number" min="-100" max="0" value={params.investment_return_percent}
-          onChange={e=>updateParams({investment_return_percent:Number(e.target.value)||0})}/></label>}
+        <label>가상 주가 상승·하락 가정 (%) <input type="number" min="-100" max="1000"
+          value={params.investment_return_percent}
+          onChange={e=>updateParams({investment_return_percent:Number(e.target.value)||0})}/></label>
         <p className="st3-muted">미래 변동 지출은 ML 결과가 아닌 과거 관측값의 7일 평균으로 처리합니다. 검증되지 않은 확률은 제시하지 않습니다.</p>
       </Info>
       {compareError&&<ErrorNotice message={compareError} retry={retry}/>}
