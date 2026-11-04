@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { addDays, parseISO, todayKST, type ISODate } from '../../../shared/dates';
+import { addDays, parseISO, type ISODate } from '../../../shared/dates';
 import type { ParsedSpend } from '../../../shared/aiPrompts';
 import { formatKey, maskText } from '../../../shared/mask';
 import { AiSourceNote } from '../../components/Ai';
@@ -52,9 +52,8 @@ function guessRow(p: ParsedSpend, moa: MoaState): Row {
 }
 
 export function PasteFlow({ onClose }: { onClose: () => void }) {
-  const { moa, set, saveTxns } = useMoa();
+  const { moa, set, saveTxns, today, now } = useMoa();
   const toast = useToast();
-  const today = todayKST();
   const [step, setStep] = useState<'input' | 'review' | 'confirm'>('input');
   const [raw, setRaw] = useState('');
   const [masked, setMasked] = useState('');
@@ -106,7 +105,7 @@ export function PasteFlow({ onClose }: { onClose: () => void }) {
         }
       }
       const time = r.time && /^\d{2}:\d{2}$/.test(r.time) ? r.time : null;
-      const occurredAt = time ? kstMs(r.date!, Number(time.slice(0, 2)), Number(time.slice(3))) : r.date === today ? Date.now() : kstMs(r.date!, 12);
+      const occurredAt = time ? kstMs(r.date!, Number(time.slice(0, 2)), Number(time.slice(3))) : r.date === today ? now : kstMs(r.date!, 12);
       const kind = (r.kind ?? 'spend') as TxnKind;
       list.push({
         occurredAt,
