@@ -90,7 +90,7 @@ describe('active V8Home design hierarchy', () => {
     expect(html).toContain('오늘 내역 보기');
     expect(html).toContain('결제계좌에 부족 위험이 있어요');
     expect(html).toContain('aria-expanded="false"');
-    expect((html.match(/소비 선택 비교하기/g)??[]).toHaveLength(2); // section aria and ONE button
+    expect(html.match(/소비 선택 비교하기/g) ?? []).toHaveLength(2); // section aria and ONE button
     expect(html).not.toContain('자유 저축</');
     expect(html).not.toContain('사고 싶은 게 있어요');
     expect(html).not.toContain('사기 전에 비교하기');
