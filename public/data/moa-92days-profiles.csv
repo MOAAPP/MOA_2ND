@@ -1,5 +1,5 @@
 user_id,description,scenario,opening_balance,monthly_income,rent,phone,subscription,spend_scale,source
-S01,일반 대학생·카페/배달,regular,900000,950000,350000,55000,17000,1,synthetic
+S01,시연용 · 혼합소득·고정결제·카드 청구·돌발지출·ETF·선택 비교,showcase,900000,950000,350000,55000,17000,1,synthetic
 S02,알바비 지연형,late_income,390000,780000,345000,49000,12500,1.1,synthetic
 S03,주말 소비 집중형,weekend,1230000,1250000,440000,65000,18500,1.35,synthetic
 S04,거래 누락형,missing,690000,980000,370000,59000,14900,1.05,synthetic

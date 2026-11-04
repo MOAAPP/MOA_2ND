@@ -1,9 +1,4 @@
 id,user_id,date,at,item,price,paid,choice,source,phase,future_scenario
-S01-D3,S01,2026-09-14,1789380000000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
-S01-D12,S01,2026-09-23,1790157600000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
-S01-D21,S01,2026-10-02,1790935200000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
-S01-D30,S01,2026-10-11,1791712800000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
-S01-D39,S01,2026-10-20,1792490400000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
 S02-D3,S02,2026-09-14,1789380000000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
 S02-D12,S02,2026-09-23,1790157600000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
 S02-D21,S02,2026-10-02,1790935200000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
@@ -99,11 +94,6 @@ S20-D12,S20,2026-09-23,1790157600000,운동화,89000,0,wait,synthetic,historical
 S20-D21,S20,2026-10-02,1790935200000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
 S20-D30,S20,2026-10-11,1791712800000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
 S20-D39,S20,2026-10-20,1792490400000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
-S01-D48,S01,2026-10-29,1793268000000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
-S01-D57,S01,2026-11-07,1794045600000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
-S01-D66,S01,2026-11-16,1794823200000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
-S01-D75,S01,2026-11-25,1795600800000,운동화,89000,89000,buy,synthetic,future_scenario,true
-S01-D84,S01,2026-12-04,1796378400000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true
 S02-D48,S02,2026-10-29,1793268000000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
 S02-D57,S02,2026-11-07,1794045600000,배달 식사,19500,0,wait,synthetic,future_scenario,true
 S02-D66,S02,2026-11-16,1794823200000,운동화,89000,0,wait,synthetic,future_scenario,true
@@ -199,3 +189,23 @@ S20-D57,S20,2026-11-07,1794045600000,카페 라떼,5600,0,wait,synthetic,future_
 S20-D66,S20,2026-11-16,1794823200000,무선 이어폰,159000,0,wait,synthetic,future_scenario,true
 S20-D75,S20,2026-11-25,1795600800000,배달 식사,19500,0,wait,synthetic,future_scenario,true
 S20-D84,S20,2026-12-04,1796378400000,운동화,89000,0,wait,synthetic,future_scenario,true
+S01-SHOW-D01,S01,2026-09-13,1789293600000,배달 야식,23000,0,wait,synthetic,historical_synthetic,false
+S01-D3,S01,2026-09-14,1789380000000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S01-SHOW-D02,S01,2026-09-22,1790071200000,작업용 키보드,85000,85000,buy,synthetic,historical_synthetic,false
+S01-D12,S01,2026-09-23,1790157600000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S01-D21,S01,2026-10-02,1790935200000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S01-SHOW-D03,S01,2026-10-04,1791108000000,택시 대신 버스,14800,1500,alternative,synthetic,historical_synthetic,false
+S01-D30,S01,2026-10-11,1791712800000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S01-D39,S01,2026-10-20,1792490400000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S01-SHOW-D04,S01,2026-10-24,1792836000000,고가 헤드폰,249000,0,wait,synthetic,historical_synthetic,false
+S01-D48,S01,2026-10-29,1793268000000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S01-SHOW-D05,S01,2026-10-29,1793268000000,편의점 커피 대신 집 커피,4900,700,alternative,synthetic,historical_synthetic,false
+S01-SHOW-D06,S01,2026-11-01,1793527200000,배달 떡볶이,18000,0,wait,synthetic,historical_synthetic,false
+S01-SHOW-D07,S01,2026-11-03,1793700000000,취업 준비 온라인 특강,49000,49000,buy,synthetic,historical_synthetic,false
+S01-SHOW-D08,S01,2026-11-06,1793959200000,새 스마트워치,289000,0,wait,synthetic,future_scenario,true
+S01-D57,S01,2026-11-07,1794045600000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
+S01-D66,S01,2026-11-16,1794823200000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
+S01-SHOW-D09,S01,2026-11-21,1795255200000,주말 카페 vs 텀블러,8500,1200,alternative,synthetic,future_scenario,true
+S01-D75,S01,2026-11-25,1795600800000,운동화,89000,89000,buy,synthetic,future_scenario,true
+S01-SHOW-D10,S01,2026-12-02,1796205600000,겨울 아우터,149000,95000,alternative,synthetic,future_scenario,true
+S01-D84,S01,2026-12-04,1796378400000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true

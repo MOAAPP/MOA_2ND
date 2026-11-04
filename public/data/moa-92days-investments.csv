@@ -1,7 +1,4 @@
 id,user_id,date,at,side,code,name,qty,price,status,position_after,source,simulated_wallet_only,phase,future_scenario
-S01-I13,S01,2026-09-24,1790226000000,buy,360750,TIGER 미국S&P500,1,25624,filled,1,synthetic,true,historical_synthetic,false
-S01-I25,S01,2026-10-06,1791262800000,buy,360750,TIGER 미국S&P500,1,26200,filled,2,synthetic,true,historical_synthetic,false
-S01-I35,S01,2026-10-16,1792126800000,sell,360750,TIGER 미국S&P500,1,26680,filled,1,synthetic,true,historical_synthetic,false
 S02-I13,S02,2026-09-24,1790226000000,buy,360750,TIGER 미국S&P500,1,25744,filled,1,synthetic,true,historical_synthetic,false
 S02-I25,S02,2026-10-06,1791262800000,buy,360750,TIGER 미국S&P500,1,26320,filled,2,synthetic,true,historical_synthetic,false
 S02-I35,S02,2026-10-16,1792126800000,sell,360750,TIGER 미국S&P500,1,26800,filled,1,synthetic,true,historical_synthetic,false
@@ -59,10 +56,6 @@ S19-I35,S19,2026-10-16,1792126800000,sell,360750,TIGER 미국S&P500,1,28840,fill
 S20-I13,S20,2026-09-24,1790226000000,buy,360750,TIGER 미국S&P500,1,27904,filled,1,synthetic,true,historical_synthetic,false
 S20-I25,S20,2026-10-06,1791262800000,buy,360750,TIGER 미국S&P500,1,28480,filled,2,synthetic,true,historical_synthetic,false
 S20-I35,S20,2026-10-16,1792126800000,sell,360750,TIGER 미국S&P500,1,28960,filled,1,synthetic,true,historical_synthetic,false
-S01-I50,S01,2026-10-31,1793422800000,buy,360750,TIGER 미국S&P500,1,27400,filled,2,synthetic,true,historical_synthetic,false
-S01-I62,S01,2026-11-12,1794459600000,sell,360750,TIGER 미국S&P500,1,27976,filled,1,synthetic,true,future_scenario,true
-S01-I70,S01,2026-11-20,1795150800000,buy,360750,TIGER 미국S&P500,1,28360,filled,2,synthetic,true,future_scenario,true
-S01-I81,S01,2026-12-01,1796101200000,sell,360750,TIGER 미국S&P500,1,28888,filled,1,synthetic,true,future_scenario,true
 S02-I50,S02,2026-10-31,1793422800000,buy,360750,TIGER 미국S&P500,1,27520,filled,2,synthetic,true,historical_synthetic,false
 S02-I62,S02,2026-11-12,1794459600000,sell,360750,TIGER 미국S&P500,1,28096,filled,1,synthetic,true,future_scenario,true
 S02-I70,S02,2026-11-20,1795150800000,buy,360750,TIGER 미국S&P500,1,28480,filled,2,synthetic,true,future_scenario,true
@@ -139,3 +132,17 @@ S20-I50,S20,2026-10-31,1793422800000,buy,360750,TIGER 미국S&P500,1,29680,fille
 S20-I62,S20,2026-11-12,1794459600000,sell,360750,TIGER 미국S&P500,1,30256,filled,1,synthetic,true,future_scenario,true
 S20-I70,S20,2026-11-20,1795150800000,buy,360750,TIGER 미국S&P500,1,30640,filled,2,synthetic,true,future_scenario,true
 S20-I81,S20,2026-12-01,1796101200000,sell,360750,TIGER 미국S&P500,1,31168,filled,1,synthetic,true,future_scenario,true
+S01-SHOW-I01,S01,2026-09-16,1789534800000,buy,069500,KODEX 200,2,37000,filled,2,synthetic,true,historical_synthetic,false
+S01-I13,S01,2026-09-24,1790226000000,buy,360750,TIGER 미국S&P500,1,25624,filled,1,synthetic,true,historical_synthetic,false
+S01-SHOW-I02,S01,2026-09-30,1790744400000,sell,069500,KODEX 200,1,37700,filled,1,synthetic,true,historical_synthetic,false
+S01-SHOW-I03,S01,2026-10-05,1791176400000,buy,360750,TIGER 미국S&P500,2,25900,filled,3,synthetic,true,historical_synthetic,false
+S01-I25,S01,2026-10-06,1791262800000,buy,360750,TIGER 미국S&P500,1,26200,filled,4,synthetic,true,historical_synthetic,false
+S01-I35,S01,2026-10-16,1792126800000,sell,360750,TIGER 미국S&P500,1,26680,filled,3,synthetic,true,historical_synthetic,false
+S01-SHOW-I04,S01,2026-10-26,1792990800000,sell,069500,KODEX 200,1,38900,filled,0,synthetic,true,historical_synthetic,false
+S01-I50,S01,2026-10-31,1793422800000,buy,360750,TIGER 미국S&P500,1,27400,filled,4,synthetic,true,historical_synthetic,false
+S01-SHOW-I05,S01,2026-11-03,1793682000000,buy,069500,KODEX 200,1,39000,filled,1,synthetic,true,historical_synthetic,false
+S01-I62,S01,2026-11-12,1794459600000,sell,360750,TIGER 미국S&P500,1,27976,filled,3,synthetic,true,future_scenario,true
+S01-SHOW-I06,S01,2026-11-19,1795064400000,buy,360750,TIGER 미국S&P500,1,27800,filled,4,synthetic,true,future_scenario,true
+S01-I70,S01,2026-11-20,1795150800000,buy,360750,TIGER 미국S&P500,1,28360,filled,5,synthetic,true,future_scenario,true
+S01-SHOW-I07,S01,2026-11-27,1795755600000,sell,069500,KODEX 200,1,40100,filled,0,synthetic,true,future_scenario,true
+S01-I81,S01,2026-12-01,1796101200000,sell,360750,TIGER 미국S&P500,1,28888,filled,4,synthetic,true,future_scenario,true
