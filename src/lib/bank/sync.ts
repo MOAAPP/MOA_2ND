@@ -58,7 +58,7 @@ export function usableNow(w: WorldWallet): number {
  * 앱 오늘까지 처리한다. 바뀐 게 없으면 null.
  * 순서: (매달 1일) 고정지출·월급 → 그날 자동이체·만기. 시간 이동으로 여러 달이 지나도 날짜 순서대로.
  */
-export function catchUp(bank: BankState, w: WorldWallet, ctx: BankContext, now: Date = new Date()): { bank: BankState; wallet: WorldWallet; events: BankEvent[]; paydays: number } | null {
+export function catchUp(bank: BankState, w: WorldWallet, ctx: BankContext, now: Date = new Date(), applyMonthlyPayday = true): { bank: BankState; wallet: WorldWallet; events: BankEvent[]; paydays: number } | null {
   const today = appToday(bank, now);
   if (bank.lastProcessed && bank.lastProcessed >= today) return null;
   if (!bank.lastProcessed) {
@@ -81,8 +81,7 @@ export function catchUp(bank: BankState, w: WorldWallet, ctx: BankContext, now: 
       cursor = segEnd;
     }
     if (nextFirst <= today) {
-      wallet = payday(wallet, nextFirst);
-      paydays += 1;
+      if (applyMonthlyPayday) { wallet = payday(wallet, nextFirst); paydays += 1; }
       const r = advance(b, nextFirst, ctx, usableNow(wallet));
       b = r.bank;
       wallet = applyToWallet(wallet, r, nextFirst);
