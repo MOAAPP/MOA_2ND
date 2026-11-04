@@ -99,7 +99,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
           onConfirm={() => {
             update((s) => ({
               ...s, profile: null, records: [], spendLog: [], demo: false,
-              demoFixtureVersion: 0, setupDraft: null, moa: emptyMoa(),
+              demoFixtureVersion: 0, demoDay: undefined, setupDraft: null, moa: emptyMoa(),
               worldWallet: emptyWorldWallet(), bank: emptyBank(),
               investJournal: emptyInvestJournal(s.investJournal.watchlist),
             }));
