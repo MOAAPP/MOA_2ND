@@ -1,9 +1,9 @@
 # MOA 공통 합성 데이터 — 전체 92일 (1차 + 2차)
 
-- **1차:** 2026-09-11 ~ 10-26 (46일), **2차:** 2026-10-27 ~ 12-11 (46일), **합계:** 92일 × 사용자 10명 = 920일별 행.
+- **전체 기간:** 2026-09-11~2026-12-11 (92일). 2026-10-26까지의 첫 46일과 10-27 이후 46일이 연결되어 있습니다. 10명 × 92일 = 920일별 행.
 - **팀원 통합 원본:** `public/data/moa-92days.json` 또는 `src/data/moa-92days.json` (가상 사용자 S01~S10).
 - **2차만:** `public/data/moa-half2.json`. CSV는 `public/data/moa-92days-{profiles,transactions,daily,choices,investments}.csv` 또는 `moa-half2-*.csv`로 제공.
-- 생성 방식: `node scripts/data/build-half1.mjs` → `node scripts/data/build-half2.mjs`. DB/API/개인정보 필요 없음. seed 고정, 재현 가능.
+- 생성 방식: `node scripts/data/build-moa-dataset.mjs` 한 번만 실행하면 통합 JSON, CSV 및 프론트 S01 예시 파일이 동일하게 재생성됩니다. DB/네트워크 불필요.
 - 프론트 체험은 경량 `src/data/moa-demo-s01.json` 사용. 2026-11-04까지의 합성 과거 거래만 포함. 모든 10명 공통 데이터는 `/data/moa-92days.json` 경로에서 읽을 수 있음.
 
 ## 매우 중요한 구분

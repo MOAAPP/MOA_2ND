@@ -1,5 +1,5 @@
 import { addDays, startOfMonth, todayKST } from '../../shared/dates';
-import half from '../data/moa-half1.json';
+import half from '../data/moa-demo-s01.json';
 import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_START_CASH, type WorldDecision, type WorldMovement, type WorldWallet } from './worldWallet';
 
 /**

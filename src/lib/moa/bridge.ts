@@ -1,5 +1,5 @@
 import { todayKST } from '../../../shared/dates';
-import half from '../../data/moa-half1.json';
+import half from '../../data/moa-demo-s01.json';
 import type { SpendEntry } from '../ml/types';
 import type { Profile, ScheduleItem } from '../types';
 import { emptyMoa, type MoaSchedule, type MoaState, type Txn } from './types';
