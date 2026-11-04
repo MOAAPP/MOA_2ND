@@ -94,6 +94,6 @@ describe('active V8Home design hierarchy', () => {
     expect(html).not.toContain('자유 저축</');
     expect(html).not.toContain('사고 싶은 게 있어요');
     expect(html).not.toContain('사기 전에 비교하기');
-    expect(html).toContain('이후는 가정 시나리오');
+    expect(html).toContain('11월 4일까지 관측된 합성 기록');
   });
 });
