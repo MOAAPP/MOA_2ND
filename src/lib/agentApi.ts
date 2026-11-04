@@ -28,6 +28,7 @@ export interface AgentRoute {
   label: string;
   kind: string;
   purchase_date: string | null;
+  payment_method: 'debit' | 'transfer' | 'credit';
   purchase_amount: number;
   savings_amount: number;
   investment_amount: number;
