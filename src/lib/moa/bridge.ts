@@ -91,7 +91,7 @@ export function demoMoa(nowMs: number): MoaState {
     // Automatically seed only those historical labels, never missing/future
     // days. Real users are not asked to confirm every day.
     dayStatus: Object.fromEntries(half.daily
-      .filter((d) => d.user_id === user.user_id && d.date < today && d.observation_complete)
+      .filter((d) => d.user_id === user.user_id && d.date <= today && d.observation_complete)
       .map((d) => [d.date, 'self' as const])),
     mainMethod: 'debit',
     aiNoticeSeen: false,
