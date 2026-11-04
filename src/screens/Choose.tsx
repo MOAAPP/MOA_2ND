@@ -5,7 +5,7 @@
  * 계산은 전부 src/lib/futureCost.ts (테스트: tests/futureCost.test.ts).
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { addDays, formatKDate, todayKST } from '../../shared/dates';
+import { addDays, formatKDate } from '../../shared/dates';
 import { appNow } from '../lib/appClock';
 import { saveChoice } from '../lib/decisionSave';
 import { BetterPrice } from '../components/BetterPrice';
@@ -18,7 +18,7 @@ import { getProduct } from '../lib/bank/products';
 import { FREQ_LABEL, futureCost, skipsInLast30, type Frequency } from '../lib/futureCost';
 import { ruleClassify } from '../lib/ml/classify';
 import { addAmount } from '../lib/numpad';
-import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldDecision, type WorldWallet } from '../lib/worldWallet';
+import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldDecision } from '../lib/worldWallet';
 import { useBank } from '../state/bank';
 import { useNav } from '../state/nav';
 import { useStore, withEvent } from '../state/store';
