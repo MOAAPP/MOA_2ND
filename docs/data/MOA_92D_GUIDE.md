@@ -18,7 +18,7 @@ DB 없이 프론트와 Python/FastAPI 팀이 **같은 합성 데이터를 사용
 | **S01 시연 대본/흐름/주의사항** | `docs/data/S01_SHOWCASE_DEMO.md` |
 | **20명 팀 공유 ZIP** | `public/data/moa-92days-20users-team.zip` |
 
-재생성은 프로젝트 최상위에서 `node scripts/data/build-moa-dataset.mjs` **한 번** 실행합니다. API, DB, 인증 정보 또는 실제 사용자 금융정보가 필요하지 않습니다. 고정 난수 시드로 항상 동일한 결과를 생성합니다.
+재생성은 프로젝트 최상위에서 `node scripts/data/build-moa-dataset.mjs` **한 번** 실행합니다. 공통 생성기는 `scripts/data/build-moa-dataset.mjs`, S01 전용 합성 시나리오는 `scripts/data/enrich-s01-showcase.mjs`로 분리되어 있습니다. API, DB, 인증 정보 또는 실제 사용자 금융정보가 필요하지 않습니다. 고정 난수 시드로 항상 동일한 결과를 생성합니다.
 
 배포된 웹의 `/data/moa-92days.json` 경로로 모든 20명의 데이터를 받을 수 있습니다. 앱 예시 체험은 S01의 **2026-11-04까지의 가상 과거 기록만** 사용하며, 미래 시나리오는 실제 가계부 내역으로 노출하지 않습니다.
 
@@ -51,3 +51,9 @@ DB 없이 프론트와 Python/FastAPI 팀이 **같은 합성 데이터를 사용
 **S02~S20 19명은 이전 20명 데이터셋과 모든 CSV 행 내용이 동일**하도록 유지했습니다. S01 외 사용자 유형은 기존 그대로(알바비 지연, 주말 지출 집중, 기록 누락, 고정비 부담, 신용카드 비중 높음, 시험기간 지출 급증, 절약형 등)입니다. 프론트 예시 체험은 S01만 사용합니다.
 
 데이터를 수정할 때는 **통합 생성 스크립트 하나만 변경**하고 재생성하세요. 1차·2차 중복 파일을 다시 만들지 않아도 됩니다.
+
+## 코드·배포 정리
+
+- 현재 Vite 빌드/서비스에서 사용하지 않던 구형 독립형 오프라인 HTML 미리보기 생성기(`build_preview.cjs`)와 전용 가상 상태(`preview-demo-state.json`), `public/vendor`의 React UMD 사본을 제거했습니다. 앱은 `package.json`의 React 패키지와 Vite 번들을 사용합니다.
+- 기존 앱 소스, 테스트 코드, AI 관련 모듈, 실제 사용자 로컬 기록 마이그레이션 로직은 삭제하지 않았습니다.
+- 생성 데이터는 같은 고정 시드로 재현할 수 있으며, 빌드 전에 전체 `npm test`와 `npm run build`로 검증합니다.
