@@ -335,7 +335,7 @@ def calculate(ds: Dataset, req: CalculationRequest) -> FinancialResult:
     if not events and not observed:
         warnings.append('no_observed_financial_events')
     days, payments = simulate_days(as_of, balance, events, horizon, req.minimum_required_balance or 0)
-    min_balance = min([balance] + [x.lowest_balance for x in days])
+    min_balance = min([balance] + [x.lowest_balance for x in days[:req.horizon_days]])
     future = {str(n): days[n-1].closing_balance for n in (3, 7, 14)}
     if req.horizon_days not in (3, 7, 14):
         future[str(req.horizon_days)] = days[req.horizon_days - 1].closing_balance
@@ -345,7 +345,7 @@ def calculate(ds: Dataset, req: CalculationRequest) -> FinancialResult:
                            balance_snapshot_source=source, available_cash=balance,
                            minimum_required_balance=req.minimum_required_balance,
                            future_balances=future, daily_cashflow=days[:req.horizon_days],
-                           minimum_balance=min([balance] + [d.lowest_balance for d in days[:req.horizon_days]]),
+                           minimum_balance=min_balance,
                            minimum_cash_cushion=min_balance - req.minimum_required_balance if req.minimum_required_balance is not None else None,
                            essential_payments_covered=all(p['covered'] for p in payments if p['date'] <= days[req.horizon_days-1].date.isoformat()),
                            essential_payment_results=[p for p in payments if p['date'] <= days[req.horizon_days-1].date.isoformat()],
