@@ -15,13 +15,17 @@ export function historyEvents(wallet:WorldWallet):WorldHistoryEvent[]{
   const decisions = (wallet.decisions || []).map(d=>({
     id:d.id,at:d.at,day:koreaDay(d.at),kind:'consumption' as const,title:d.title,
     detail:d.choice==='buy'?'지금 구매':d.choice==='alternative'?'다른 대안 선택':'구매 보류',
-    cashDelta:-d.paid,referenceDelta:-d.price,difference:d.price-d.paid,
+    // The shared S01 purchase choices are "what if" events; purchases are
+    // already represented in the payment account ledger, never debit twice.
+    cashDelta:d.simulatedOnly?0:-d.paid,
+    referenceDelta:d.simulatedOnly?d.paid-d.price:-d.price,
+    difference:d.price-d.paid,
   }));
   const moves = (wallet.movements || []).map(m=>{
     const out=['withdraw','redeemDeposit','cancelInstallment','sellStock','income'].includes(m.kind);
     const flow=m.kind==='income'||m.kind==='bills';
     const investing=['buyStock','sellStock'].includes(m.kind);
-    const delta=out?m.amount:-m.amount;
+    const delta=m.simulatedOnly?0:out?m.amount:-m.amount;
     return {id:m.id,at:m.at,day:koreaDay(m.at),kind:investing?'investing' as const:'saving' as const,
       title:m.memo,detail:flow?(m.kind==='income'?'월급 → 현금':'현금 → 고정지출'):out?(investing?'가상 주식 → 현금':'저축 자산 → 현금'):(investing?'현금 → 가상 주식':'현금 → 저축 자산'),
       cashDelta:delta,referenceDelta:delta,difference:0};
@@ -37,13 +41,14 @@ export function historyEvents(wallet:WorldWallet):WorldHistoryEvent[]{
  */
 export function worldHistory(wallet:WorldWallet,days=30,now=Date.now()):WorldHistoryPoint[]{
   const events = historyEvents(wallet);
-  const expectedCash = WORLD_START_CASH + events.reduce((sum,e)=>sum+e.cashDelta,0);
+  const opening=wallet.openingCash??WORLD_START_CASH;
+  const expectedCash = opening + events.reduce((sum,e)=>sum+e.cashDelta,0);
   const adjustment = wallet.cash - expectedCash;
   const anchor = koreaDay(now);
   const endDate = Date.parse(`${anchor}T00:00:00.000Z`);
   const dates=Array.from({length:days},(_,i)=>new Date(endDate-(days-i-1)*86400000).toISOString().slice(0,10));
-  const protectedCash=WORLD_FIXED_BILLS+WORLD_SAFETY_BUFFER;
-  let cursor=0, actual=WORLD_START_CASH+adjustment-protectedCash,alternative=actual;
+  const protectedCash=(wallet.fixedBills??WORLD_FIXED_BILLS)+WORLD_SAFETY_BUFFER;
+  let cursor=0, actual=opening+adjustment-protectedCash,alternative=actual;
   return dates.map(date=>{
     const todays:WorldHistoryEvent[]=[];
     const end=dayEndUTC(date);
