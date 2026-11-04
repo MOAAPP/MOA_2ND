@@ -77,6 +77,7 @@ export interface AgentSearchRequest {
   max_evaluations: number;
   max_results: number;
   stress: Stress;
+  investment_return_percent?: number;
 }
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -115,8 +116,9 @@ async function call<T>(path: string, body: unknown, check: (v: unknown) => v is 
   return data;
 }
 
-export function analyzeGoal(user_id: string, as_of: string, goal: string, stress: Stress, signal?: AbortSignal) {
-  return call('/agent/analyze', { user_id, as_of, goal, stress }, (v): v is AgentAnalysis =>
+export function analyzeGoal(user_id: string, as_of: string, goal: string, stress: Stress,
+  investment_return_percent: number = 0, signal?: AbortSignal) {
+  return call('/agent/analyze', { user_id, as_of, goal, stress, investment_return_percent }, (v): v is AgentAnalysis =>
     isObject(v) && isObject(v.conditions) && isSearch(v.search) &&
     v.search.user_id === user_id && v.search.as_of === as_of &&
     Array.isArray(v.tool_execution_log) && isObject(v.tokens), signal);
