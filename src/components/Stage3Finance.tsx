@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { won } from '../../shared/format';
+import { useStore } from '../state/store';
 import {
   compareScenarios, getDemoDefault, getDemoHome, getDemoUsers, getInstruments, saveScenario,
   type CompareRequest, type CompareResult, type HomeState, type Instrument,
-  type ScenarioPath, type FinanceLoadError,
+  type ScenarioPath,
 } from '../lib/stage3Api';
 
 const W = (amount: number | undefined | null) => amount == null ? '—' : won(amount);
@@ -160,6 +161,7 @@ function MiniLine({values}:{values:number[]}) {
   </svg>;
 }
 export function Stage3Home() {
+  const {update}=useStore();
   const {home,comparison,loading,error,retry,day,user}=useTwin();
   if(error)return <div className="page t-page t-home ux-home"><Title name="모아" subtitle="결제일을 확인하고, 오늘의 소비를 관리해요"/><Scope/><ErrorNotice message={error} retry={retry}/></div>;
   return <div className="page t-page t-home ux-home st3">
@@ -199,6 +201,7 @@ export function Stage3Home() {
         {comparison&&<p className="st3-muted">평행세계 비교: {comparison.paths.filter(p=>p.status==='calculated').length}개 계산됨 · 기본 변동 지출 전망은 최근 관측 평균이며 ML 예측이 아닙니다.</p>}
       </Info>
       <p className="st3-legal">합성 금융 데이터로 재현한 시연 결과이며 실제 계좌·시세·검증된 AI 예측이 아닙니다.</p>
+      <button className="st3-expand" type="button" onClick={()=>update(s=>({...s,demo:false,profile:null,introSeen:false,setupDraft:null}))}>내 재무 정보 직접 입력하기</button>
     </>}
   </div>;
 }
