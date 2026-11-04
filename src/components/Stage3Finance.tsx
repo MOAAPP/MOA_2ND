@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { won } from '../../shared/format';
 import { useStore } from '../state/store';
+import { useNav } from '../state/nav';
+import { Logo } from './Glyph';
 import {
   compareScenarios, getDemoDefault, getDemoHome, getDemoUsers, getInstruments, saveScenario,
   type CompareRequest, type CompareResult, type HomeState, type Instrument,
@@ -158,10 +160,11 @@ function MiniLine({values}:{values:number[]}) {
 }
 export function Stage3Home() {
   const {update}=useStore();
+  const nav=useNav();
   const {home,comparison,loading,error,retry,day,user}=useTwin();
   if(error)return <div className="page t-page t-home ux-home"><Title name="모아" subtitle="결제일을 확인하고, 오늘의 소비를 관리해요"/><Scope/><ErrorNotice message={error} retry={retry}/></div>;
   return <div className="page t-page t-home ux-home st3">
-    <Title name="모아" subtitle="결제일을 확인하고, 오늘의 소비를 관리해요" />
+    <header className="t-head"><div><h1 className="with-logo"><Logo size={26}/>모아</h1><p className="t-head-sub">결제일을 확인하고, 오늘의 소비를 관리해요</p></div></header>
     <Scope />
     {loading||!home?<p className="st3-loading" role="status">공통 금융 데이터셋을 불러오는 중이에요…</p>:<>
       <section className="st3-hero">
@@ -176,6 +179,12 @@ export function Stage3Home() {
         <MiniLine values={[home.available_cash,...home.daily_cashflow.map(d=>d.closing_balance)]}/>
         <p className="st3-muted">Python 금융 엔진의 등록 일정 기준 · ML 예측 미반영 · 기간 최저 잔액 {W(home.minimum_balance)}</p>
       </Info>
+      <section className="ux-home-decision" aria-label="구매 선택 비교하기">
+        <small className="ux-home-overline">BEFORE YOU BUY · 소비 결정</small>
+        <h2>지금 사면, 다음 결제일은 괜찮을까요?</h2>
+        <p>가상 구매·저축·투자 6개 경로를 같은 계좌 상태에서 비교해요. 실제 계좌를 변경하지 않아요.</p>
+        <button type="button" className="ux-home-primary" onClick={()=>nav.setTab('forks')}>소비·저축·투자 비교하기 <span>→</span></button>
+      </section>
       <Info title="가까운 필수결제">
         {home.upcoming_essential_payments.length?home.upcoming_essential_payments.slice(0,5).map(e=>
           <div className="st3-row" key={e.id}><span><b>{e.label}</b><small>{e.debit_at.slice(0,10)}</small></span><strong>−{W(-e.amount)}</strong></div>
@@ -196,7 +205,7 @@ export function Stage3Home() {
         <p className="st3-muted">가상 투자: {Object.keys(home.virtual_investments.positions??{}).length}개 종목 보유 (원본 테스트 지갑, 실제 결제계좌에 영향 없음)</p>
         {comparison&&<p className="st3-muted">평행세계 비교: {comparison.paths.filter(p=>p.status==='calculated').length}개 계산됨 · 기본 변동 지출 전망은 최근 관측 평균이며 ML 예측이 아닙니다.</p>}
       </Info>
-      <p className="st3-legal">합성 금융 데이터로 재현한 시연 결과이며 실제 계좌·시세·검증된 AI 예측이 아닙니다.</p>
+      <p className="st3-legal">AI 아침 브리핑: 실제 모델이 연결되지 않아 현재는 제공하지 않습니다. 합성 금융 데이터로 재현한 시연 결과이며 실제 계좌·시세·검증된 AI 예측이 아닙니다.</p>
       <button className="st3-expand" type="button" onClick={()=>update(s=>({...s,demo:false,profile:null,introSeen:false,setupDraft:null}))}>내 재무 정보 직접 입력하기</button>
     </>}
   </div>;
@@ -223,6 +232,7 @@ function PathCard({path}:{path:ScenarioPath}) {
 export function Stage3Worlds() {
   const {home,params,updateParams,comparison,comparing,compareError,loading,error,retry,instruments}=useTwin();
   const [all,setAll]=useState(false);
+  const [instrumentQuery,setInstrumentQuery]=useState('');
   const [saveMessage,setSaveMessage]=useState('');
   const [saving,setSaving]=useState(false);
   const updateAmount=(purchase_amount:number)=>updateParams({purchase_amount,
