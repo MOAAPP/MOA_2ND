@@ -10,6 +10,8 @@ import { runAi, type AiSource } from '../../lib/ai';
 import { findCardByName, kstMs, METHOD_LABEL, upsertCard, type AccountRef, type MoaState, type NewTxn, type PayMethod, type TxnKind } from '../../lib/moa';
 import { uid } from '../../lib/id';
 import { useMoa } from '../../state/moa';
+import { useStore } from '../../state/store';
+import { Stage2Sms } from '../../components/Stage2Sms';
 import { AiLabel, fmt } from './parts';
 
 /**
@@ -53,6 +55,8 @@ function guessRow(p: ParsedSpend, moa: MoaState): Row {
 
 export function PasteFlow({ onClose }: { onClose: () => void }) {
   const { moa, set, saveTxns } = useMoa();
+  const { state } = useStore();
+  const [pythonMode, setPythonMode] = useState(false);
   const toast = useToast();
   const today = todayKST();
   const [step, setStep] = useState<'input' | 'review' | 'confirm'>('input');
@@ -131,6 +135,8 @@ export function PasteFlow({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
+  if (pythonMode) return <Stage2Sms onClose={() => setPythonMode(false)} />;
+
   if (step === 'review') {
     return (
       <Sheet title="AI에게 보낼 문장" onClose={onClose} footer={<Button disabled={busy || !masked.trim()} onClick={() => void send(maskText(masked, hide.split(/[,\s]+/)).text)}>{busy ? 'AI가 읽는 중…' : '가린 문장 보내기'}</Button>}>
@@ -192,6 +198,7 @@ export function PasteFlow({ onClose }: { onClose: () => void }) {
           <p>문자는 계좌·카드 번호, 전화번호, 이름을 가린 뒤 외부 AI(Anthropic API, 입력을 학습에 쓰지 않는 조건)로 보내요. 처음 보는 형식은 보낼 문장을 먼저 보여드려요. 원문은 어디에도 저장하지 않아요.</p>
         </div>
       )}
+      {state.demo && <button className="btn ghost block" type="button" onClick={() => setPythonMode(true)}>Python FastAPI 결제 문자 구조화 사용하기</button>}
       <textarea className="lg-textarea" value={raw} onChange={(e) => setRaw(e.target.value.slice(0, 4000))} placeholder="[Web발신] 국민체크 승인 18,500원 …" rows={7} />
       <button type="button" className="lg-sample" onClick={() => setRaw(SAMPLE(today))}>예시 문자 넣어보기</button>
       <p className="mo-fine">체크카드는 결제계좌에서 바로, 신용카드는 다음 카드값 출금일에 빠지는 것으로 계산해요. 지갑 현금은 소비 집계에만 넣어요.</p>
