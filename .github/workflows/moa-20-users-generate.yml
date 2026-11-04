@@ -35,6 +35,7 @@ on:
       - tests/onboardingEntry.test.ts
       - tests/homeUxAndDemoClock.test.ts
       - tests/homeLayoutUx.test.tsx
+      - vite.config.ts
       - src/screens/ParallelLab.tsx
       - src/screens/NewChoice.tsx
       - src/screens/bank/SaveHome.tsx
