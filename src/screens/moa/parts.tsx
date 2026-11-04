@@ -128,7 +128,7 @@ export function ShortfallCard() {
   return (
     <section className={`t-card mo-home ${w ? `g-${w.grade}` : 'g-ok'}`}>
       <div className="h-tag-row">
-        <span className="h-tag real">내 결제계좌 · 앞으로 14일</span>
+        <span className="h-tag real">다가오는 결제일</span>
         <button className="mo-bell" onClick={() => setAlerts(true)} aria-label={`알림 ${unread}개`}>알림{unread > 0 && <b>{unread}</b>}</button>
       </div>
       {w ? <GradeBadge grade={w.grade} /> : <span className="mo-grade g-ok">결제 일정 없음</span>}
@@ -143,7 +143,7 @@ export function ShortfallCard() {
           <button className="mo-link" onClick={todo.go}>{todo.cta}</button>
         </div>
       )}
-      <p className="mo-scope">결제계좌 잔액 {fmt(report.anchorBalance ?? 0)} 기준{report.anchorAt ? ` · ${formatKDateTime(report.anchorAt)} 확인` : ''}</p>
+      <p className="mo-scope">확인된 잔액 {fmt(report.anchorBalance ?? 0)}{report.anchorAt ? ` · ${formatKDateTime(report.anchorAt)} 기준` : ''}</p>
       {alerts && <AlertsSheet list={moa.alerts} onClose={() => setAlerts(false)} />}
     </section>
   );
