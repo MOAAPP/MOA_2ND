@@ -49,7 +49,8 @@ describe('unified 2026-11-04 S01 presentation day', () => {
     expect(risk.anchorBalance).toBe(s.profile?.baseBalance);
     const insurance = risk.payments.find(p => p.date === '2026-11-08' && p.name.includes('보험'));
     expect(insurance).toBeDefined();
-    expect(insurance?.shortBy).toBeGreaterThan(0);
+    // If the generator or forecast changes, investigate rather than hardcoding UI money.
+    expect(insurance?.shortBy).toBe(8200);
   });
 });
 
