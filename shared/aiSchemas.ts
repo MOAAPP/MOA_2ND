@@ -35,6 +35,20 @@ const briefIn = z.object({
   nextBill: z.object({ date: isoDate, amount: won }).strict().nullable(),
 });
 
+const cashflowIn = z.object({
+  payment: z.object({
+    name: shortText(60), date: isoDate, amount: won,
+    grade: z.enum(['registered', 'high', 'caution', 'combo', 'ok']),
+    shortBy: wonSigned, baseBalance: wonSigned, delayBalance: wonSigned,
+  }).strict().nullable(),
+  accountBalance: wonSigned.nullable(),
+  forecastMethod: z.enum(['none', 'weekday', 'ml']),
+  forecastReadiness: z.string().max(180),
+  reliability: z.enum(['enough', 'check', 'low']),
+  scheduledIncome: z.array(z.object({ name: shortText(60), date: isoDate, amount: won }).strict()).max(30),
+  uncertainIncome: z.array(z.object({ name: shortText(60), date: isoDate, amount: won }).strict()).max(30),
+}).strict();
+
 const coachIn = z.object({
   item: shortText(60),
   category: shortText(30),
@@ -83,6 +97,8 @@ const briefOut = z.object({
   action: z.object({ label: shortText(20), to: z.enum(['choose', 'ledger', 'save', 'forks']) }).strict().nullable(),
 }).strict();
 
+const cashflowOut = z.object({ insight: shortText(300), nextStep: shortText(200) }).strict();
+
 const coachOut = z.object({ tone: z.enum(['ok', 'careful', 'warn']), message: shortText(300), tip: shortText(200).nullable() }).strict();
 
 const ledgerSummaryOut = z.object({ title: shortText(80), points: z.array(shortText(200)).min(1).max(6) }).strict();
@@ -120,6 +136,7 @@ const categorizeOut = z.object({ category: shortText(30), confidence, reason: sh
 const askOut = z.object({ answer: shortText(800), followUps: z.array(shortText(80)).max(4) }).strict();
 
 export const AI_SCHEMAS: { [T in AiTask]: { input: z.ZodTypeAny; output: z.ZodTypeAny } } = {
+  cashflow: { input: cashflowIn, output: cashflowOut },
   brief: { input: briefIn, output: briefOut },
   coach: { input: coachIn, output: coachOut },
   ledgerSummary: { input: ledgerSummaryIn, output: ledgerSummaryOut },
