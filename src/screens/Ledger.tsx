@@ -56,7 +56,12 @@ export function Row({ e, showDate = false }: { e: SpendEntry; showDate?: boolean
 export function Ledger() {
   const nav = useNav();
   const { all, today } = useSpending();
-  const [month, setMonth] = useState<ISODate>(startOfMonth(today));
+  const { state } = useStore();
+  // The demo fixture intentionally ends 2026-10-26 in part 1. Open the
+  // latest available month rather than displaying an empty November calendar.
+  const [month, setMonth] = useState<ISODate>(() => state.demo && all.length &&
+    !all.some((e) => startOfMonth(e.date) === startOfMonth(today))
+    ? startOfMonth(all[0].date) : startOfMonth(today));
   const [view, setView] = useState<View>('calendar');
   const [showAi, setShowAi] = useState(false);
   const [cat, setCat] = useState<string | null>(null);
@@ -76,7 +81,7 @@ export function Ledger() {
   return (
     <div className="page t-page lg-page">
       <header className="t-head lg-first-head">
-        <div><h1>가계부</h1><p className="t-head-sub">날짜를 누르면 그날 쓴 돈을 볼 수 있어요</p></div>
+        <div><h1>가계부</h1><p className="t-head-sub">{state.demo ? "가상 기록 · 9월 11일~10월 26일 (1차)" : "날짜를 누르면 그날 쓴 돈을 볼 수 있어요"}</p></div>
         <button className="t-head-icon" aria-label="설정" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
       </header>
 
