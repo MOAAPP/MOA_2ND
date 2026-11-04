@@ -258,3 +258,10 @@ def test_api_simulate_payload(dataset):
     assert response.status_code==200,response.text
     base=client.get('/api/v4/users/S01/cashflow').json()
     assert response.json()['future_balances']['7']==base['future_balances']['7']-15000
+
+
+def test_short_horizon_minimum_cushion_matches_returned_low(dataset):
+    result = calculate(dataset, CalculationRequest(user_id='S01', horizon_days=3, minimum_required_balance=20000))
+    assert len(result.daily_cashflow) == 3
+    assert result.minimum_cash_cushion == result.minimum_balance - 20000
+    assert result.minimum_balance == min([result.available_cash] + [d.lowest_balance for d in result.daily_cashflow])
