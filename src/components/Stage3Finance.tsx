@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useId, useMemo, useRef, useState,
 import { useStore } from '../state/store';
 import { useNav } from '../state/nav';
 import { Logo } from './Glyph';
+import { Stage5Agent } from './Stage5Agent';
 import {
   compareScenarios, getDemoDefault, getDemoHome, getDemoUsers, getInstruments, getTransactions, saveScenario,
   type CompareRequest, type CompareResult, type HomeState, type Instrument,
@@ -137,7 +138,11 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     setLoading(true); setHome(null); setHomeKey(''); setComparison(null);
     setError(''); setCompareError(''); setInstruments([]);
-    Promise.all([getDemoHome(user, day, controller.signal), getInstruments(user, day, controller.signal)])
+    // A non-essential virtual instrument API must not blank the real payment-account home.
+    Promise.all([
+      getDemoHome(user, day, controller.signal),
+      getInstruments(user, day, controller.signal).catch(() => ({ prices: [] as Instrument[], is_live: false })),
+    ])
       .then(([current, assets]) => {
         if (controller.signal.aborted) return;
         setHome(current); setHomeKey(`${user}:${day}`); setInstruments(assets.prices);
@@ -733,6 +738,9 @@ export function Stage3Worlds() {
         </div>
 
         <div className="st3-col-main st3-results" aria-busy={comparing}>
+          <Stage5Agent key={`${home.user_id}:${home.as_of_date}`}
+            user={home.user_id} day={home.as_of_date}
+            productName={candidate?.main_product?.name} />
           {compareError && <ErrorNotice message={compareError} retry={retry} />}
           {capExceeded && <p className="st3-card st3-note warn">나눠 쓸 금액의 합계가 결제 금액이나 지금 잔액보다 커서 계산할 수 없어요.</p>}
           {!comparison && !compareError && !capExceeded && <div className="st3-card"><Loading label="여섯 가지 세계를 계산하는 중이에요" /></div>}
