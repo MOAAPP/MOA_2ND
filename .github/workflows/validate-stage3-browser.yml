@@ -1,4 +1,4 @@
-name: Stage 3 FastAPI + React real-browser integration
+name: V4 final design + ML cashflow browser integration
 on:
   pull_request:
     paths:
@@ -91,7 +91,7 @@ jobs:
             sleep 1
           done
           grep '<div id="root"' /tmp/stage3-index.html
-      - name: Verify actual rendered financial Home, 20-user switch, six worlds
+      - name: Verify PR37 redesigned Home, 20-user switch, ML forecast and six worlds
         run: node scripts/validate-stage3-browser.mjs
       - name: Upload UI evidence and server logs
         if: always()
