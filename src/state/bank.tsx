@@ -5,13 +5,14 @@ import type { Product } from '../lib/bank/products';
 import { appToday, applyToWallet, bankContext, catchUp, usableNow } from '../lib/bank/sync';
 import { useToast } from '../components/ui';
 import { useStore, withEvent } from './store';
-import { diffDays } from '../../shared/dates';
+import { addDays, diffDays } from '../../shared/dates';
+import { appDay, appNow } from '../lib/appClock';
 
 /** 모으기(예금·적금) 화면들이 쓰는 상태와 동작 */
 export function useBank() {
   const { state, update } = useStore();
   const bank = state.bank;
-  const today = appToday(bank);
+  const today = state.demo ? addDays(appDay(state), bank.clockOffsetDays || 0) : appToday(bank);
   const ctx = useMemo(() => bankContext(state), [state.records, state.worldWallet, state.spendLog, state.learning]);
   const usable = usableNow(state.worldWallet);
   const totals = useMemo(() => bankTotals(bank, today), [bank, today]);
@@ -54,11 +55,11 @@ export function BankClock() {
   const { state, update } = useStore();
   const toast = useToast();
   const last = useRef('');
-  const key = `${state.bank.clockOffsetDays}|${state.bank.lastProcessed}|${state.bank.contracts.length}`;
+  const key = `${state.bank.clockOffsetDays}|${state.bank.lastProcessed}|${state.bank.contracts.length}|${state.demo ? appDay(state) : ''}`;
   useEffect(() => {
     if (last.current === key) return;
     last.current = key;
-    const r = catchUp(state.bank, state.worldWallet, bankContext(state));
+    const r = catchUp(state.bank, state.worldWallet, bankContext(state), new Date(appNow(state)), !state.demo);
     if (!r) return;
     update((s) => {
       let n = { ...s, bank: r.bank, worldWallet: r.wallet };

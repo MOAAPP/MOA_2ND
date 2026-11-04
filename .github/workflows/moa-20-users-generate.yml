@@ -9,6 +9,7 @@ on:
       - fix/daily-five-spends-unified-s01-ledger
       - fix/demo-filled-from-first-setup
       - fix/onboarding-example-first-entry
+      - feat/home-ux-flow-unified-demo-clock
     paths:
       - .github/workflows/moa-20-users-generate.yml
       - scripts/data/build-moa-dataset.mjs
@@ -32,6 +33,26 @@ on:
       - src/screens/Choose.tsx
       - src/ux-v19.css
       - tests/onboardingEntry.test.ts
+      - tests/homeUxAndDemoClock.test.ts
+      - tests/homeLayoutUx.test.tsx
+      - vite.config.ts
+      - src/screens/ParallelLab.tsx
+      - src/screens/NewChoice.tsx
+      - src/screens/bank/SaveHome.tsx
+      - src/screens/moa/MoaSetup.tsx
+      - docs/UX_HOME_V22.md
+      - src/lib/appClock.ts
+      - src/lib/decisionSave.ts
+      - src/lib/bank/sync.ts
+      - src/state/moa.tsx
+      - src/state/bank.tsx
+      - src/state/nav.tsx
+      - src/screens/moa/parts.tsx
+      - src/screens/moa/Shortfall.tsx
+      - src/screens/WorldTimeline.tsx
+      - src/screens/WorldReport.tsx
+      - src/main.tsx
+      - src/ux-v22-home.css
       - src/screens/Settings.tsx
       - src/lib/ai/context.ts
       - src/lib/demo.ts

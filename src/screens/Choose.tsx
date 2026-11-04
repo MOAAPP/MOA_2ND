@@ -5,7 +5,9 @@
  * 계산은 전부 src/lib/futureCost.ts (테스트: tests/futureCost.test.ts).
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { addDays, formatKDate, todayKST } from '../../shared/dates';
+import { addDays, formatKDate } from '../../shared/dates';
+import { appDay, appNow } from '../lib/appClock';
+import { saveChoice } from '../lib/decisionSave';
 import { BetterPrice } from '../components/BetterPrice';
 import { IconCamera, IconCheck, IconChevron } from '../components/Icons';
 import { usePhotoReader } from '../components/PhotoReader';
@@ -16,7 +18,7 @@ import { getProduct } from '../lib/bank/products';
 import { FREQ_LABEL, futureCost, skipsInLast30, type Frequency } from '../lib/futureCost';
 import { ruleClassify } from '../lib/ml/classify';
 import { addAmount } from '../lib/numpad';
-import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldDecision, type WorldWallet } from '../lib/worldWallet';
+import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldDecision } from '../lib/worldWallet';
 import { useBank } from '../state/bank';
 import { useNav } from '../state/nav';
 import { useStore, withEvent } from '../state/store';
@@ -58,6 +60,7 @@ export function Choose() {
   const [altLabel, setAltLabel] = useState('');
   const [altOpen, setAltOpen] = useState(false);
   const [pick, setPick] = useState<Pick | null>(null);
+  const [method, setMethod] = useState<'debit' | 'credit'>(state.moa.mainMethod === 'credit' ? 'credit' : 'debit');
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [error, setError] = useState('');
   const previewAt = useRef(0);
@@ -69,7 +72,7 @@ export function Choose() {
     if (n) setName(n.slice(0, 30));
   });
 
-  const title = name.trim() || '사고 싶은 것';
+  const title = name.trim() || '고민 중인 소비';
   const w = state.worldWallet;
   const fc = useMemo(
     () => futureCost({
@@ -77,11 +80,11 @@ export function Choose() {
       altPrice: alt > 0 && alt < price ? alt : 0,
       frequency: freq,
       wallet: { cash: w.cash, fixedBills: w.fixedBills ?? WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
-      today: bank.today,
+      today: appDay(state),
       ctx: bank.ctx,
       history: bank.bank.contracts,
     }),
-    [price, alt, freq, w.cash, w.fixedBills, bank.today, bank.ctx, bank.bank.contracts],
+    [price, alt, freq, w.cash, w.fixedBills, state.demo, state.demoDay, bank.ctx, bank.bank.contracts],
   );
   const hasAlt = alt > 0 && alt < price;
   const holdName = hasAlt ? '더 싸게 산 나' : '참은 나';
@@ -89,38 +92,35 @@ export function Choose() {
   const decide = (p: Pick) => {
     const paid = p === 'buy' ? price : p === 'alt' ? alt : 0;
     const saved = price - paid;
-    const realToday = todayKST();
-    const decision: WorldDecision = {
-      id: `choose-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      title,
-      price,
-      paid,
-      choice: p === 'buy' ? 'buy' : p === 'alt' ? 'alternative' : 'wait',
-      at: bank.today === realToday ? Date.now() : Date.parse(`${bank.today}T12:00:00+09:00`),
-      note: `사기 전 비교 · ${FREQ_LABEL[freq]}${p === 'alt' && altLabel ? ` · ${altLabel}` : ''}`,
-    };
-    const spent = transactWorldWallet(w, { type: 'spend', decision });
-    if (!spent) { setError('가상 계좌 현금이 부족해서 기록하지 못했어요.'); return; }
-    let next: WorldWallet = spent;
-    let moved = 0;
-    if (saved > 0) {
-      const m = transactWorldWallet(spent, { type: 'save', amount: saved });
-      if (m) {
-        const moves = [...m.movements];
-        moves[moves.length - 1] = { ...moves[moves.length - 1], memo: `참은 돈 모으기 · ${title}` };
-        next = { ...m, movements: moves };
-        moved = saved;
-      }
-    }
     const category = ruleClassify(title, state.categoryMemory)?.category ?? '기타';
-    update((s) => ({
-      ...s,
-      worldWallet: next,
-      spendLog: paid > 0 ? [...s.spendLog, { date: bank.today, amount: paid, category, name: p === 'alt' && altLabel ? `${title} (${altLabel})` : title, from: 'record' as const }] : s.spendLog,
-    }));
+    const decision: WorldDecision = {
+      id: 'choose-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      title, price, paid,
+      choice: p === 'buy' ? 'buy' : p === 'alt' ? 'alternative' : 'wait',
+      at: state.demo ? appNow(state) - 2000 : Date.now(),
+      note: '구매 비교 · ' + FREQ_LABEL[freq] + (p === 'alt' && altLabel ? ' · ' + altLabel : ''),
+      simulatedOnly: state.demo,
+    };
+    const savedState = saveChoice(state, {
+      decision, paid, date: appDay(state),
+      name: p === 'alt' && altLabel ? title + ' (' + altLabel + ')' : title,
+      category, method,
+    });
+    if (!savedState) {
+      setError('기록을 저장하지 못했어요. 결제 수단이나 거래 내역을 확인해 주세요.');
+      return;
+    }
+    update(s => saveChoice(s, {
+      decision, paid, date: appDay(state),
+      name: p === 'alt' && altLabel ? title + ' (' + altLabel + ')' : title,
+      category, method,
+    }) ?? s);
     const dwellMs = previewAt.current ? Date.now() - previewAt.current : 0;
-    update((s) => withEvent(s, { type: 'decision_made', choice: p, price, paid, saved, freq, category, dwellMs, moved: moved > 0 }));
-    setOutcome({ pick: p, title, saved, paid, moved, moveFailed: saved > 0 && moved === 0 });
+    update(s => withEvent(s, {
+      type: 'decision_made', choice: p, price, paid, saved,
+      freq, category, dwellMs, moved: false,
+    }));
+    setOutcome({ pick: p, title, saved, paid, moved: 0, moveFailed: false });
     setPhase('done');
   };
 
@@ -131,8 +131,8 @@ export function Choose() {
   if (phase === 'input') {
     return (
       <div className="page t-page has-cta c-page">
-        <TopBar onBack={nav.pop} title="이거 사도 될까?" />
-        <p className="mo-intro">무엇을 얼마에 살지 넣으면, 다음 결제일 잔고와 평행세계 1년 뒤를 같이 보여줘요.</p>
+        <TopBar onBack={nav.pop} title="소비 선택 비교" />
+        <p className="mo-intro">금액을 입력하면 구매와 보류를 같은 결제일 기준으로 비교해요. 이 단계에서는 아무 기록도 바뀌지 않아요.</p>
         <section className="c-input">
           <label className="c-name">
             <span className="sr-only">무엇을 사고 싶어요?</span>
@@ -183,7 +183,7 @@ export function Choose() {
       </header>
 
       {!control && <>
-      <PayDayImpact price={price} freq={freq} />
+      <PayDayImpact price={price} freq={freq} method={method} onMethod={setMethod} />
 
       <section className="c-fork" aria-label="1년 동안 두 세계의 차이">
         <div className="h-tag-row"><span className="h-tag world">평행세계 · 1년 뒤</span><span className="t-badge">가상 지갑</span></div>
@@ -205,7 +205,7 @@ export function Choose() {
 
       <Card title="어떻게 할래요?" className="c-pick-card">
         <div className="c-picks" role="radiogroup" aria-label="선택">
-          <PickRow on={pick === 'hold'} onClick={() => setPick('hold')} title="이번엔 참을래요" sub={`${fmt(price)}을 자유 저축으로 옮겨요`} />
+          <PickRow on={pick === 'hold'} onClick={() => setPick('hold')} title="이번에는 보류할래요" sub="가상의 선택 차이만 기록해요 · 실제 저축은 자동으로 하지 않아요" />
           {hasAlt ? (
             <PickRow on={pick === 'alt'} onClick={() => setPick('alt')} title={`${fmt(alt)}짜리로 살래요`} sub={`${fmt(price - alt)} 아껴요${altLabel ? ` · ${altLabel}` : ''}`} action={<button type="button" className="c-pick-edit" onClick={(e) => { e.stopPropagation(); setAltOpen(true); }}>바꾸기</button>} />
           ) : (
@@ -220,13 +220,16 @@ export function Choose() {
         )}
       </Card>
 
-      <p className="t-foot">결제일 잔고는 내 결제계좌 기준, 1년 뒤는 평행세계 가상 지갑 기준이에요. 고른 결과는 평행세계에 기록되고, 실제 결제나 이체는 일어나지 않아요.</p>
+      <p className="t-foot">비교만 하면 잔액과 기록이 바뀌지 않아요. 구매·대안 선택을 저장하면 가계부에 한 번만 기록하고 선택한 결제 수단에 맞춰 결제일을 계산해요. 실제 은행 결제는 일어나지 않아요.</p>
       {error && <p className="t-error" role="alert">{error}</p>}
 
       <CtaBar>
-        <Button disabled={!pick} onClick={() => pick && decide(pick)}>
-          {pick === 'hold' ? `${fmt(price)} 지키기` : pick === 'alt' ? `${fmt(alt)}에 사고 ${fmt(price - alt)} 지키기` : pick === 'buy' ? '산 걸로 기록하기' : '하나를 골라 주세요'}
-        </Button>
+        <ButtonRow>
+          <Button tone="ghost" onClick={() => nav.pop()}>비교만 하고 닫기</Button>
+          <Button disabled={!pick} onClick={() => pick && decide(pick)}>
+            {pick ? '선택 기록하기' : '선택을 골라 주세요'}
+          </Button>
+        </ButtonRow>
       </CtaBar>
 
       {altOpen && (
@@ -243,11 +246,10 @@ export function Choose() {
 }
 
 /** 내 결제계좌 기준: 사면 다음 필수결제일 잔고가 어떻게 되는지 (모아 계산 엔진) */
-function PayDayImpact({ price, freq }: { price: number; freq: Frequency }) {
+function PayDayImpact({ price, freq, method, onMethod }: { price: number; freq: Frequency; method: 'debit' | 'credit'; onMethod: (method: 'debit' | 'credit') => void }) {
   const nav = useNav();
   const { moa, report, now, today } = useMoa();
   const card = moa.cards.find((c) => c.kind === 'credit' && c.payDay && c.cutoffDay);
-  const [method, setMethod] = useState<'debit' | 'credit'>('debit');
   const after = useMemo(() => {
     if (!report.hasAnchor || price <= 0) return null;
     const days = freq === 'once' ? [0] : freq === 'weekly' ? [0, 7] : Array.from({ length: RISK_HORIZON }, (_, i) => i);
@@ -286,8 +288,8 @@ function PayDayImpact({ price, freq }: { price: number; freq: Frequency }) {
           </div>
           {card && (
             <Chips label="결제 수단">
-              <Chip on={method === 'debit'} onClick={() => setMethod('debit')}>체크카드</Chip>
-              <Chip on={method === 'credit'} onClick={() => setMethod('credit')}>신용카드</Chip>
+              <Chip on={method === 'debit'} onClick={() => onMethod('debit')}>체크카드</Chip>
+              <Chip on={method === 'credit'} onClick={() => onMethod('credit')}>신용카드</Chip>
             </Chips>
           )}
           <small className="c-sec-note">{method === 'credit' && card ? `신용카드는 ${formatKDate(billingDate(card, today))}에 청구돼요.` : '체크카드·이체는 사는 날 바로 결제계좌에서 빠져요.'}</small>
@@ -368,7 +370,7 @@ function Done({ o, yearNet, yearProduct, yearLabel }: { o: Outcome; yearNet: num
   // 바로 굴려보기: 한 번 아낀 돈은 1년 예금, 반복이거나 예금 최소금액보다 작으면 1천 원부터 넣는 참기 챌린지 적금
   const deposit = getProduct(yearProduct);
   const product = deposit && o.saved >= deposit.minAmount ? deposit : getProduct('moa-challenge');
-  const canGrow = !!product && o.saved >= product.minAmount;
+  const canGrow = !state.demo && bank.usable > 0 && !!product && o.saved >= product.minAmount;
   const home = () => { nav.reset(); nav.setTab('home'); };
   /** 자유 저축에 옮긴 돈을 현금으로 돌려놓고(가입은 현금에서 빠지므로) 그 금액으로 가입 화면을 연다 */
   const grow = () => {
@@ -393,7 +395,7 @@ function Done({ o, yearNet, yearProduct, yearLabel }: { o: Outcome; yearNet: num
         <Card className="c-done-card">
           <div className="c-done-kv"><span>이번 달 쓸 수 있는 돈</span><b className="num">{signed(bank.usable)}</b></div>
           {yearNet > 0 && <div className="c-done-kv"><span>대신 참았다면 1년 뒤</span><b className="num">{fmt(yearNet)}</b></div>}
-          <p className="c-done-note">잘 산 소비였는지는 일주일 뒤 평행세계 탭에서 돌아볼 수 있어요.</p>
+          <p className="c-done-note">선택과 가계부 기록이 저장됐어요. 실제 금융 계좌와는 연결되지 않아요.</p>
         </Card>
         <CtaBar><ButtonRow><Button tone="ghost" onClick={() => nav.goTab('ledger')}>가계부 보기</Button><Button onClick={home}>홈으로</Button></ButtonRow></CtaBar>
       </div>
@@ -403,7 +405,7 @@ function Done({ o, yearNet, yearProduct, yearLabel }: { o: Outcome; yearNet: num
   return (
     <div className="page t-page has-cta c-done">
       <div className="c-done-icon" aria-hidden="true"><IconCheck /></div>
-      <h1><span className="num">{fmt(shown)}</span><br />지켰어요</h1>
+      <h1><span className="num">{fmt(shown)}</span><br />가상 비교 차이를 기록했어요</h1>
       <p className="c-done-sub">{o.pick === 'alt' ? `${o.title}을 ${fmt(o.paid)}에 사고 남긴 돈이에요` : `${o.title} 대신 남긴 돈이에요`}</p>
 
       <Card className="c-done-card">
@@ -429,7 +431,7 @@ function Done({ o, yearNet, yearProduct, yearLabel }: { o: Outcome; yearNet: num
       <CtaBar>
         <ButtonRow>
           <Button tone="ghost" onClick={home}>홈으로</Button>
-          {canGrow ? <Button onClick={grow}>{product!.kind === 'deposit' ? '예금으로 굴려보기' : '적금에 넣어보기'}</Button> : <Button onClick={() => { nav.reset(); nav.setTab('save'); }}>모으기 보기</Button>}
+          {canGrow ? <Button onClick={grow}>{product!.kind === 'deposit' ? '예금으로 굴려보기' : '적금에 넣어보기'}</Button> : <Button onClick={() => { nav.reset(); nav.setTab('forks'); }}>평행세계 보기</Button>}
         </ButtonRow>
       </CtaBar>
     </div>

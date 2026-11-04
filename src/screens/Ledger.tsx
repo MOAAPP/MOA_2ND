@@ -4,8 +4,8 @@
  * - 빠른 쓰기(숫자패드 + AI 카테고리), 카드 문자 붙여넣기(AI가 읽기)
  * - AI 이번 달 요약
  */
-import { useMemo, useState } from 'react';
-import { addDays, addMonths, daysInMonth, parseISO, startOfMonth, todayKST, weekdayOf, type ISODate } from '../../shared/dates';
+import { useEffect, useMemo, useState } from 'react';
+import { addDays, addMonths, daysInMonth, parseISO, startOfMonth, weekdayOf, type ISODate } from '../../shared/dates';
 import { manShort } from '../../shared/format';
 import { AiCard, AiMark } from '../components/Ai';
 import { CategoryIcon, categoryColor } from '../components/CategoryIcon';
@@ -22,6 +22,7 @@ import { spendHistory } from '../lib/ml/provider';
 import type { SpendEntry } from '../lib/ml/types';
 import { useNav } from '../state/nav';
 import { rememberCategory, useStore } from '../state/store';
+import { appDay, appNow } from '../lib/appClock';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const PAGE_DAYS = 7;
@@ -35,9 +36,9 @@ const dayLabel = (d: ISODate, today: ISODate) => `${parseISO(d).m}월 ${parseISO
 
 export function useSpending() {
   const { state } = useStore();
-  const today = todayKST();
+  const today = appDay(state);
   const all = useMemo(() => {
-    const variable = spendHistory(state.records, state.spendLog, today);
+    const variable = spendHistory(state.records, state.spendLog, today).filter((e) => e.date <= today);
     // A single S01 fixture drives the payment account and the ledger UI.
     // Fixed outflows (e.g. rent) must be visible in the calendar as expenses,
     // without becoming a second variable-spend entry or an ML target.
@@ -64,21 +65,20 @@ export function Row({ e, showDate = false }: { e: SpendEntry; showDate?: boolean
   );
 }
 
-export function Ledger() {
+export function Ledger({ initialSheet = null }: { initialSheet?: 'add' | 'paste' | null } = {}) {
   const nav = useNav();
   const { all, today } = useSpending();
   const { state } = useStore();
   // Open the current month. The synthetic demo includes five daily entries
   // through the 2026-11-04 snapshot, so today is never a blank calendar day.
-  const [month, setMonth] = useState<ISODate>(() => state.demo && all.length &&
-    !all.some((e) => startOfMonth(e.date) === startOfMonth(today))
-    ? startOfMonth(all[0].date) : startOfMonth(today));
+  const [month, setMonth] = useState<ISODate>(() => startOfMonth(today));
   const [view, setView] = useState<View>('calendar');
   const [showAi, setShowAi] = useState(false);
   const [cat, setCat] = useState<string | null>(null);
   const [day, setDay] = useState<ISODate | null>(null);
+  useEffect(() => { setMonth(startOfMonth(today)); setDay(today); }, [today]);
   const [pages, setPages] = useState(1);
-  const [sheet, setSheet] = useState<'add' | 'paste' | null>(null);
+  const [sheet, setSheet] = useState<'add' | 'paste' | null>(initialSheet);
 
   const { items: inMonth, elapsed, prevTotal, total } = monthSlice(all, month, today);
   const { m } = parseISO(month);
@@ -92,7 +92,7 @@ export function Ledger() {
   return (
     <div className="page t-page lg-page">
       <header className="t-head lg-first-head">
-        <div><h1>가계부</h1><p className="t-head-sub">{state.demo ? "가상 기록 · 9월 11일~11월 4일 · 월세·고정비 포함" : "날짜를 누르면 그날 쓴 돈을 볼 수 있어요"}</p></div>
+        <div><h1>가계부</h1><p className="t-head-sub">{state.demo ? `S01 예시 · ${parseISO(today).m}월 ${parseISO(today).d}일 기준 · 월세 포함` : '날짜를 누르면 그날의 기록을 볼 수 있어요'}</p></div>
         <button className="t-head-icon" aria-label="설정" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
       </header>
 
@@ -142,8 +142,8 @@ export function Ledger() {
           : <p className="small muted">지출 내역을 입력하면 AI 분석을 볼 수 있어요.</p>)}
       </section>
 
-      {sheet === 'add' && <AddSheet today={today} onClose={() => setSheet(null)} />}
-      {sheet === 'paste' && <PasteFlow onClose={() => setSheet(null)} />}
+      {sheet === 'add' && <AddSheet today={today} onClose={() => { setSheet(null); if (initialSheet) nav.pop(); }} />}
+      {sheet === 'paste' && <PasteFlow onClose={() => { setSheet(null); if (initialSheet) nav.pop(); }} />}
     </div>
   );
 }
@@ -214,7 +214,7 @@ function CalendarView({ month, items, today, day, setDay }: { month: ISODate; it
         <div className="lg-day">
           <div className="lg-day-head"><span>{dayLabel(day, today)}</span><span className="num">{list.length ? `−${fmt(sum(list))}` : ''}</span></div>
           {list.map((e, i) => <Row key={i} e={e} />)}
-          {!list.length && <p className="t-empty">이날은 쓴 돈이 없어요.</p>}
+          {!list.length && <p className="t-empty">기록된 지출이 없어요. 아직 입력하지 않은 날일 수 있어요.</p>}
         </div>
       </section>
     </>
@@ -279,7 +279,7 @@ function AddSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
   const { moa, saveTxns } = useMoa();
   const [method, setMethod] = useState<PayMethod>(moa.mainMethod && moa.mainMethod !== 'atm' ? moa.mainMethod : 'debit');
   const save = () => {
-    const occurredAt = date === today ? Date.now() : Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)), 3);
+    const occurredAt = date === today ? appNow(state) : Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)), 3);
     saveTxns([{ occurredAt, date, amount, kind: 'spend', method, account: method === 'cash' ? 'cash' : method === 'credit' ? 'other' : 'pay', name: name.trim() || category, category, essential: false, source: 'manual' }]);
     if (picked && name.trim()) update((s) => rememberCategory(s, name.trim(), picked));
     toast(`${fmt(amount)} 적었어요`);

@@ -1,4 +1,5 @@
 import { todayKST } from '../../shared/dates';
+import { DEMO_SNAPSHOT_DAY } from './appClock';
 import { emptyBank } from './bank/engine';
 import { demoData } from './demo';
 import { demoWorldWalletFromShared } from './demoWorld';
@@ -12,9 +13,11 @@ import type { AppState } from '../state/store';
  * (home, account setup, and ledger) must not build independent fake balances.
  * Never invoke without an explicit "example" action or for actual user data.
  */
-export const DEMO_FIXTURE_VERSION = 5;
+export const DEMO_FIXTURE_VERSION = 6;
 
-export function seedDemoState(state: AppState, now = Date.now()): AppState {
+export function seedDemoState(state: AppState, _now = Date.now()): AppState {
+  // The S01 presentation starts on a frozen, fully observed day.
+  const now = Date.parse(`${DEMO_SNAPSHOT_DAY}T23:59:00+09:00`);
   return {
     ...state,
     ...demoData(now),
@@ -23,6 +26,7 @@ export function seedDemoState(state: AppState, now = Date.now()): AppState {
     investJournal: emptyInvestJournal(state.investJournal.watchlist),
     bank: emptyBank(),
     demo: true,
+    demoDay: DEMO_SNAPSHOT_DAY,
     demoFixtureVersion: DEMO_FIXTURE_VERSION,
     introSeen: true,
     setupDraft: null,
@@ -30,7 +34,8 @@ export function seedDemoState(state: AppState, now = Date.now()): AppState {
 }
 
 /** Preview numbers derived from exactly the S01 dataset loaded at demo entry. */
-export function demoSetupPreview(now = Date.now()) {
+export function demoSetupPreview(_now = Date.now()) {
+  const now = Date.parse(`${DEMO_SNAPSHOT_DAY}T23:59:00+09:00`);
   const date = todayKST(new Date(now));
   const { profile, spendLog } = demoData(now);
   const account = demoMoa(now);

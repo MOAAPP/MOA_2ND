@@ -1,11 +1,12 @@
 import { todayKST } from '../../shared/dates';
+import { DEMO_SNAPSHOT_DAY } from './appClock';
 import half from '../data/moa-demo-s01.json';
 import type { SpendEntry } from './ml/types';
 import type { DecisionRecord, Profile, ScheduleItem } from './types';
 
 /** Frontend demo uses the very same generated dataset shared with the Python/FastAPI team. */
 export function demoData(now = Date.now()): { profile: Profile; records: DecisionRecord[]; spendLog: SpendEntry[] } {
-  const today = todayKST(new Date(now));
+  const today = todayKST(new Date(now)) > DEMO_SNAPSHOT_DAY ? DEMO_SNAPSHOT_DAY : todayKST(new Date(now));
   const user = half.profiles.find((x) => x.user_id === 'S01')!;
   const last = half.daily.filter((d) => d.user_id === user.user_id && d.date <= today).at(-1);
   const profile: Profile = {

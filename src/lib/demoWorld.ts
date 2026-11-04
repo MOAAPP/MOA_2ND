@@ -1,4 +1,5 @@
 import { addDays, startOfMonth, todayKST } from '../../shared/dates';
+import { DEMO_SNAPSHOT_DAY } from './appClock';
 import half from '../data/moa-demo-s01.json';
 import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_START_CASH, type WorldDecision, type WorldMovement, type WorldWallet } from './worldWallet';
 
@@ -96,6 +97,7 @@ export const isEmptyWorld = (w: WorldWallet) => (w.decisions?.length ?? 0) === 0
  * A choice is a what-if comparison and is never debited from the account twice.
  */
 export function demoWorldWalletFromShared(now = Date.now()): WorldWallet {
+  now = Math.min(now, Date.parse(`${DEMO_SNAPSHOT_DAY}T23:59:00+09:00`));
   const today = todayKST(new Date(now));
   const user = half.profiles.find(x => x.user_id === 'S01')!;
   const day = half.daily.filter(d => d.user_id === 'S01' && d.date <= today).at(-1);

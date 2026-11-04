@@ -142,7 +142,7 @@ export function QuickStart({ onDone, onDemo }: { onDone?: () => void; onDemo: ()
 
 export function MoaSetup() {
   const nav = useNav();
-  const { moa, set, today } = useMoa();
+  const { moa, set, today, now } = useMoa();
   const { update } = useStore();
   const [sheet, setSheet] = useState<'balance' | 'card' | 'schedule' | 'sentence' | 'wipe' | null>(null);
   const [editCard, setEditCard] = useState<MoaCard | null>(null);
@@ -216,7 +216,7 @@ export function MoaSetup() {
         <button className="mo-link danger" onClick={() => setSheet('wipe')}>내 기록 전체 지우기</button>
       </section>
 
-      {sheet === 'balance' && <BalanceSheet initial={moa.anchor.balance} onClose={() => setSheet(null)} onDone={(b) => { set((m) => setAnchor(m, b, Date.now())); setSheet(null); }} />}
+      {sheet === 'balance' && <BalanceSheet initial={moa.anchor.balance} onClose={() => setSheet(null)} onDone={(b) => { set((m) => setAnchor(m, b, now)); setSheet(null); }} />}
       {sheet === 'card' && <CardSheet card={editCard} onClose={() => setSheet(null)} onSave={(c) => { set((m) => upsertCard(m, c)); setSheet(null); }} onDelete={editCard ? () => { set((m) => removeCard(m, editCard.id)); setSheet(null); } : undefined} />}
       {sheet === 'schedule' && <ScheduleSheet item={editItem} onClose={() => setSheet(null)} onSave={(s) => { set((m) => upsertSchedule(m, s)); setSheet(null); }} onDelete={editItem ? () => { set((m) => removeSchedule(m, editItem.id)); setSheet(null); } : undefined} />}
       {sheet === 'sentence' && <SentenceSheet today={today} onClose={() => setSheet(null)} onSave={(items) => { set((m) => items.reduce((acc, it) => upsertSchedule(acc, it), m)); setSheet(null); }} />}

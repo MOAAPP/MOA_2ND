@@ -30,7 +30,8 @@ export type Screen =
   | { name: 'research' }
   | { name: 'report' }
   | { name: 'ask'; q?: string }
-  | { name: 'shortfall' }
+  | { name: 'shortfall'; paymentKey?: string }
+  | { name: 'ledgerAdd' }
   | { name: 'moaSetup' };
 
 interface Nav {

@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { appNow } from '../lib/appClock';
 import { emptyBank } from '../lib/bank/engine';
 import { won } from '../../shared/format';
 import { TopBar } from '../components/ui';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
 import {
-  WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER,
+  WORLD_SAFETY_BUFFER,
   etfValue, transactWorldWallet,
   type WorldDecision, type WorldWalletAction,
 } from '../lib/worldWallet';
@@ -52,8 +53,8 @@ function BalancePanel({compact=false}:{compact?:boolean}) {
     <div className="v7-money-label">이번 달 <strong>쓸 수 있는 돈</strong></div>
     <div className={`v7-money-big ${w.monthlyUsable<0?'short':''}`}>{won(w.monthlyUsable)}</div>
     {w.monthlyUsable<0 && <p className="v7-money-alert">지켜두기로 한 돈에서 {won(-w.monthlyUsable)}이 부족해요.</p>}
-    <div className="v7-segments" aria-hidden="true"><span style={{flex:WORLD_FIXED_BILLS,background:'#bdc7d9'}}/><span style={{flex:WORLD_SAFETY_BUFFER,background:'#7895e9'}}/><span style={{flex:Math.max(0,w.monthlyUsable),background:'#3d68f4'}}/><span style={{flex:w.savings,background:'#57b3a3'}}/><span style={{flex:w.stockValue||0.01,background:'#a18ae9'}}/></div>
-    <div className="v7-money-legend"><span><i className="gray"/>필수지출 {won(WORLD_FIXED_BILLS)}</span><span><i className="light"/>지켜둘 돈 {won(WORLD_SAFETY_BUFFER)}</span></div>
+    <div className="v7-segments" aria-hidden="true"><span style={{flex:w.protectedBills,background:'#bdc7d9'}}/><span style={{flex:WORLD_SAFETY_BUFFER,background:'#7895e9'}}/><span style={{flex:Math.max(0,w.monthlyUsable),background:'#3d68f4'}}/><span style={{flex:w.savings,background:'#57b3a3'}}/><span style={{flex:w.stockValue||0.01,background:'#a18ae9'}}/></div>
+    <div className="v7-money-legend"><span><i className="gray"/>필수지출 {won(w.protectedBills)}</span><span><i className="light"/>지켜둘 돈 {won(WORLD_SAFETY_BUFFER)}</span></div>
     <div className="v7-money-columns">
       <div><span>저축해 둔 돈</span><b>{won(w.savings)}</b></div>
       <div><span>ETF 평가금</span><b>{won(w.stockValue)}</b></div>
@@ -102,6 +103,7 @@ function PageTabs({mode,setMode}:{mode:Mode;setMode:(m:Mode)=>void}) {
 export function ParallelLab({initialMode='future',embedded=false}:{initialMode?:Mode;embedded?:boolean}) {
   const nav=useNav();
   const {wallet,act,message}=useWorldActions();
+  const {state}=useStore();
   const [mode,setMode]=useState<Mode>(initialMode);
   const [caseIndex,setCaseIndex]=useState(0);
   const [choice,setChoice]=useState<Choice>('alternative');
@@ -118,7 +120,7 @@ export function ParallelLab({initialMode='future',embedded=false}:{initialMode?:
   const wouldHave=current.monthlyUsable-spend;
   const commit=()=>{
     if(!title.trim()||!Number.isSafeInteger(price)||price<=0||alternative>price)return;
-    const d:WorldDecision={id:`world-${Date.now()}`,title,price,paid:spend,choice,at:Date.now(),note:custom?'내가 입력한 소비':moment.subtitle};
+    const d:WorldDecision={id:`world-${Date.now()}`,title,price,paid:spend,choice,at:appNow(state),note:custom?'내가 입력한 소비':moment.subtitle,simulatedOnly:state.demo};
     act({type:'spend',decision:d},`${title}: ${choice==='wait'?'미루기':choice==='alternative'?'대안 선택':'구매'}를 가상 세계에 반영했어요.`);
   };
   return <div className={`page no-nav v7-page ${embedded?'v7-embedded':''}`}>
@@ -139,7 +141,7 @@ export function ParallelLab({initialMode='future',embedded=false}:{initialMode?:
       <WorldCompare amount={price} choice={choice} alternative={alternative} baseline={current.monthlyUsable} title={title}/>
       <div className={`v7-decision-verdict ${wouldHave<0?'warning':''}`}><span>{wouldHave<0?'주의 · 생활비 안전선 아래':'이번 달 생활비 안에서 가능한 선택'}</span><p>{wouldHave<0?`선택하면 지켜두려던 돈에서 ${won(-wouldHave)}을 써야 해요.`:`선택 후에도 이번 달에 ${won(wouldHave)}을 쓸 수 있어요.`}</p></div>
       {alternative>price&&<p className="v7-invalid">대안 가격은 원래 가격보다 낮게 입력해 주세요.</p>}
-      <button className="v7-primary" disabled={price<=0||alternative>price||!title.trim()||spend>wallet.cash} onClick={commit}>이 선택으로 내 세계 이어가기 <span>→</span></button>
+      <button className="v7-primary" disabled={price<=0||alternative>price||!title.trim()||(!state.demo&&spend>wallet.cash)} onClick={commit}>이 선택으로 내 세계 이어가기 <span>→</span></button>
       {message&&<p className="v7-confirmation" role="status">{message}</p>}
       <div className="v7-after-actions"><button onClick={()=>{nav.reset();nav.setTab('invest')}}>남은 돈을 저축·투자로 나누기 <span>↗</span></button><button onClick={()=>setMode('past')}>지난 선택이 쌓인 세계 보기 <span>↗</span></button></div>
     </>:<section className="v7-past"><div className="v7-section-title"><span>그때 달리했다면?</span><small>내 선택 {wallet.decisions.length}건</small></div>
@@ -174,7 +176,7 @@ export function WorldInvestment() {
     <TopBar title="생활비로 ETF 사보기" onBack={nav.pop}/>
     <header className="v7-head"><span className="v7-eyebrow">MONEY LAB · 같은 돈, 다른 활용</span><h1>이번 달 남는 돈으로<br/>진짜 ETF를 사 보면?</h1><p>모의투자 탭과 같은 종목, 같은 시세를 써요. 돈은 가상이지만 가격은 실제 시장을 따라 움직여요.</p></header>
     <BalancePanel/>
-    {held.length>0&&<><div className="v7-section-title"><span>생활비로 산 ETF</span><small>실시간 시세로 평가</small></div>
+    {held.length>0&&<><div className="v7-section-title"><span>생활비로 산 ETF</span><small>실제 가격 참고 · 가상 잔액</small></div>
       <section className="etf-held">{held.map(([code,h])=>{const inst=INSTRUMENT_BY_CODE[code];const q=m.quotes[code];const value=etfValue(code,h,q?{[code]:q.price}:undefined);const pl=value-h.cost;
         return <div key={code} className="etf-held-row"><button className="etf-held-main" onClick={()=>nav.push({name:'stock',code})}><b>{inst?.name??code}</b><small>{h.qty}주 · 평균 {won(Math.round(h.cost/h.qty))}</small></button><span className="etf-held-val"><b>{won(value)}</b><small className={pl>0?'up':pl<0?'down':''}>{pl>0?'+':pl<0?'−':''}{won(Math.abs(pl))}</small></span>
           <button className="etf-sell" disabled={!q} onClick={()=>q&&act({type:'sellEtf',code,name:inst?.name??code,qty:1,price:q.price},`${inst?.name??code} 1주를 ${won(q.price)}에 팔고 현금으로 옮겼어요.`)}>1주 팔기</button></div>;})}

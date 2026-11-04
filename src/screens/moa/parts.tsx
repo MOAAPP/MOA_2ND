@@ -131,8 +131,7 @@ export function ShortfallCard() {
       <strong className="mo-home-title">{s ? s.title : '14일 안에 등록된 필수결제가 없어요'}</strong>
       {s && <small className="mo-home-sub">{s.body}</small>}
       <div className="mo-home-actions">
-        <button className="t-btn primary" onClick={() => nav.push({ name: 'shortfall' })}>결제일 자세히 보기</button>
-        <button className="t-btn" onClick={() => nav.push({ name: 'choose' })}>이거 사도 될까?</button>
+        <button className="t-btn ux-home-risk-action" onClick={() => nav.push({ name: 'shortfall', paymentKey: w?.key })}>결제일 영향 확인</button>
       </div>
       {todo && (
         <div className="mo-todo">
