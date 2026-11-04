@@ -56,6 +56,8 @@ export interface CompareRequest {
   user_id: string; as_of: string; purchase_amount: number; horizon_days: number;
   purchase_date: string; purchase_delay_days: number; payment_method: 'debit'|'credit'|'transfer';
   credit_debit_date?: string;
+  delayed_credit_debit_date?: string;
+  savings_date?: string;
   savings_amount: number; savings_monthly_amount: number;
   savings_goal_target?: number; savings_goal_current: number;
   investment_amount: number; investment_code?: string;
