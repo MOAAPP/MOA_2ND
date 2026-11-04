@@ -7,12 +7,14 @@ export const WORLD_MONTHLY_INCOME = 800_000;
 /** 예전 버전의 '연습용 가상 ETF' 고정 가격. 저장된 기록을 옮길 때만 쓴다. */
 export const LEGACY_STOCK_PRICE = 10_000;
 
-export type WorldDecision = { id:string; title:string; price:number; paid:number; choice:'buy'|'wait'|'alternative'; at:number; note:string };
-export type WorldMovement = {id:string; kind:'save'|'withdraw'|'deposit'|'redeemDeposit'|'installment'|'cancelInstallment'|'buyStock'|'sellStock'|'income'|'bills'; amount:number; at:number; memo:string; code?:string; qty?:number};
+export type WorldDecision = { id:string; title:string; price:number; paid:number; choice:'buy'|'wait'|'alternative'; at:number; note:string; simulatedOnly?:boolean };
+export type WorldMovement = {id:string; kind:'save'|'withdraw'|'deposit'|'redeemDeposit'|'installment'|'cancelInstallment'|'buyStock'|'sellStock'|'income'|'bills'; amount:number; at:number; memo:string; code?:string; qty?:number; simulatedOnly?:boolean};
 /** 생활비로 산 ETF. 모의투자 탭과 같은 종목·같은 시세를 쓴다. cost = 산 금액 합계(평균단가 × 수량) */
 export type EtfHolding = { qty:number; cost:number };
 export type WorldWallet = {
   cash:number; savings:number; deposit:number; installment:number;
+  /** Optional origin for the synthetic S01 ledger; legacy/user worlds keep defaults. */
+  openingCash?:number; fixedBills?:number;
   etfs:Record<string,EtfHolding>;
   /** @deprecated 예전 고정가 가상 ETF. migrateWorldWallet 이 현금으로 돌려놓는다. */
   shares?:number; priceRate?:number;
@@ -34,9 +36,10 @@ export function walletSummary(w:WorldWallet,prices?:PriceMap){
   const stockValue=holdings.reduce((s,[code,h])=>s+etfValue(code,h,prices),0);
   const stockCost=holdings.reduce((s,[,h])=>s+h.cost,0);
   const savings=freeSavings+deposit+installment;
+  const fixedBills=w.fixedBills??WORLD_FIXED_BILLS;
   return {cash:w.cash,savings,freeSavings,deposit,installment,stockValue,stockCost,stockProfit:stockValue-stockCost,
-    totalAssets:w.cash+savings+stockValue,monthlyUsable:w.cash-WORLD_FIXED_BILLS-WORLD_SAFETY_BUFFER,
-    afterBills:w.cash-WORLD_FIXED_BILLS,protectedBills:WORLD_FIXED_BILLS,protectedBuffer:WORLD_SAFETY_BUFFER};
+    totalAssets:w.cash+savings+stockValue,monthlyUsable:w.cash-fixedBills-WORLD_SAFETY_BUFFER,
+    afterBills:w.cash-fixedBills,protectedBills:fixedBills,protectedBuffer:WORLD_SAFETY_BUFFER};
 }
 
 export type WorldWalletAction=
