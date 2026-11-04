@@ -1,0 +1,106 @@
+name: V4 final design + ML cashflow browser integration
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/validate-stage3-browser.mjs'
+      - '.github/workflows/validate-stage3-browser.yml'
+      - 'vite.config.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium-stage3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout React PR branch
+        uses: actions/checkout@v4
+      - name: Checkout matching FastAPI stage-4 branch
+        uses: actions/checkout@v4
+        with:
+          repository: MOAAPP/MOA_2ND_BE
+          ref: feat/v4-stage4-lightgbm-cashflow
+          path: _stage3_backend
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python dependencies
+        run: python -m pip install -r _stage3_backend/requirements.txt
+      - name: Offline ML training with synthetic data
+        run: |
+          cd _stage3_backend
+          python -m app.ml.train --output app/data/models >/tmp/stage4-evaluation.json
+          python - <<'PY'
+          import json
+          d=json.load(open('app/data/models/evaluation.json'))
+          assert d['metadata']['training_samples'] >= 100
+          assert d['metadata']['selected_model'] in ('lightgbm','recent7','weekday')
+          print('Stage 4 model selected:',d['metadata']['selected_model'])
+          PY
+      - name: Start FastAPI with canonical ZIP
+        run: |
+          cd _stage3_backend
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 >/tmp/stage3-fastapi.log 2>&1 &
+      - name: Verify forecast model API and cashflow
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS 'http://127.0.0.1:8000/api/v4/users/S01/forecast?as_of=2026-11-04' >/tmp/stage4-forecast.json; then break; fi
+            sleep 1
+          done
+          python - <<'PY'
+          import json
+          x=json.load(open('/tmp/stage4-forecast.json'))
+          assert x['model_type'] in ('lightgbm','recent7','weekday')
+          assert len(x['daily'])==14
+          assert all(x['daily'][i]['date'] < x['daily'][i+1]['date'] for i in range(13))
+          assert x['candidate_purchases_included'] is False
+          print('Forecast:',x['model_type'],x['forecasts'])
+          PY
+      - name: Verify FastAPI is ready and reads 20-user source
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8000/api/v4/health >/tmp/stage3-health.json; then break; fi
+            sleep 1
+          done
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/stage3-health.json'))
+          assert d['users']==20, d
+          assert d['snapshot_date']=='2026-11-04', d
+          print('Canonical FastAPI ZIP loaded: 20 users', d['dataset_id'])
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install React and browser test dependencies
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --only-shell chromium
+      - name: Start React Vite server (proxy -> FastAPI)
+        run: |
+          nohup npm run dev:web -- --host 127.0.0.1 > /tmp/stage3-vite.log 2>&1 &
+      - name: Verify Vite ready
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS 'http://127.0.0.1:5173/?demo=1' >/tmp/stage3-index.html; then break; fi
+            sleep 1
+          done
+          grep '<div id="root"' /tmp/stage3-index.html
+      - name: Verify PR37 redesigned Home, 20-user switch, ML forecast and six worlds
+        run: node scripts/validate-stage3-browser.mjs
+      - name: Upload UI evidence and server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage3-browser-evidence
+          path: |
+            /tmp/stage3-s01-home.png
+            /tmp/stage3-six-worlds.png
+            /tmp/stage3-fastapi.log
+            /tmp/stage3-vite.log
+          if-no-files-found: warn

@@ -41,6 +41,7 @@ import { Shortfall } from './screens/moa/Shortfall';
 import { MoaSetup, QuickStart } from './screens/moa/MoaSetup';
 import { MoaAlertsDaemon } from './state/moa';
 import { profileFromMoa } from './lib/moa/bridge';
+import { Stage3Provider, Stage3Home, Stage3Worlds, Stage3Assets, Stage3Ledger, Stage3DevPanel } from './components/Stage3Finance';
 
 /**
  * 하단 메뉴 = 모아의 두 축.
@@ -130,6 +131,19 @@ function Shell() {
   useEffect(() => {
     document.documentElement.classList.toggle('reduce-motion', state.settings.reduceMotion);
   }, [state.settings.reduceMotion]);
+
+  // An isolated synthetic session uses ONLY the FastAPI canonical 20-user ledger.
+  // Preserve existing screens and flows for real manually entered data.
+  if (state.demo && !replayIntro) {
+    return <Stage3Provider><main className="st3-shell">
+      {nav.tab === 'home' && <Stage3Home />}
+      {nav.tab === 'ledger' && <Stage3Ledger />}
+      {nav.tab === 'forks' && <Stage3Worlds />}
+      {nav.tab === 'save' && <Stage3Assets focus="save" />}
+      {nav.tab === 'invest' && <Stage3Assets focus="invest" />}
+      {nav.tab === 'learn' && <Learn />}
+    </main><BottomNav /><Stage3DevPanel /></Stage3Provider>;
+  }
 
   if (!state.introSeen || replayIntro) {
     // Replaying onboarding must never replace existing cash, records or investments with demo data.
