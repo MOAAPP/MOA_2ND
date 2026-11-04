@@ -33,6 +33,16 @@ try {
   assert.equal((await page.locator('select[aria-label="가상 사용자 선택"] option').count()),20);
   assert.equal(await page.locator('input[aria-label="금융 관측 기준일"]').inputValue(),'2026-11-04');
   assert.equal(await hero.innerText(), won(s01.available_cash));
+  // Proof that the real training artifact or explicit baseline reaches the visible Home.
+  const spendForecast = await fetchJSON('/api/v4/users/S01/forecast?as_of=2026-11-04');
+  assert.equal(spendForecast.model_type,s01.variable_forecast.model_type);
+  assert.equal(spendForecast.forecast_run_id,s01.variable_forecast.forecast_run_id);
+  assert.equal(spendForecast.daily.length,14);
+  assert.ok(spendForecast.model_type !== 'unavailable');
+  await page.getByText('앞으로 7일 변동 지출 전망').waitFor();
+  const next7 = spendForecast.forecasts.find(f => f.horizon_days === 7).predicted_variable_outflow;
+  assert.ok((await page.locator('.st3').innerText()).includes(won(next7)));
+
 
   await page.screenshot({ path: '/tmp/stage3-s01-home.png', fullPage: true });
   await page.locator('select[aria-label="가상 사용자 선택"]').selectOption('S02');
