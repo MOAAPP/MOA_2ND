@@ -14,7 +14,7 @@ permissions:
 jobs:
   chromium-stage3:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 9
     steps:
       - name: Checkout React PR branch
         uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
         run: |
           npm ci
           npm install --no-save --package-lock=false playwright@1.58.2
-          npx playwright install --with-deps chromium
+          npx playwright install --only-shell chromium
       - name: Start React Vite server (proxy -> FastAPI)
         run: |
           nohup npm run dev:web -- --host 127.0.0.1 > /tmp/stage3-vite.log 2>&1 &
