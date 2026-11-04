@@ -57,7 +57,6 @@ export function loadFallObserved(): Promise<Snapshot> {
   return cache;
 }
 
-const at = (date: string, hour = 12) => Date.parse(date + 'T' + String(hour).padStart(2, '0') + ':00:00+09:00');
 const cutoffAt = () => Date.parse(FALL_DATASET_AS_OF + 'T23:59:59+09:00');
 
 function transaction(row: TransactionRow, data: Snapshot): Txn {
