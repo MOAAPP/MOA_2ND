@@ -146,7 +146,7 @@ export function V8Home() {
   }, [walletData, when]);
   const decisions = walletData.decisions.filter(d => d.at <= when);
   const latest = decisions.at(-1);
-  const isShort = Boolean(report.worst && report.worst.shortBy > 0);
+  const isShort = !state.demo && Boolean(report.worst && report.worst.shortBy > 0);
   const holdings = [
     { key: 'savings', name: '자유 저축', amount: wallet.freeSavings, tab: 'save' as const },
     { key: 'deposit', name: '정기예금', amount: wallet.deposit, tab: 'save' as const },
@@ -160,12 +160,11 @@ export function V8Home() {
 
       {/* 01 · Payment-account risk, the primary service promise */}
       <div className="ux-home-risk" aria-label="다가오는 결제일 상태">
-        <ShortfallCard />
-        <FinanceEnginePanel />
+        {state.demo ? <FinanceEnginePanel /> : <ShortfallCard />}
       </div>
 
       {/* 02 · Actual or entered spending, not simulated investment returns */}
-      <HomeSpend />
+      {!state.demo && <HomeSpend />}
 
       {/* 03 · One and only primary purchase-comparison CTA */}
       <section className="ux-home-decision" aria-label="소비 선택 비교하기">
