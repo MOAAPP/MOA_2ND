@@ -57,8 +57,8 @@ function record(w:WorldWallet,kind:WorldMovement['kind'],amount:number,patch:Par
 
 export function transactWorldWallet(w:WorldWallet,action:WorldWalletAction):WorldWallet|null{
   if(action.type==='reset')return emptyWorldWallet();
-  if(action.type==='undoDecision'){const last=w.decisions.at(-1);return last?{...w,cash:w.cash+last.paid,decisions:w.decisions.slice(0,-1)}:null;}
-  if(action.type==='spend'){const d=action.decision;if(!Number.isSafeInteger(d.paid)||d.paid<0||d.paid>w.cash||w.decisions.some(x=>x.id===d.id))return null;return {...w,cash:w.cash-d.paid,decisions:[...w.decisions,d]};}
+  if(action.type==='undoDecision'){const last=w.decisions.at(-1);return last?{...w,cash:w.cash+(last.simulatedOnly?0:last.paid),decisions:w.decisions.slice(0,-1)}:null;}
+  if(action.type==='spend'){const d=action.decision;if(!Number.isSafeInteger(d.paid)||d.paid<0||(!d.simulatedOnly&&d.paid>w.cash)||w.decisions.some(x=>x.id===d.id))return null;return {...w,cash:w.cash-(d.simulatedOnly?0:d.paid),decisions:[...w.decisions,d]};}
   if(action.type==='buyEtf'||action.type==='sellEtf'){
     const {code,name,qty,price}=action;
     if(!code||!Number.isSafeInteger(qty)||qty<=0||!Number.isFinite(price)||price<=0)return null;
