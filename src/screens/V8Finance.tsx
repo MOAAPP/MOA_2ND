@@ -1,13 +1,13 @@
 import { ShortfallCard } from './moa/parts';
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
-import { addDays, addMonths, parseISO, startOfMonth, todayKST, weekdayOf } from '../../shared/dates';
+import { addDays, parseISO, startOfMonth, weekdayOf } from '../../shared/dates';
 import { IconChevron, IconGear } from '../components/Icons';
 import { Logo } from '../components/Glyph';
 import { Won } from '../components/ds';
 import { useStore } from '../state/store';
 import { useNav } from '../state/nav';
-import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldWalletAction } from '../lib/worldWallet';
+import { WORLD_SAFETY_BUFFER, transactWorldWallet, type WorldWalletAction } from '../lib/worldWallet';
 import { Sheet } from '../components/ui';
 import { worldHistory } from '../lib/worldHistory';
 import { useWallet } from '../state/wallet';
@@ -168,11 +168,11 @@ export function V8Home() {
         <Sheet title="쓸 수 있는 돈 계산" onClose={() => setHow(false)}>
           <dl className="ob-calc t-how-calc">
             <div><dt>지금 가상 지갑 현금</dt><dd className="num">{fmt(w.cash)}</dd></div>
-            <div><dt>{Number(addMonths(startOfMonth(todayKST()), 1).slice(5, 7))}월 1일 나갈 월세·통신비</dt><dd className="num">−{fmt(WORLD_FIXED_BILLS)}</dd></div>
+            <div><dt>등록된 월 필수결제 합계</dt><dd className="num">−{fmt(w.protectedBills)}</dd></div>
             <div><dt>지켜둘 생활비</dt><dd className="num">−{fmt(WORLD_SAFETY_BUFFER)}</dd></div>
             <div className="total"><dt>이번 달 쓸 수 있는 돈</dt><dd className="num">{w.monthlyUsable < 0 ? '−' : ''}{fmt(Math.abs(w.monthlyUsable))}</dd></div>
           </dl>
-          <p className="t-how-note">저축·예금·투자로 옮긴 돈은 사라진 게 아니라 '쓸 수 있는 돈'에서만 빠져요. 매달 1일에 고정지출이 나가고 월급 {fmt(WORLD_MONTHLY_INCOME)}이 들어와요.</p>
+          <p className="t-how-note">위 금액은 가상 지갑의 소비 가능 금액을 계산한 결과예요. 실제 결제일은 월세·통신비 등 각자 다른 날짜이며, 홈 위쪽의 결제계좌와 결제일 화면에서 확인할 수 있어요. 저축·투자로 옮긴 돈은 현금이 아닌 가상 자산으로 남아요.</p>
         </Sheet>
       )}
 
