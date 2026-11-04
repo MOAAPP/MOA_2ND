@@ -1,4 +1,5 @@
 import { ShortfallCard } from './moa/parts';
+import { FinanceEnginePanel } from '../components/FinanceEnginePanel';
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
 import { addDays, parseISO, startOfMonth } from '../../shared/dates';
@@ -125,6 +126,7 @@ function DemoDayBar() {
         {day !== DEMO_SNAPSHOT_DAY && <button type="button" className="reset" onClick={() => change(DEMO_SNAPSHOT_DAY)}>기준일</button>}
       </div>
       <p>{day > DEMO_SNAPSHOT_DAY ? '11월 4일 이후는 가정 시나리오예요. 새로운 날짜의 거래는 아직 기록되지 않았어요.' : '11월 4일까지 관측된 합성 기록을 보여줘요. 날짜를 넘겨도 과거 기록은 유지돼요.'}</p>
+      {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1' && <a className="ux-home-demo-exit" href="/">내 기록으로 돌아가기</a>}
     </div>
   );
 }
@@ -159,6 +161,7 @@ export function V8Home() {
       {/* 01 · Payment-account risk, the primary service promise */}
       <div className="ux-home-risk" aria-label="다가오는 결제일 상태">
         <ShortfallCard />
+        <FinanceEnginePanel />
       </div>
 
       {/* 02 · Actual or entered spending, not simulated investment returns */}

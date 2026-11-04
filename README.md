@@ -1,3 +1,5 @@
+> **V4.0 백엔드 저장소 분리 (2026-11-04):** Python FastAPI 금융 계산 엔진·원본 합성 데이터·pytest는 [MOAAPP/MOA_2ND_BE](https://github.com/MOAAPP/MOA_2ND_BE)로 이동했습니다. 이 저장소의 React 화면은 `/api/v4`(개발 환경) 또는 `VITE_FINANCE_API_BASE`(배포 환경)로 연결합니다. 기존 Node 시세·Discord API는 기능 보존을 위해 그대로 유지합니다. 프론트 연동: [docs/V4_STAGE1_FRONTEND.md](docs/V4_STAGE1_FRONTEND.md)
+
 > **결제일 부족 탐지 MVP (2026-10-31):** 기획서 기준 핵심 기능을 붙였습니다. 결제계좌 기준 현금흐름 엔진(결제 수단별 출금 시점·카드 청구·입금 지연), 네 시나리오 등급과 D-7·D-3 알림, 문자 마스킹 후 AI 추출, 1분 설정·홈 부족 카드·살까 말까. 대응표: [docs/MOA_ENGINE.md](docs/MOA_ENGINE.md) · 검증: [docs/eval/RESULTS.md](docs/eval/RESULTS.md) · ML 비교: [ml/README.md](ml/README.md)
 
 > **v16 N7 (2026-10-29):** 사기 전 결정 플로우 — 금액·빈도를 넣으면 이번 달 쓸 수 있는 돈, 다음 결제일 잔고, 1년 뒤 두 세계 차이(가상 예금·적금 세후)를 보여주고, 참은 돈을 자유 저축 → 예금·적금으로 이어줍니다. 계산: `src/lib/futureCost.ts`

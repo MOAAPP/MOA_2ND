@@ -114,6 +114,7 @@ export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: (
               {existingData ? '기존 기록으로 돌아가기' : '일단 예시 데이터로 시작하기'}
             </button>
             <button type="button" className="ob-secondary" onClick={next}>기능 설명 먼저 보기</button>
+            {existingData && <a className="ob-demo-isolated" href="/?demo=1">S01 예시로 체험하기 · 기존 기록은 그대로</a>}
           </>
         ) : (
           <button

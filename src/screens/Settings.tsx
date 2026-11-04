@@ -57,6 +57,12 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
             <IconChevron width={18} height={18} color="var(--ink-3)" />
           </button>
         )}
+        {!state.demo && (
+          <a className="list-item" href="/?demo=1" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="grow"><div className="t">S01 예시 데이터 체험하기</div><div className="s">내 기록을 변경하지 않고 별도 체험</div></div>
+            <IconChevron width={18} height={18} color="var(--ink-3)" />
+          </a>
+        )}
         <button className="list-item" onClick={() => nav.push({ name: 'placement' })}>
           <div className="grow"><div className="t">금융 레벨 테스트</div><div className="s">{state.level ? LEVEL_LABEL[state.level] : '아직 안 했어요'}</div></div>
           <IconChevron width={18} height={18} color="var(--ink-3)" />

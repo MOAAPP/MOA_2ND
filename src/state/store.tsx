@@ -11,7 +11,8 @@ import { emptyBank, migrateLegacy, type BankState } from '../lib/bank/engine';
 import { todayKST } from '../../shared/dates';
 import { demoWorldWalletFromShared, isEmptyWorld } from '../lib/demoWorld';
 import { demoData } from '../lib/demo';
-import { DEMO_FIXTURE_VERSION } from '../lib/demoSeed';
+import { DEMO_FIXTURE_VERSION, seedDemoState } from '../lib/demoSeed';
+import { isSandboxDemo } from '../lib/demoSandbox';
 import { DEMO_SNAPSHOT_DAY } from '../lib/appClock';
 import { emptyMoa, type MoaState } from '../lib/moa/types';
 import { demoMoa, moaFromProfile } from '../lib/moa/bridge';
@@ -101,6 +102,8 @@ export interface AppState {
 }
 
 const KEY = 'pb.state.v3';
+// Query ?demo=1 creates an independent in-memory S01 session without overwriting personal records.
+const ISOLATED_DEMO = typeof window !== 'undefined' && isSandboxDemo(window.location.search);
 
 /** 모아 상태 불러오기. 예전 사용자는 기존 프로필(기준 잔고·일정)로 결제계좌를 채운다. */
 function loadMoa(parsed: Partial<AppState>): MoaState {
@@ -148,6 +151,7 @@ export function initialState(): AppState {
 }
 
 function load(): { state: AppState; error: string | null } {
+  if (ISOLATED_DEMO) return { state: seedDemoState(initialState()), error: null };
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return { state: initialState(), error: null };
@@ -210,6 +214,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
+    if (ISOLATED_DEMO) return;
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => {
       try {
@@ -223,6 +228,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // 창을 닫기 직전 즉시 저장
   useEffect(() => {
+    if (ISOLATED_DEMO) return;
     const flush = () => {
       try {
         localStorage.setItem(KEY, JSON.stringify(stateRef.current));
