@@ -57,6 +57,7 @@ export function Stage2Sms({ onClose }: { onClose: () => void }) {
     try {
       const result = await confirmSms('S01', row);
       setCompleted(prev => ({ ...prev, [row.source_id]: true }));
+      window.dispatchEvent(new Event('moa:financial-updated'));
       setInfo(result.warnings.join(' ') || '확인된 거래로 저장했어요.');
     } catch (e) {
       setError(e instanceof Error ? e.message : '저장 실패');
