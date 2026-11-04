@@ -152,7 +152,7 @@ function Shell() {
           if (hasExistingData) {
             update((s) => ({ ...s, introSeen: true }));
           } else {
-            update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWalletFromShared(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
+            update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWalletFromShared(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, demoFixtureVersion: 4, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
           }
           nav.setTab('home');
         }}

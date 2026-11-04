@@ -10,8 +10,9 @@ import { emptyWorldWallet, migrateWorldWallet, type WorldWallet } from '../lib/w
 import { emptyBank, migrateLegacy, type BankState } from '../lib/bank/engine';
 import { todayKST } from '../../shared/dates';
 import { demoWorldWalletFromShared, isEmptyWorld } from '../lib/demoWorld';
+import { demoData } from '../lib/demo';
 import { emptyMoa, type MoaState } from '../lib/moa/types';
-import { moaFromProfile } from '../lib/moa/bridge';
+import { demoMoa, moaFromProfile } from '../lib/moa/bridge';
 import { appendEvent, emptyResearch, migrateResearch, type ResearchEventBody, type ResearchState } from '../lib/research/log';
 
 export interface SetupDraft {
@@ -73,6 +74,8 @@ export interface AppState {
   categoryMemory: Record<string, string>;
   /** 예시 데이터로 보는 중 */
   demo: boolean;
+  /** Ensures an old untouched sample can reload the latest daily fixture. */
+  demoFixtureVersion?: number;
   portfolio: PortfolioState;
   /** 단일 가상 지갑 투자 주문·체결 장부. 구형 독립 1,000만 원 기록은 portfolio에 보존. */
   investJournal: InvestJournal;
@@ -126,6 +129,7 @@ export function initialState(): AppState {
     spendLog: [],
     categoryMemory: {},
     demo: false,
+    demoFixtureVersion: 0,
     portfolio: emptyPortfolio(),
     investJournal: emptyInvestJournal(),
     level: null,
@@ -145,12 +149,27 @@ function load(): { state: AppState; error: string | null } {
     const parsed = JSON.parse(raw) as Partial<AppState>;
     const base = initialState();
     const world = migrateWorldWallet(parsed.worldWallet);
-    // 예전 체험 저장본은 평행세계가 비어 있었다 → 예시 기록을 채워 바로 보이게
-    const worldWallet = parsed.demo && isEmptyWorld(world) && !parsed.bank?.contracts?.length ? demoWorldWalletFromShared() : world;
+    // Previous demo fixtures were persisted in localStorage and hid the new
+    // current-day purchases. Update ONLY untouched sample data. Never replace
+    // manually entered transactions, real financial data, or user investments.
+    const sampleOnly = !!parsed.demo &&
+      (parsed.demoFixtureVersion ?? 0) < 4 &&
+      (parsed.records ?? []).length === 0 &&
+      (parsed.spendLog ?? []).every(e => e.from === 'demo') &&
+      (parsed.moa?.txns ?? []).every(t => t.source === 'demo') &&
+      (parsed.worldWallet?.decisions ?? []).every(d => d.id.startsWith('S01-')) &&
+      (parsed.worldWallet?.movements ?? []).every(m => m.id.startsWith('S01-') ||
+        m.id.startsWith('income-') || m.id.startsWith('bills-')) &&
+      !(parsed.bank?.contracts?.length) && !(parsed.investJournal?.orders?.length);
+    const refreshed = sampleOnly ? { ...demoData(), moa: demoMoa(Date.now()),
+      worldWallet: demoWorldWalletFromShared(), demoFixtureVersion: 4 } : null;
+    const worldWallet = refreshed ? refreshed.worldWallet : parsed.demo && isEmptyWorld(world) &&
+      !parsed.bank?.contracts?.length ? demoWorldWalletFromShared() : world;
     return {
       state: {
         ...base,
         ...parsed,
+        ...(refreshed ?? {}),
         settings: { ...base.settings, ...(parsed.settings ?? {}) },
         portfolio: { ...base.portfolio, ...(parsed.portfolio ?? {}) },
         investJournal: { ...emptyInvestJournal(parsed.portfolio?.watchlist), ...(parsed.investJournal ?? {}) },
@@ -159,7 +178,7 @@ function load(): { state: AppState; error: string | null } {
         learning: { ...base.learning, ...(parsed.learning ?? {}) },
         daily: { ...base.daily, ...(parsed.daily ?? {}) },
         research: migrateResearch(parsed.research),
-        moa: loadMoa(parsed),
+        moa: refreshed?.moa ?? loadMoa(parsed),
         version: 3,
       },
       error: null,

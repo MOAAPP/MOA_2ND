@@ -36,10 +36,21 @@ const dayLabel = (d: ISODate, today: ISODate) => `${parseISO(d).m}월 ${parseISO
 export function useSpending() {
   const { state } = useStore();
   const today = todayKST();
-  const all = useMemo(
-    () => spendHistory(state.records, state.spendLog, today).filter((e) => e.amount > 0).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.amount - a.amount)),
-    [state.records, state.spendLog, today],
-  );
+  const all = useMemo(() => {
+    const variable = spendHistory(state.records, state.spendLog, today);
+    // A single S01 fixture drives the payment account and the ledger UI.
+    // Fixed outflows (e.g. rent) must be visible in the calendar as expenses,
+    // without becoming a second variable-spend entry or an ML target.
+    const fixed = state.demo
+      ? state.moa.txns.filter((t) => t.kind === 'spend' && t.essential && t.date <= today)
+        .map((t): SpendEntry => ({ date: t.date, amount: t.amount, name: t.name,
+          category: t.category, from: 'demo', txnId: t.id }))
+      : [];
+    const seen = new Set(variable.map((e) => e.txnId).filter(Boolean));
+    return [...variable, ...fixed.filter((e) => !seen.has(e.txnId))]
+      .filter((e) => e.amount > 0)
+      .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.amount - a.amount);
+  }, [state.demo, state.records, state.spendLog, state.moa.txns, today]);
   return { all, today };
 }
 
@@ -57,8 +68,8 @@ export function Ledger() {
   const nav = useNav();
   const { all, today } = useSpending();
   const { state } = useStore();
-  // The demo fixture intentionally ends 2026-10-26 in part 1. Open the
-  // latest available month rather than displaying an empty November calendar.
+  // Open the current month. The synthetic demo includes five daily entries
+  // through the 2026-11-04 snapshot, so today is never a blank calendar day.
   const [month, setMonth] = useState<ISODate>(() => state.demo && all.length &&
     !all.some((e) => startOfMonth(e.date) === startOfMonth(today))
     ? startOfMonth(all[0].date) : startOfMonth(today));
@@ -81,7 +92,7 @@ export function Ledger() {
   return (
     <div className="page t-page lg-page">
       <header className="t-head lg-first-head">
-        <div><h1>가계부</h1><p className="t-head-sub">{state.demo ? "가상 기록 · 9월 11일~10월 26일 (1차)" : "날짜를 누르면 그날 쓴 돈을 볼 수 있어요"}</p></div>
+        <div><h1>가계부</h1><p className="t-head-sub">{state.demo ? "가상 기록 · 9월 11일~11월 4일 · 월세·고정비 포함" : "날짜를 누르면 그날 쓴 돈을 볼 수 있어요"}</p></div>
         <button className="t-head-icon" aria-label="설정" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
       </header>
 

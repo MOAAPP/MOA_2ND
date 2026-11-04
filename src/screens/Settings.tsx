@@ -7,6 +7,11 @@ import { IconChevron } from '../components/Icons';
 import { ScheduleList } from '../components/ScheduleEditor';
 import { AmountInput, ConfirmSheet, CtaBar, Notice, Switch, TopBar, useToast } from '../components/ui';
 import { occurrences } from '../lib/cashflow';
+import { demoData } from '../lib/demo';
+import { demoWorldWalletFromShared } from '../lib/demoWorld';
+import { demoMoa } from '../lib/moa/bridge';
+import { emptyInvestJournal } from '../lib/fundedInvest';
+import { emptyBank } from '../lib/bank/engine';
 import type { Profile } from '../lib/types';
 import { useNav } from '../state/nav';
 import { resetScope, useStore } from '../state/store';
@@ -22,6 +27,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
   const nav = useNav();
   const toast = useToast();
   const [reset, setReset] = useState<keyof typeof SCOPES | null>(null);
+  const [refreshDemo, setRefreshDemo] = useState(false);
   const p = state.profile;
 
   return (
@@ -30,6 +36,15 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
       {storageError && <Notice kind="danger">{storageError}</Notice>}
 
       <section className="card" style={{ padding: '4px 18px' }}>
+        {state.demo && (
+          <button className="list-item" onClick={() => setRefreshDemo(true)}>
+            <div className="grow">
+              <div className="t">최신 예시 데이터 다시 불러오기</div>
+              <div className="s">11월 4일 포함 매일 5건 이상 · 잔액·월세·카드값 통일</div>
+            </div>
+            <IconChevron width={18} height={18} color="var(--ink-3)" />
+          </button>
+        )}
         {state.demo ? (
           <button className="list-item" onClick={() => { update((s) => ({ ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null })); nav.reset(); }}>
             <div className="grow"><div className="t">내 생활비로 시작하기</div><div className="s">지금은 예시 데이터로 체험 중이에요</div></div>
@@ -74,6 +89,24 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
 
       <p className="small muted" style={{ textAlign: 'center', margin: '20px 0 32px' }}>모아 · 결제일 예측과 평행세계</p>
 
+      {refreshDemo && (
+        <ConfirmSheet
+          title="최신 예시 데이터로 바꿀까요?"
+          body="현재 예시의 추가 지출·소비 선택·가상 투자 변경 기록이 새 S01 합성 데이터로 바뀌어요. 실제 내 데이터에는 영향을 주지 않아요."
+          confirm="최신 예시 불러오기"
+          onClose={() => setRefreshDemo(false)}
+          onConfirm={() => {
+            const now=Date.now();
+            update((s) => ({ ...s, ...demoData(now), moa:demoMoa(now),
+              worldWallet:demoWorldWalletFromShared(now),
+              investJournal:emptyInvestJournal(s.investJournal.watchlist),
+              bank:emptyBank(), demo:true, demoFixtureVersion:4 }));
+            setRefreshDemo(false);
+            toast('최신 예시 기록을 불러왔어요');
+            nav.reset();
+          }}
+        />
+      )}
       {reset && (
         <ConfirmSheet
           title={`${SCOPES[reset].title}를 지울까요?`}

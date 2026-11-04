@@ -5,6 +5,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { enrichShowcaseS01 } from './enrich-s01-showcase.mjs';
+import { normalizeDailyLedger } from './normalize-daily-ledger.mjs';
 const buildHalf=function buildHalf(){
  const START="2026-09-11",END="2026-10-26",SEED=20261104;
  const specs=[
@@ -51,7 +52,7 @@ const buildHalf=function buildHalf(){
   for(let i=0;i<dates.length;i++){
    const date=dates[i],day=Number(date.slice(8)),weekday=new Date(date+"T00:00:00Z").getUTCDay(),weekend=weekday===0||weekday===6;
    const txStart=transactions.length;
-   if(day===10+(scenario==="late_income"?4:scenario==="irregular_income"?5:0))add(date,"income",monthly_income,"알바비 입금","수입","transfer",false,true,{schedule_ref:user_id+"-income:2026-10-10"});
+   if(day===10+(scenario==="late_income"?4:scenario==="irregular_income"?5:0))add(date,"income",monthly_income,"알바비 입금","수입","transfer",false,true,{schedule_ref:user_id+"-income:"+date.slice(0,7)+"-10"});
    if(day===25)add(date,"spend",rent,"월세","주거","transfer",true,true,{schedule_ref:user_id+"-rent:"+date});
    if(day===15)add(date,"spend",phone,"통신비","통신","transfer",true,true,{schedule_ref:user_id+"-phone:"+date});
    if(day===5)add(date,"spend",subscription,"구독료","구독","transfer",true,true,{schedule_ref:user_id+"-sub:"+date});
@@ -213,7 +214,7 @@ const cols={"profiles":["user_id","description","scenario","opening_balance","mo
 
 const first = buildHalf();
 const second = buildSecond(first);
-const full = enrichShowcaseS01(combine(first,second));
+const full = normalizeDailyLedger(enrichShowcaseS01(combine(first,second)));
 const snapshot = full.metadata.snapshot_date;
 const s01 = {
  metadata: { dataset_id:'MOA-FRONTEND-S01', source:'synthetic', snapshot_date:snapshot, historical_only:true },

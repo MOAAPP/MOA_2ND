@@ -5,42 +5,48 @@
  *  2) 평행세계: 사고 싶은 게 생기면 산 나와 참은 나의 1년 뒤 (futureCost)
  *  3) AI는 결제 문자를 기록으로, 계산은 코드가 (exampleParseSpend + maskText)
  *  4) 시작 방법 고르기
- * 화면 숫자는 전부 src/lib/moa 계산 결과다(하드코딩 없음). 예시 상황은 기획서 시연 시나리오와 같다.
+ * 화면 숫자는 2026-11-04 S01 공용 합성 원장과 src/lib/moa 계산 결과를 따른다.
  */
 import { useMemo, useState, type ReactNode } from 'react';
-import { addDays, startOfMonth, todayKST, type ISODate } from '../../shared/dates';
+import { addDays, todayKST, type ISODate } from '../../shared/dates';
 import { exampleCoach } from '../lib/ai/example';
 import { Won } from '../components/ds';
 import { FREQ_LABEL, futureCost, type Frequency } from '../lib/futureCost';
-import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_SAFETY_BUFFER } from '../lib/worldWallet';
+import { WORLD_SAFETY_BUFFER, walletSummary } from '../lib/worldWallet';
+import { demoData } from '../lib/demo';
+import { demoWorldWalletFromShared } from '../lib/demoWorld';
 import { ForkChart } from './Choose';
-import { assessRisk, emptyMoa, kstMs, setAnchor, upsertCard, upsertSchedule, type MoaState } from '../lib/moa';
+import { assessRisk } from '../lib/moa';
+import { demoMoa } from '../lib/moa/bridge';
 
 const fmt = (n: number) => `${Math.round(Math.abs(n)).toLocaleString('ko-KR')}원`;
 const dayOf = (d: ISODate) => `${Number(d.slice(8, 10))}일`;
 
 const STEPS = 4;
 
-/** 기획서 시연 시나리오: 잔액 15만원, 10일 알바비 20만원 입금 예정, 11일 카드값 30만원 */
-function demoState(today: ISODate, month: ISODate): MoaState {
-  let m = setAnchor(emptyMoa(), 150_000, kstMs(today, 9));
-  m = upsertSchedule(m, { id: 'ob-in', name: '알바비', direction: 'in', amount: 200_000, recurrence: 'once', date: addDays(month, 9), essential: false, status: 'scheduled' });
-  m = upsertSchedule(m, { id: 'ob-card', name: '카드값', direction: 'out', amount: 300_000, recurrence: 'once', date: addDays(month, 10), essential: true });
-  m = upsertCard(m, { id: 'ob-credit', name: '신용카드', kind: 'credit', linked: false, cutoffDay: 31, payDay: 14 });
-  return m;
-}
-
+/** Onboarding presents the SAME S01 fixture that opens in the app.
+ * This preview is anchored to the synthetic 2026-11-04 snapshot, not an
+ * invented 150,000 KRW account with an unrelated 300,000 KRW card bill.
+ */
+const S01_SNAPSHOT_AT = Date.parse('2026-11-04T14:30:00+09:00');
 function useDemo() {
   return useMemo(() => {
-    const month = startOfMonth(todayKST());
-    const today = addDays(month, 2);
-    const state = demoState(today, month);
-    const now = kstMs(today, 10);
-    const base = assessRisk(state, now, today).payments.find((p) => p.key.includes('ob-card')) ?? null;
-    const income = state.schedule.find((x) => x.id === 'ob-in')!;
-    const card = state.schedule.find((x) => x.id === 'ob-card')!;
-    return { today, base, income, card, delayDays: state.delayDays, balance: state.anchor!.balance };
-  }, []);
+    const now=S01_SNAPSHOT_AT;
+    const today=todayKST(new Date(now));
+    const state=demoMoa(now);
+    const report=assessRisk(state,now,today);
+    const payment=report.payments.find(p=>p.date==='2026-11-14'&&p.name.includes('신용')) ??
+      report.payments.find(p=>p.name.includes('카드'));
+    const income=state.schedule.find(s=>s.id==='S01-income');
+    if (!payment || !income) throw new Error('S01 demonstration income/card schedule missing');
+    return {
+      today, base:payment,
+      income:{...income,date:today.slice(0,7)+'-'+String(income.day).padStart(2,'0')},
+      card:{name:payment.name,date:payment.date,amount:payment.amount},
+      delayDays:state.delayDays,
+      balance:state.anchor!.balance,
+    };
+  },[]);
 }
 type Demo = ReturnType<typeof useDemo>;
 
@@ -134,7 +140,7 @@ function PayDay({ demo }: { demo: Demo }) {
           <strong className="num">{bal < 0 ? `${fmt(bal)} 모자라요` : `${fmt(bal)} 남아요`}</strong>
         </div>
       </div>
-      <p className="ob-note">모두 가상의 날짜와 금액이에요. 실제 결제계좌를 연결하지 않고도 입력한 일정으로 잔액을 계산할 수 있어요.</p>
+      <p className="ob-note">2026년 11월 4일 S01 합성 데이터와 같은 잔액·입금 일정·카드 결제일이에요. 실제 계좌는 연결하지 않아요.</p>
     </>
   );
 }
@@ -148,11 +154,12 @@ const ITEMS: { id: string; emoji: string; name: string; price: number; freq: Fre
 
 function World({ itemId, setItemId }: { itemId: string; setItemId: (id: string) => void }) {
   const item = ITEMS.find((i) => i.id === itemId)!;
-  const day = addDays(startOfMonth(todayKST()), 9);
-  const fc = useMemo(() => futureCost({
-    price: item.price, frequency: item.freq, today: day,
-    wallet: { cash: WORLD_MONTHLY_INCOME, fixedBills: WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
-  }), [item, day]);
+  const wallet=useMemo(()=>demoWorldWalletFromShared(S01_SNAPSHOT_AT),[]);
+  const day=todayKST(new Date(S01_SNAPSHOT_AT));
+  const fc=useMemo(()=>futureCost({
+    price:item.price, frequency:item.freq, today:day,
+    wallet:{cash:wallet.cash,fixedBills:wallet.fixedBills??0,safetyBuffer:WORLD_SAFETY_BUFFER},
+  }),[item,day,wallet]);
   return (
     <>
       <div className="ob-items" role="radiogroup" aria-label="예시 고르기">
@@ -185,14 +192,18 @@ function World({ itemId, setItemId }: { itemId: string; setItemId: (id: string) 
 function AiDecisionDemo({ itemId }: { itemId: string }) {
   const item = ITEMS.find((i) => i.id === itemId)!;
   const category = item.id === 'latte' ? '카페' : item.id === 'buds' ? '쇼핑' : '식비';
-  const count = item.id === 'latte' ? 9 : item.id === 'buds' ? 1 : 4;
-  const usableNow = 120_000; // synthetic, explicitly labeled in the UI
-  const today = addDays(startOfMonth(todayKST()), 9);
-  const outcome = futureCost({
-    price: item.price,
-    frequency: item.freq,
-    today,
-    wallet: { cash: WORLD_MONTHLY_INCOME, fixedBills: WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
+  const day=todayKST(new Date(S01_SNAPSHOT_AT));
+  const since=addDays(day,-29);
+  const records=demoData(S01_SNAPSHOT_AT).spendLog
+    .filter(x=>x.date>=since&&x.date<=day&&x.category===category);
+  const count=records.length;
+  const observedSpend=records.reduce((sum,x)=>sum+x.amount,0);
+  const wallet=demoWorldWalletFromShared(S01_SNAPSHOT_AT);
+  const summary=walletSummary(wallet);
+  const usableNow=Math.max(0,summary.monthlyUsable);
+  const outcome=futureCost({
+    price:item.price,frequency:item.freq,today:day,
+    wallet:{cash:wallet.cash,fixedBills:wallet.fixedBills??0,safetyBuffer:WORLD_SAFETY_BUFFER},
   });
   const explanation = exampleCoach({
     item: item.name,
@@ -201,10 +212,10 @@ function AiDecisionDemo({ itemId }: { itemId: string }) {
     frequency: item.freq,
     usableNow,
     usableAfter: usableNow - item.price,
-    afterBills: usableNow - item.price,
+    afterBills: summary.afterBills - item.price,
     yearGap: outcome.year.net,
     categoryCount30: count,
-    categorySpentThisMonth: count * item.price,
+    categorySpentThisMonth: observedSpend,
   });
   return (
     <>
@@ -212,7 +223,7 @@ function AiDecisionDemo({ itemId }: { itemId: string }) {
         <span className="ob-insight-overline">예시 사용자의 지난 30일</span>
         <div className="ob-insight-row">
           <span>{category} 지출</span>
-          <strong className="num">{count}회 · {fmt(count * item.price)}</strong>
+          <strong className="num">{count}회 · {fmt(observedSpend)}</strong>
         </div>
         <div className="ob-insight-row">
           <span>남은 가상 소비 가능 금액</span>

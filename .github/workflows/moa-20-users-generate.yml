@@ -3,14 +3,28 @@ name: Generate MOA 20-user synthetic dataset
 on:
   push:
     branches:
+      - main
       - feat/shared-92-day-dataset-20-users
       - feat/s01-complex-showcase
+      - fix/daily-five-spends-unified-s01-ledger
     paths:
       - .github/workflows/moa-20-users-generate.yml
       - scripts/data/build-moa-dataset.mjs
       - scripts/data/enrich-s01-showcase.mjs
+      - scripts/data/normalize-daily-ledger.mjs
       - tests/sharedDataset.test.ts
       - tests/s01Showcase.test.ts
+      - tests/daily5Unified.test.ts
+      - src/screens/Ledger.tsx
+      - src/lib/worldWallet.ts
+      - src/lib/worldHistory.ts
+      - src/state/store.tsx
+      - src/App.tsx
+      - src/screens/Onboarding.tsx
+      - src/screens/Settings.tsx
+      - src/lib/ai/context.ts
+      - src/lib/demo.ts
+      - src/lib/worldHistory.ts
       - src/lib/moa/bridge.ts
       - src/lib/demoWorld.ts
       - docs/data/S01_SHOWCASE_DEMO.md
@@ -51,7 +65,14 @@ jobs:
               throw new Error('Invalid carry-forward balance: ' + p.user_id);
             }
           }
-          console.log('Validated 20 synthetic profiles and 1840 distinct daily rows');
+          for (const day of d.daily) {
+            const expenses = d.transactions.filter(x => x.user_id === day.user_id &&
+              x.date === day.date && x.kind === 'spend' && !x.essential);
+            const visible = expenses.filter(x => x.logged);
+            if (expenses.length < 5 || (day.date <= d.metadata.snapshot_date && visible.length < 5))
+              throw new Error('Daily minimum five failed: ' + day.user_id + ' ' + day.date);
+          }
+          console.log('Validated 20 users x 92 days with five daily spends');
           NODE
       - name: Run S01 demo and shared dataset tests
         run: |
