@@ -6,6 +6,7 @@ import { useStore } from '../state/store';
 import { useNav } from '../state/nav';
 import { historyEvents, koreanDayLabel, worldHistory } from '../lib/worldHistory';
 import { demoWorldWallet, isEmptyWorld } from '../lib/demoWorld';
+import { appNow } from '../lib/appClock';
 
 const money = (n: number) => `${n < 0 ? '−' : ''}${won(Math.abs(Math.round(n)))}`;
 const RANGES = [{ d: 7, label: '1주' }, { d: 30, label: '1개월' }, { d: 90, label: '3개월' }] as const;
@@ -19,7 +20,8 @@ export function WorldTimeline() {
   const [days, setDays] = useState<7 | 30 | 90>(30);
   const [filter, setFilter] = useState<'all' | 'consumption' | 'saving' | 'investing'>('all');
   const swipe = useRef<SwipeHandle>(null);
-  const points = useMemo(() => worldHistory(wallet, days), [wallet, days]);
+  const now = appNow(state);
+  const points = useMemo(() => worldHistory(wallet, days, now), [wallet, days, now]);
   const events = useMemo(() => historyEvents(wallet).reverse(), [wallet]);
   const shown = events.filter((e) => filter === 'all' || filter === e.kind);
   const rangeIdx = RANGES.findIndex((r) => r.d === days);
