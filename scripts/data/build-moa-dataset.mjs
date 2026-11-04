@@ -218,7 +218,7 @@ function enrichShowcaseS01(data) {
   if (!profile) throw new Error('Missing showcase profile S01');
   profile.description = '시연용 · 혼합소득·고정결제·카드 청구·돌발지출·ETF·선택 비교';
   profile.scenario = 'showcase';
-  profile.schedule.find(s => s.id === 'S01-income').status = 'uncertain';
+  // Main payday stays scheduled, so the risk engine can model a 3-day delay.
   profile.schedule.push(
     { id: 'S01-maint', name: '관리비', direction: 'out', amount: 45000, recurrence: 'monthly', day: 27, essential: true },
     { id: 'S01-insurance', name: '보험료', direction: 'out', amount: 19000, recurrence: 'monthly', day: 8, essential: true },
