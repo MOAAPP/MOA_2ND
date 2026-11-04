@@ -26,6 +26,7 @@ import { V8Home } from './screens/V8Finance';
 import { WorldInvestment } from './screens/ParallelLab';
 import { WorldTimeline } from './screens/WorldTimeline';
 import { Ledger } from './screens/Ledger';
+import { DatasetLedger } from './components/DatasetLedger';
 import { NewChoice } from './screens/NewChoice';
 import { Choose } from './screens/Choose';
 import { SaveHome } from './screens/bank/SaveHome';
@@ -187,7 +188,7 @@ function Shell() {
       <MoaAlertsDaemon />
       <main>
         {nav.tab === 'home' && <V8Home />}
-        {nav.tab === 'ledger' && <Ledger />}
+        {nav.tab === 'ledger' && (state.demo ? <DatasetLedger /> : <Ledger />)}
         {nav.tab === 'forks' && <WorldTimeline />}
         {nav.tab === 'save' && <SaveHome />}
         {nav.tab === 'invest' && <Practice />}
