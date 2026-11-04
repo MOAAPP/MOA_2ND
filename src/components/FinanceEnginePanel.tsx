@@ -90,7 +90,7 @@ export function FinanceEnginePanel() {
           {[3, 7, 14].map(days => (
             <div key={days}>
               <span>{days}일 뒤</span>
-              <strong className="num">{won(flow.future_balances[String(days)] ?? 0)}</strong>
+              <strong className="num">{typeof flow.future_balances[String(days)] === 'number' ? won(flow.future_balances[String(days)]) : '계산값 없음'}</strong>
             </div>
           ))}
         </div>
@@ -121,7 +121,7 @@ export function FinanceEnginePanel() {
                   <small>{new Date(t.occurred_at!).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}
                     {t.category ? ` · ${t.category}` : ''}</small>
                 </span>
-                <strong className="num">{won(t.amount ?? 0)}</strong>
+                <strong className="num">{typeof t.amount === 'number' ? won(t.amount) : '금액 확인 필요'}</strong>
               </li>
             ))}
           </ul> : <p className="ux-python-main-empty">이 기준일까지 관측된 거래가 없어요.</p>}
