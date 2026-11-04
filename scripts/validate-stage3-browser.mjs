@@ -8,7 +8,7 @@ const base = process.env.STAGE3_E2E_BASE || 'http://127.0.0.1:5173';
 const python = process.env.STAGE3_E2E_API || 'http://127.0.0.1:8000';
 const fetchJSON = async path => {
   const res = await fetch(python + path);
-  assert.equal(res.status, 200, path + ': ' + await res.text());
+  if (res.status !== 200) throw new Error(path + ': ' + await res.text());
   return res.json();
 };
 const won = amount => Math.round(amount).toLocaleString('ko-KR') + '원';
