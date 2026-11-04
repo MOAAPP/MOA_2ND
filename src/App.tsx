@@ -99,7 +99,8 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'research': return <Research />;
     case 'ask': return <AskAi initial={screen.q} />;
     case 'report': return <WorldReport />;
-    case 'shortfall': return <Shortfall />;
+    case 'shortfall': return <Shortfall paymentKey={screen.paymentKey} />;
+    case 'ledgerAdd': return <Ledger initialSheet="add" />;
     case 'moaSetup': return <MoaSetup />;
   }
 }
