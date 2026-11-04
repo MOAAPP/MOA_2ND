@@ -86,9 +86,12 @@ export function demoMoa(nowMs: number): MoaState {
       essential: x.essential, ...(x.direction === 'in' ? { status: x.status === 'uncertain' ? 'uncertain' as const : 'scheduled' as const } : {}),
     })),
     txns,
-    // The app does not ask for daily "completion" clicks. Unrecorded dates
-    // remain unknown; only the offline synthetic oracle has complete truth.
-    dayStatus: {},
+    // Simulated persona: the generator has verified complete synthetic days.
+    // Automatically seed only those historical labels, never missing/future
+    // days. Real users are not asked to confirm every day.
+    dayStatus: Object.fromEntries(half.daily
+      .filter((d) => d.user_id === user.user_id && d.date < today && d.observation_complete)
+      .map((d) => [d.date, 'self' as const])),
     mainMethod: 'debit',
     aiNoticeSeen: false,
   };
