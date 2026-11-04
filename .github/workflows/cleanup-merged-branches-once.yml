@@ -19,11 +19,18 @@ jobs:
             const branches = await github.paginate(github.rest.repos.listBranches, { owner, repo, per_page: 100 });
             for (const branch of branches) {
               if (branch.name === 'main' || branch.protected) continue;
-              const comparison = await github.rest.repos.compareCommits({
-                owner, repo, base: 'main', head: branch.name
-              });
-              if (comparison.data.ahead_by !== 0) {
-                core.info('Kept unmerged work: ' + branch.name + ' (' + comparison.data.ahead_by + ' unique commits)');
+              let ahead;
+              try {
+                const comparison = await github.rest.repos.compareCommits({
+                  owner, repo, base: 'main', head: branch.name
+                });
+                ahead = comparison.data.ahead_by;
+              } catch (error) {
+                core.warning('Kept unrelated/uncomparable branch ' + branch.name + ': ' + error.message);
+                continue;
+              }
+              if (ahead !== 0) {
+                core.info('Kept unmerged work: ' + branch.name + ' (' + ahead + ' unique commits)');
                 continue;
               }
               try {
