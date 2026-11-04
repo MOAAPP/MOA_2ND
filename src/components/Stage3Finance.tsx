@@ -92,7 +92,7 @@ export function Stage3Provider({children}: {children: ReactNode}) {
         setParams({
           ...emptyReq, user_id:user, as_of:day, purchase_date:shiftDate(day,1),
           purchase_amount:amount, savings_amount:amount, investment_amount:amount,
-          investment_code:firstInstrument?.code, allocation:splitBudget(amount),
+          investment_code:firstInstrument?.code, allocation:splitBudget(Math.min(amount,Math.max(0,current.available_cash))),
         });
         setLoading(false);
       })
@@ -106,7 +106,7 @@ export function Stage3Provider({children}: {children: ReactNode}) {
     if(!home||homeKey!==`${user}:${day}` || params.user_id!==user || params.as_of!==day)return;
     const controller=new AbortController();
     const timer=window.setTimeout(()=>{
-      setComparing(true);setCompareError('');
+      setComparing(true);setComparison(null);setCompareError('');
       compareScenarios(params,controller.signal).then(data=>{
         if(!controller.signal.aborted)setComparison(data);
       }).catch(e=>{
@@ -231,7 +231,7 @@ export function Stage3Worlds() {
   const [saving,setSaving]=useState(false);
   const updateAmount=(purchase_amount:number)=>updateParams({purchase_amount,
     savings_amount:purchase_amount,investment_amount:purchase_amount,
-    allocation:splitBudget(purchase_amount)});
+    allocation:splitBudget(Math.min(purchase_amount,Math.max(0,home?.available_cash??0)))});
   const allocated=Object.values(params.allocation).reduce((sum, n)=>sum+n,0);
   const capExceeded=allocated>params.purchase_amount || (home!=null&&allocated>home.available_cash);
   async function save() {
