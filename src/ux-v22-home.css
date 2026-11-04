@@ -29,6 +29,7 @@
 .ux-home-risk > .mo-home { margin: 0; border: 1px solid var(--ux-stroke); border-radius: 22px; }
 .ux-home-risk .mo-home-actions { margin-top: 12px; }
 .ux-home-risk .mo-home-actions > button { min-height: 46px; }
+.ux-home-risk .ux-home-risk-action { border: 1px solid #d7ddf7; background: #f5f6ff; color: #3e45a4; font-weight: 750; box-shadow: none; }
 .ux-home-risk .mo-home-title { letter-spacing: -.035em; }
 
 .ux-home-ledger { padding: 18px 17px 17px; margin: 0 0 18px; background: #fff; border: 1px solid var(--ux-stroke); border-radius: 22px; box-shadow: 0 4px 22px rgba(27,33,62,.035); }
