@@ -8,6 +8,12 @@ on:
     paths:
       - .github/workflows/moa-20-users-generate.yml
       - scripts/data/build-moa-dataset.mjs
+      - tests/sharedDataset.test.ts
+      - tests/s01Showcase.test.ts
+      - src/lib/moa/bridge.ts
+      - src/lib/demoWorld.ts
+      - docs/data/S01_SHOWCASE_DEMO.md
+      - docs/data/MOA_92D_GUIDE.md
 
 permissions:
   contents: write
@@ -50,7 +56,7 @@ jobs:
         run: |
           npm ci
           npx vitest run tests/sharedDataset.test.ts tests/s01Showcase.test.ts
-          npm run typecheck
+          npm run build
       - name: Create shareable team ZIP
         run: |
           python3 - <<'PY'
@@ -59,6 +65,7 @@ jobs:
           root = Path('public/data')
           paths = [root / 'moa-92days.json', *sorted(root.glob('moa-92days-*.csv'))]
           paths.append(Path('docs/data/MOA_92D_GUIDE.md'))
+          paths.append(Path('docs/data/S01_SHOWCASE_DEMO.md'))
           with ZipFile(root / 'moa-92days-20users-team.zip', 'w', compression=ZIP_DEFLATED, compresslevel=9) as archive:
               for path in paths:
                   archive.write(path, arcname=path.name)
