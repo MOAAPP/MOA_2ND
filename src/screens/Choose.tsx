@@ -76,12 +76,12 @@ export function Choose() {
       price,
       altPrice: alt > 0 && alt < price ? alt : 0,
       frequency: freq,
-      wallet: { cash: w.cash, fixedBills: WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
+      wallet: { cash: w.cash, fixedBills: w.fixedBills ?? WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
       today: bank.today,
       ctx: bank.ctx,
       history: bank.bank.contracts,
     }),
-    [price, alt, freq, w.cash, bank.today, bank.ctx, bank.bank.contracts],
+    [price, alt, freq, w.cash, w.fixedBills, bank.today, bank.ctx, bank.bank.contracts],
   );
   const hasAlt = alt > 0 && alt < price;
   const holdName = hasAlt ? '더 싸게 산 나' : '참은 나';
