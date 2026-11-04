@@ -169,7 +169,7 @@ export function SaveHome() {
       <section className="t-card b-clock">
         <div className="t-card-head"><h2>시간 이동</h2><span className="t-badge amber">발표·체험용</span></div>
         <p className="t-card-desc">
-          앱 날짜 <b className="num">{kDate(today)}</b>{bank.clockOffsetDays ? ` (실제보다 ${bank.clockOffsetDays}일 뒤)` : ''}. 날짜를 앞으로 옮기면 그 사이의 자동이체와 만기가 차례로 처리돼요.
+          앱 날짜 <b className="num">{kDate(today)}</b>{bank.clockOffsetDays ? ` (기준일보다 ${bank.clockOffsetDays}일 뒤)` : ''}. 날짜를 앞으로 옮기면 그 사이의 가상 계약 자동이체와 만기가 처리돼요. 합성 결제계좌의 급여·월세를 다시 입출금하지 않아요.
         </p>
         <div className="t-quick">
           <button onClick={() => travel(7)}>+1주</button>
