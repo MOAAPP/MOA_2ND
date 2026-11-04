@@ -45,11 +45,23 @@ jobs:
           }
           console.log('Validated 20 synthetic profiles and 1840 distinct daily rows');
           NODE
+      - name: Create shareable team ZIP
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          root = Path('public/data')
+          paths = [root / 'moa-92days.json', *sorted(root.glob('moa-92days-*.csv'))]
+          paths.append(Path('docs/data/MOA_92D_GUIDE.md'))
+          with ZipFile(root / 'moa-92days-20users-team.zip', 'w', compression=ZIP_DEFLATED, compresslevel=9) as archive:
+              for path in paths:
+                  archive.write(path, arcname=path.name)
+          PY
       - name: Commit generated fixtures
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/moa-92days.json public/data/moa-92days-*.csv src/data/moa-demo-s01.json
+          git add public/data/moa-92days.json public/data/moa-92days-*.csv public/data/moa-92days-20users-team.zip src/data/moa-demo-s01.json
           if ! git diff --cached --quiet; then
             git commit -m "chore(data): generate 20-user 92-day synthetic fixtures"
             git push origin HEAD:feat/shared-92-day-dataset-20-users
