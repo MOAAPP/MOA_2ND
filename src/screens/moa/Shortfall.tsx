@@ -11,7 +11,7 @@ import {
 } from '../../lib/moa';
 import { useNav } from '../../state/nav';
 import { useMoa } from '../../state/moa';
-import { AiLabel, BalanceChart, fmt, Fold, GradeBadge, HelpCard, md, ReliabilityRow } from './parts';
+import { AiLabel, BalanceChart, fmt, GradeBadge, HelpCard, md, ReliabilityRow } from './parts';
 
 /**
  * 결제일 잔고 상세 — 이 화면의 일: "다가오는 필수결제마다 그날 결제계좌에 돈이 남는지" 보여주기.
@@ -22,10 +22,11 @@ export function Shortfall({ paymentKey }: { paymentKey?: string } = {}) {
   const { moa, report, today, now, set } = useMoa();
   const [view, setView] = useState<'onTime' | 'late'>('onTime');
   const [balOpen, setBalOpen] = useState(false);
+  const [detail, setDetail] = useState<'graph' | 'evidence' | null>(null);
   const [sel, setSel] = useState<string | null>(paymentKey ?? null);
   const [allCases, setAllCases] = useState(false);
 
-  const until = addDays(today, 14);
+  const chartUntil = addDays(today, 30);
   const keys: ScenarioKey[] = view === 'late' ? ['delay', 'combo'] : report.forecast.ready.ready ? ['base', 'high'] : ['registered'];
   const focus = (sel && report.payments.find((p) => p.key === sel)) || report.worst;
   const ev = report.evidence;
@@ -93,30 +94,55 @@ export function Shortfall({ paymentKey }: { paymentKey?: string } = {}) {
 
           <HelpCard report={report} />
 
-          <Fold title="잔고 흐름 그래프" hint="앞으로 30일, 날짜별 결제계좌 잔고">
-            <Chips label="입금 시나리오">
-              <Chip on={view === 'onTime'} onClick={() => setView('onTime')}>입금 예정대로</Chip>
-              <Chip on={view === 'late'} onClick={() => setView('late')}>입금 {report.delayDays}일 지연</Chip>
-            </Chips>
-            <BalanceChart series={report.series} keys={keys} payments={report.payments} from={today} until={until} />
-            <p className="mo-fine">판단은 14일 안 결제일만 해요. 확률은 쓰지 않고 '평소보다 많이 쓰는 경우'로만 보여드려요.</p>
-          </Fold>
-
-          <Fold title="어떻게 계산했어요?" hint="잔액·출금·입금·예상 지출">
-            <div className="t-card-head"><AiLabel>숫자는 모두 계산값</AiLabel></div>
-            <dl className="mo-kv">
-              <div><dt>결제계좌 잔액 확인</dt><dd>{fmt(report.anchorBalance ?? 0)}<small>{report.anchorAt ? formatKDateTime(report.anchorAt) : ''}{moa.anchor?.source === 'sms' ? ' · 문자' : ' · 직접 입력'}</small></dd></div>
-              <div><dt>14일 안 확정·등록 출금</dt><dd>{fmt(ev.confirmedOut)}</dd></div>
-              <div><dt>14일 안 예상 변동 지출 (결제계좌분)</dt><dd>{report.forecast.ready.ready ? fmt(ev.forecastOut) : '예측 전'}<small>{report.forecast.ready.message}</small></dd></div>
-              <div><dt>예정 입금</dt><dd>{ev.scheduledIn.length ? ev.scheduledIn.map((x) => `${md(x.date)} ${x.label} ${fmt(x.amount)}`).join(', ') : '없음'}</dd></div>
-              <div><dt>불확실 입금 (계산에서 뺌)</dt><dd>{ev.uncertainIn.length ? ev.uncertainIn.map((x) => `${md(x.date)} ${x.label} ${fmt(x.amount)}`).join(', ') : '없음'}{report.ifUncertainArrives !== null && <small>들어온다면 가장 낮은 결제일 잔고 {fmt(report.ifUncertainArrives)}</small>}</dd></div>
-              {report.forecast.ready.ready && <div><dt>결제 수단 비중 (최근 4주)</dt><dd>결제계좌 {Math.round(report.forecast.shares.pay * 100)}% · 신용카드 {Math.round(report.forecast.shares.credit * 100)}% · 현금·다른 계좌 {Math.round(report.forecast.shares.outside * 100)}%</dd></div>}
-              {ev.outsideCount > 0 && <div><dt>결제계좌와 무관한 소비</dt><dd>{ev.outsideCount}건<small>지갑 현금·다른 계좌 체크카드는 소비 집계에만 넣어요</small></dd></div>}
-            </dl>
-          </Fold>
+          <section className="t-card mo-details-launch">
+            <h2>분석 자세히 보기</h2>
+            <p>그래프와 계산 근거는 별도 화면에서 확인할 수 있어요.</p>
+            <div className="mo-details-launch-actions">
+              <button type="button" onClick={() => setDetail('graph')}>
+                잔고 흐름 그래프 <span aria-hidden="true">↗</span>
+              </button>
+              <button type="button" onClick={() => setDetail('evidence')}>
+                계산 근거 확인 <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </section>
         </>
       )}
 
+      {detail && (
+        <Sheet title="결제일 분석 상세" onClose={() => setDetail(null)}>
+          <div className="mo-detail-tabs" role="tablist" aria-label="분석 종류">
+            <button type="button" role="tab" aria-selected={detail === 'graph'} onClick={() => setDetail('graph')}>잔고 흐름</button>
+            <button type="button" role="tab" aria-selected={detail === 'evidence'} onClick={() => setDetail('evidence')}>계산 근거</button>
+          </div>
+          {detail === 'graph' ? (
+            <div className="mo-detail-panel" role="tabpanel" aria-label="잔고 흐름 그래프">
+              <h3>앞으로 30일 잔고 흐름</h3>
+              <p className="mo-fine">30일 그래프는 참고용이에요. 부족 위험 등급은 앞으로 14일 안의 필수결제일만 판단해요.</p>
+              <Chips label="입금 시나리오">
+                <Chip on={view === 'onTime'} onClick={() => setView('onTime')}>입금 예정대로</Chip>
+                <Chip on={view === 'late'} onClick={() => setView('late')}>입금 {report.delayDays}일 지연</Chip>
+              </Chips>
+              <BalanceChart series={report.series} keys={keys} payments={report.payments} from={today} until={chartUntil} height={225} />
+              <p className="mo-fine">파란 선은 기본, 점선은 지출 증가 또는 입금 지연을 가정한 경우예요. 통장에 실제로 들어오고 나간 돈과는 달라질 수 있어요.</p>
+            </div>
+          ) : (
+            <div className="mo-detail-panel" role="tabpanel" aria-label="결제일 계산 근거">
+              <div className="t-card-head"><AiLabel>숫자는 계산 엔진의 결과예요</AiLabel></div>
+              <dl className="mo-kv">
+                <div><dt>결제계좌 잔액 확인</dt><dd>{fmt(report.anchorBalance ?? 0)}<small>{report.anchorAt ? formatKDateTime(report.anchorAt) : ''}{moa.anchor?.source === 'sms' ? ' · 문자' : ' · 직접 입력'}</small></dd></div>
+                <div><dt>14일 안 확정·등록 출금</dt><dd>{fmt(ev.confirmedOut)}</dd></div>
+                <div><dt>14일 안 예상 변동 지출 (결제계좌분)</dt><dd>{report.forecast.ready.ready ? fmt(ev.forecastOut) : '예측 전'}<small>{report.forecast.ready.message}</small></dd></div>
+                <div><dt>지출 예측 방법</dt><dd>{report.forecast.ready.ready ? (report.forecast.meta.source === 'ml' ? '채택된 ML 모델' : '요일별 평균 기준선') : '확정 일정 기준'}</dd></div>
+                <div><dt>예정 입금</dt><dd>{ev.scheduledIn.length ? ev.scheduledIn.map((x) => `${md(x.date)} ${x.label} ${fmt(x.amount)}`).join(', ') : '없음'}</dd></div>
+                <div><dt>불확실 입금 (기본 계산에서 제외)</dt><dd>{ev.uncertainIn.length ? ev.uncertainIn.map((x) => `${md(x.date)} ${x.label} ${fmt(x.amount)}`).join(', ') : '없음'}{report.ifUncertainArrives !== null && <small>들어온다면 가장 낮은 결제일 잔고 {fmt(report.ifUncertainArrives)}</small>}</dd></div>
+                {report.forecast.ready.ready && <div><dt>결제 수단 비중 (최근 4주)</dt><dd>결제계좌 {Math.round(report.forecast.shares.pay * 100)}% · 신용카드 {Math.round(report.forecast.shares.credit * 100)}% · 현금·다른 계좌 {Math.round(report.forecast.shares.outside * 100)}%</dd></div>}
+                {ev.outsideCount > 0 && <div><dt>결제계좌와 무관한 소비</dt><dd>{ev.outsideCount}건<small>현금·다른 계좌 체크카드는 소비 집계에만 들어가요</small></dd></div>}
+              </dl>
+            </div>
+          )}
+        </Sheet>
+      )}
       {balOpen && <BalanceSheet initial={report.anchorBalance ?? 0} onClose={() => setBalOpen(false)} onDone={(b) => { set((m) => setAnchor(m, b, now)); setBalOpen(false); }} />}
     </div>
   );
