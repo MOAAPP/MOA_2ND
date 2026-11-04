@@ -1,4 +1,5 @@
 import { addDays, startOfMonth, todayKST } from '../../shared/dates';
+import half from '../data/moa-half1.json';
 import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_START_CASH, type WorldDecision, type WorldMovement, type WorldWallet } from './worldWallet';
 
 /**
@@ -88,3 +89,38 @@ export function demoWorldWallet(now = Date.now()): WorldWallet {
 
 /** 사용자가 직접 남긴 평행세계 기록이 하나도 없는지 */
 export const isEmptyWorld = (w: WorldWallet) => (w.decisions?.length ?? 0) === 0 && !(w.movements ?? []).some((m) => m.kind !== 'income' && m.kind !== 'bills');
+
+
+/** The default UI fixture shares its choices/investments with the team's 46-day dataset.
+ * The historical demoWorldWallet remains available to test legacy examples. */
+export function demoWorldWalletFromShared(now = Date.now()): WorldWallet {
+  const today = todayKST(new Date(now));
+  const decisions: WorldDecision[] = half.choices
+    .filter((x) => x.user_id === 'S01' && x.date <= today && x.at <= now)
+    .map((x) => ({ id: x.id, title: x.item, price: x.price, paid: x.paid, choice: x.choice as WorldDecision['choice'], note: '공통 합성 데이터 체험', at: x.at }));
+  const movements: WorldMovement[] = half.transactions
+    .filter((x) => x.user_id === 'S01' && x.date <= today && x.logged && (x.kind === 'income' || (x.kind === 'spend' && x.essential)))
+    .map((x) => ({
+      id: x.kind === 'income' ? 'income-' + x.date : 'bills-' + x.id,
+      kind: x.kind === 'income' ? 'income' : 'bills',
+      amount: x.amount, at: x.occurred_at, memo: x.name,
+    }));
+  const etfs: WorldWallet['etfs'] = {};
+  for (const i of half.investments.filter((x) => x.user_id === 'S01' && x.date <= today && x.at <= now)) {
+    const amount = i.qty * i.price;
+    movements.push({ id: i.id, kind: i.side === 'buy' ? 'buyStock' : 'sellStock', amount, at: i.at,
+      memo: i.name + ' ' + i.qty + '주 ' + (i.side === 'buy' ? '매수' : '매도'), code: i.code, qty: i.qty });
+    const previous = etfs[i.code] ?? { qty: 0, cost: 0 };
+    if (i.side === 'buy') etfs[i.code] = { qty: previous.qty + i.qty, cost: previous.cost + amount };
+    else {
+      const qty = previous.qty - i.qty;
+      if (qty > 0) etfs[i.code] = { qty, cost: Math.round(previous.cost * qty / previous.qty) };
+      else delete etfs[i.code];
+    }
+  }
+  movements.sort((a, b) => a.at - b.at);
+  const received = movements.filter((m) => m.kind === 'income' || m.kind === 'sellStock').reduce((s, m) => s + m.amount, 0);
+  const paid = movements.filter((m) => m.kind === 'bills' || m.kind === 'buyStock').reduce((s, m) => s + m.amount, 0)
+    + decisions.reduce((s, d) => s + d.paid, 0);
+  return { cash: WORLD_START_CASH + received - paid, savings: 0, deposit: 0, installment: 0, etfs, decisions, movements };
+}

@@ -22,7 +22,7 @@ import { FundedInvestDaemon } from './state/fundedInvestDaemon';
 import { NavProvider, useNav, type Screen, type Tab } from './state/nav';
 import { StoreProvider, useStore } from './state/store';
 import { demoData } from './lib/demo';
-import { demoWorldWallet } from './lib/demoWorld';
+import { demoWorldWalletFromShared } from './lib/demoWorld';
 import { emptyInvestJournal } from './lib/fundedInvest';
 import { V8Home } from './screens/V8Finance';
 import { WorldInvestment } from './screens/ParallelLab';
@@ -152,7 +152,7 @@ function Shell() {
           if (hasExistingData) {
             update((s) => ({ ...s, introSeen: true }));
           } else {
-            update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWallet(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
+            update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWalletFromShared(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
           }
           nav.setTab('home');
         }}

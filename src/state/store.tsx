@@ -9,7 +9,7 @@ import type { DecisionRecord, Goal, Profile, ScheduleItem } from '../lib/types';
 import { emptyWorldWallet, migrateWorldWallet, type WorldWallet } from '../lib/worldWallet';
 import { emptyBank, migrateLegacy, type BankState } from '../lib/bank/engine';
 import { todayKST } from '../../shared/dates';
-import { demoWorldWallet, isEmptyWorld } from '../lib/demoWorld';
+import { demoWorldWalletFromShared, isEmptyWorld } from '../lib/demoWorld';
 import { emptyMoa, type MoaState } from '../lib/moa/types';
 import { moaFromProfile } from '../lib/moa/bridge';
 import { appendEvent, emptyResearch, migrateResearch, type ResearchEventBody, type ResearchState } from '../lib/research/log';
@@ -146,7 +146,7 @@ function load(): { state: AppState; error: string | null } {
     const base = initialState();
     const world = migrateWorldWallet(parsed.worldWallet);
     // 예전 체험 저장본은 평행세계가 비어 있었다 → 예시 기록을 채워 바로 보이게
-    const worldWallet = parsed.demo && isEmptyWorld(world) && !parsed.bank?.contracts?.length ? demoWorldWallet() : world;
+    const worldWallet = parsed.demo && isEmptyWorld(world) && !parsed.bank?.contracts?.length ? demoWorldWalletFromShared() : world;
     return {
       state: {
         ...base,
