@@ -1,27 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { addDays, parseISO, todayKST, type ISODate } from '../../../shared/dates';
 import type { ParsedSpend } from '../../../shared/aiPrompts';
-import { formatKey, maskText } from '../../../shared/mask';
-import { AiSourceNote } from '../../components/Ai';
 import { CategoryIcon } from '../../components/CategoryIcon';
 import { Button, Chip, Chips } from '../../components/ds';
 import { Sheet, useToast } from '../../components/ui';
-import { runAi, type AiSource } from '../../lib/ai';
 import { findCardByName, kstMs, METHOD_LABEL, upsertCard, type AccountRef, type MoaState, type NewTxn, type PayMethod, type TxnKind } from '../../lib/moa';
 import { uid } from '../../lib/id';
 import { useMoa } from '../../state/moa';
 import { useStore } from '../../state/store';
 import { Stage2Sms } from '../../components/Stage2Sms';
-import { AiLabel, fmt } from './parts';
+import { fmt } from './parts';
 
-/**
- * 결제 문자 붙여넣기 (기획서 「결제 문자 개인정보 처리」 1~5단계)
- * 1. 원문 입력 (어디에도 저장하지 않음)
- * 2. 규칙 기반 자동 마스킹
- * 3. 'AI에게 보낼 문장' 확인·수정 — 처음 보는 형식만. 승인한 형식은 자동 마스킹 후 바로 보냄
- * 4. 승인한 문자열만 AI로
- * 5. 금액·날짜·결제 수단 확인 후 구조화 값만 저장
- */
+/** 금융 문자는 규칙 기반만 사용. 원문은 모델이나 별도 외부 서비스로 보내지 않는다. */
 
 const SAMPLE = (today: ISODate) => {
   const d = (n: number) => { const p = parseISO(addDays(today, -n)); return `${String(p.m).padStart(2, '0')}/${String(p.d).padStart(2, '0')}`; };
@@ -31,6 +21,61 @@ const SAMPLE = (today: ISODate) => {
     `[Web발신]\n신한카드(1234)승인\n김*현님\n32,000원 일시불\n${d(0)} 19:02\n무신사스토어\n누적 412,300원`,
   ].join('\n\n');
 };
+
+
+/** Non-demo offline path. Demo financial SMS uses the canonical FastAPI rule parser. */
+function parseLocalRules(text: string, today: ISODate): { items: ParsedSpend[]; skipped: number } {
+  const messages = text.replace(/(?<!^)(?=\\[Web발신\\])/g, '\\n\\n').split(/\\n\\s*\\n/g).filter(x => x.trim());
+  const items: ParsedSpend[] = [];
+  let skipped = 0;
+  for (const message of messages) {
+    const lines = message.split('\\n').map(x => x.trim()).filter(Boolean);
+    const body = lines.filter(x => !/(잔액|누적|한도|가용|포인트)/.test(x)).join('\\n');
+    const amountText = body.match(/(\\d{1,3}(?:,\\d{3})+|\\d{3,10})\\s*원/);
+    if (!amountText) { skipped++; continue; }
+    const amount = Number(amountText[1].replace(/,/g, ''));
+    if (!Number.isSafeInteger(amount) || amount <= 0) { skipped++; continue; }
+    const dm = message.match(/(?:(20\\d{2})[./-])?(\\d{1,2})[./-](\\d{1,2})/);
+    let date: string | null = null;
+    if (dm) {
+      let year = Number(dm[1] || today.slice(0, 4));
+      const month = Number(dm[2]);
+      const day = Number(dm[3]);
+      let candidate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      if (!dm[1] && candidate > today) {
+        year -= 1;
+        candidate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
+      const verified = new Date(`${candidate}T12:00:00+09:00`);
+      if (!Number.isNaN(verified.valueOf()) && verified.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }) === candidate) date = candidate;
+    }
+    const time = message.match(/(?:^|\\s)([01]?\\d|2[0-3]):([0-5]\\d)(?:\\s|$)/)?.slice(1).join(':') ?? null;
+    const issuer = message.match(/(KB국민|국민|신한|삼성|현대|롯데|하나|우리|농협|NH|카카오뱅크|토스뱅크|IBK기업)/)?.[1] ?? null;
+    const isCredit = /신용|할부|일시불/.test(message) || (/카드/.test(message) && !/체크/.test(message));
+    const isDebit = /체크/.test(message);
+    const isRefund = /취소|환불/.test(message);
+    const isIncome = /급여|월급|입금|용돈/.test(message) && !isRefund;
+    const isCardBill = /카드(?:이용)?대금|카드값|청구.*출금/.test(message);
+    const kind: ParsedSpend['kind'] = isCardBill ? 'card_payment' : isRefund ? 'refund' : isIncome ? 'income' : 'spend';
+    const method: ParsedSpend['method'] = isCardBill ? 'transfer' : isCredit ? 'credit' : isDebit ? 'debit'
+      : /이체|송금|출금|입금/.test(message) ? 'transfer' : null;
+    const name = [...lines].reverse().find(l => !/(Web발신|승인|누적|잔액|한도|\\d{2}[:/.-]\\d|\\d[\\d,]*\\s*원|\\d{4}|님)/.test(l))
+      ?? issuer ?? '거래 상대 확인 필요';
+    const category = /커피|카페|메가|스타벅스/.test(name) ? '카페'
+      : /배달|식당|분식|편의점/.test(name) ? '식비'
+      : /무신사|의류|패션/.test(name) ? '패션' : '기타';
+    const installment = message.match(/할부\\s*(\\d{1,2})\\s*개?월?/);
+    const balanceAfter = message.match(/잔액\\s*([\\d,]+)\\s*원?/)?.[1];
+    items.push({
+      amount, date, time, method, kind, issuer, name,
+      category, confidence: 0.8,
+      essential: /월세|관리비|통신비|보험료|전기|수도/.test(name),
+      installments: installment ? Number(installment[1]) : null,
+      balanceAfter: balanceAfter ? Number(balanceAfter.replace(/,/g, '')) : null,
+    });
+  }
+  return { items, skipped };
+}
 
 const KIND_LABEL: Record<TxnKind, string> = { spend: '소비', income: '입금', card_payment: '카드 대금', transfer_self: '내 계좌 이체', saving: '저축', refund: '취소·환불' };
 
@@ -56,39 +101,19 @@ function guessRow(p: ParsedSpend, moa: MoaState): Row {
 export function PasteFlow({ onClose }: { onClose: () => void }) {
   const { moa, set, saveTxns } = useMoa();
   const { state } = useStore();
-  const [pythonMode, setPythonMode] = useState(false);
   const toast = useToast();
   const today = todayKST();
-  const [step, setStep] = useState<'input' | 'review' | 'confirm'>('input');
+  const [step, setStep] = useState<'input' | 'confirm'>('input');
   const [raw, setRaw] = useState('');
-  const [masked, setMasked] = useState('');
-  const [hide, setHide] = useState('');
-  const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
-  const [source, setSource] = useState<AiSource>('example');
   const [skipped, setSkipped] = useState(0);
 
-  const blocks = useMemo(() => raw.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean), [raw]);
-  const keys = useMemo(() => [...new Set(blocks.map(formatKey))], [blocks]);
-  const trusted = !moa.confirmEveryTime && keys.length > 0 && keys.every((k) => moa.trustedFormats.includes(k));
-
-  const send = async (text: string) => {
-    setBusy(true);
-    const r = await runAi('parseSpend', { text, today });
-    setRows(r.data.items.map((p) => guessRow(p, moa)));
-    setSkipped(r.data.skipped);
-    setSource(r.source);
-    set((m) => ({ ...m, aiNoticeSeen: true, trustedFormats: [...new Set([...m.trustedFormats, ...keys])] }));
-    setRaw(''); // 원문은 화면 상태에서도 바로 지운다
-    setBusy(false);
-    setStep('confirm');
-  };
-
   const next = () => {
-    const m = maskText(raw).text;
-    if (trusted) { void send(m); return; }
-    setMasked(m);
-    setStep('review');
+    const result = parseLocalRules(raw, today);
+    setRows(result.items.map(item => guessRow(item, moa)));
+    setSkipped(result.skipped);
+    setRaw('');
+    setStep('confirm');
   };
 
   const patch = (i: number, p: Partial<Row>) => setRows((rs) => rs.map((r, k) => (k === i ? { ...r, ...p } : r)));
@@ -135,24 +160,12 @@ export function PasteFlow({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
-  if (pythonMode) return <Stage2Sms onClose={() => setPythonMode(false)} />;
-
-  if (step === 'review') {
-    return (
-      <Sheet title="AI에게 보낼 문장" onClose={onClose} footer={<Button disabled={busy || !masked.trim()} onClick={() => void send(maskText(masked, hide.split(/[,\s]+/)).text)}>{busy ? 'AI가 읽는 중…' : '가린 문장 보내기'}</Button>}>
-        <p className="mo-fine">계좌·카드 번호, 전화번호, 이름으로 보이는 부분을 가렸어요. 더 가릴 부분이 있으면 지우거나 아래에 적어 주세요. 이 문장만 외부 AI로 가고, 원문은 저장하지 않아요.</p>
-        <textarea className="lg-textarea mo-masked" rows={8} value={masked} onChange={(e) => setMasked(e.target.value)} />
-        <label className="mo-field wide">더 가릴 말 <input value={hide} onChange={(e) => setHide(e.target.value)} placeholder="쉼표로 구분 (예: 민지네)" /></label>
-        <p className="mo-fine">이 형식({keys.join(', ')})은 다음부터 자동으로 가린 뒤 바로 보내요. 설정에서 매번 확인으로 바꿀 수 있어요.</p>
-      </Sheet>
-    );
-  }
+  if (state.demo) return <Stage2Sms onClose={onClose} />;
 
   if (step === 'confirm') {
     return (
       <Sheet title={`${rows.length}건을 찾았어요`} onClose={onClose}
         footer={<Button disabled={!chosen.length || missing.length > 0} onClick={save}>{missing.length ? `빈칸 ${missing.length}건을 채워 주세요` : `${chosen.length}건 저장`}</Button>}>
-        <AiLabel />
         <ul className="mo-confirm">
           {rows.map((r, i) => (
             <li key={i} className={r.on ? '' : 'off'}>
@@ -185,23 +198,19 @@ export function PasteFlow({ onClose }: { onClose: () => void }) {
           {!rows.length && <li className="t-empty">거래를 찾지 못했어요. 금액이 들어 있는지 확인해 주세요.</li>}
         </ul>
         {skipped > 0 && <p className="mo-fine">읽지 못한 {skipped}건은 뺐어요.</p>}
-        <AiSourceNote source={source} />
       </Sheet>
     );
   }
 
   return (
-    <Sheet title="결제 문자 붙여넣기" onClose={onClose} footer={<Button disabled={!raw.trim() || busy} onClick={next}>{busy ? 'AI가 읽는 중…' : trusted ? '가린 뒤 바로 읽기' : '다음'}</Button>}>
-      {!moa.aiNoticeSeen && (
-        <div className="mo-notice">
-          <b>AI로 읽기 전에 알려드려요</b>
-          <p>문자는 계좌·카드 번호, 전화번호, 이름을 가린 뒤 외부 AI(Anthropic API, 입력을 학습에 쓰지 않는 조건)로 보내요. 처음 보는 형식은 보낼 문장을 먼저 보여드려요. 원문은 어디에도 저장하지 않아요.</p>
-        </div>
-      )}
-      {state.demo && <button className="btn ghost block" type="button" onClick={() => setPythonMode(true)}>Python FastAPI 결제 문자 구조화 사용하기</button>}
+    <Sheet title="결제 문자 붙여넣기" onClose={onClose} footer={<Button disabled={!raw.trim()} onClick={next}>규칙으로 거래 읽기</Button>}>
+      <div className="mo-notice">
+        <b>결제 문자는 AI로 전송하지 않아요</b>
+        <p>문자 내용은 이 기기에서 규칙으로만 분석해요. 추출된 금액과 날짜, 결제 수단을 직접 확인한 뒤 저장하며 문자 원문은 보관하지 않아요.</p>
+      </div>
       <textarea className="lg-textarea" value={raw} onChange={(e) => setRaw(e.target.value.slice(0, 4000))} placeholder="[Web발신] 국민체크 승인 18,500원 …" rows={7} />
       <button type="button" className="lg-sample" onClick={() => setRaw(SAMPLE(today))}>예시 문자 넣어보기</button>
-      <p className="mo-fine">체크카드는 결제계좌에서 바로, 신용카드는 다음 카드값 출금일에 빠지는 것으로 계산해요. 지갑 현금은 소비 집계에만 넣어요.</p>
+      <p className="mo-fine">체크카드는 결제계좌에서 바로, 신용카드는 카드대금 출금일에 반영하는 것이 원칙이에요. 실제 출금일은 확인이 필요해요.</p>
     </Sheet>
   );
 }
