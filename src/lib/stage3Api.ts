@@ -62,6 +62,8 @@ export interface CompareRequest {
   savings_goal_target?: number; savings_goal_current: number;
   investment_amount: number; investment_code?: string;
   investment_return_percent: number; minimum_required_balance: number;
+  virtual_sell_qty?: number; virtual_sell_unit_price?: number;
+  virtual_sell_date?: string; virtual_sell_settlement_date?: string;
   stress: 'baseline'|'higher_spending'|'delayed_income'|'combined'|'investment_loss';
   allocation: Allocation;
 }
@@ -78,6 +80,7 @@ export interface ScenarioPath {
     savings_balance: number; investment_value: number; investment_profit_loss: number })[];
   virtual_savings: number; virtual_investment_value: number; virtual_investment_profit_loss: number;
   investment_quantity: number; investment_average_price: number|null;
+  virtual_investment_realized_profit_loss: number;
   savings_goal_reached_date: string|null; purchase_completed: boolean;
   purchase_delay_days: number; assumptions: string[];
 }
