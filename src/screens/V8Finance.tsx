@@ -53,7 +53,7 @@ function HomeBrief() {
   const input = useMemo(() => briefInput(state.worldWallet, all, today), [state.worldWallet, all, today]);
   const ai = useAi('brief', input, JSON.stringify(input));
   return (
-    <AiCard title="오늘의 분석" loading={ai.loading} source={ai.source} tone="light" className="ux-home-brief" foot={false}>
+    <AiCard title="오늘의 분석" loading={ai.loading} source={ai.source} className="ux-home-brief" foot={false}>
       {ai.data && <>
         <strong className="ai-headline">{ai.data.headline}</strong>
         <p className="ai-body">{ai.data.body}</p>
@@ -137,7 +137,6 @@ export function V8Home() {
   const [showBudget, setShowBudget] = useState(false);
   const [showAi, setShowAi] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
-  const day = appDay(state);
   const when = appNow(state);
   const gap = useMemo(() => {
     const points = worldHistory(walletData, 30, when);
