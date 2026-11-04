@@ -23,7 +23,6 @@ const methodLabels: Record<PaymentMethod, string> = {
 
 export function Stage2Sms({ onClose }: { onClose: () => void }) {
   const [raw, setRaw] = useState('');
-  const [useLlm, setUseLlm] = useState(false);
   const [items, setItems] = useState<ParsedTransaction[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +34,7 @@ export function Stage2Sms({ onClose }: { onClose: () => void }) {
     setBusy(true); setError('');
     setCompleted({});
     try {
-      const response = await analyzeSms('S01', raw, useLlm);
+      const response = await analyzeSms('S01', raw);
       setItems(response.transactions);
       setRaw(''); // Clear original SMS immediately after parsing.
       setInfo(response.skipped ? response.skipped + '건은 파싱하지 못했어요.' : '');
@@ -63,15 +62,13 @@ export function Stage2Sms({ onClose }: { onClose: () => void }) {
       setError(e instanceof Error ? e.message : '저장 실패');
     } finally { setBusy(false); }
   }
-  return <Sheet title="FastAPI 결제 문자 구조화" onClose={onClose}>
+  return <Sheet title="결제 문자 가져오기" onClose={onClose}>
     <p className="sheet-note">합성 사용자 S01의 개발용 입력 화면이에요. 원본 문자는 저장하지 않고, 구조화된 거래만 별도 파일에 저장합니다.</p>
     {!items && <>
       <label className="field"><span className="lab">결제 문자 붙여넣기</span>
         <textarea className="lg-textarea" rows={6} placeholder="카드 승인·계좌 출금·입금 문자 등을 붙여넣으세요."
           value={raw} onChange={e => setRaw(e.target.value.slice(0, 12000))} /></label>
-      <label className="s2-check"><input type="checkbox" checked={useLlm}
-        onChange={e => setUseLlm(e.target.checked)} />
-        규칙으로 읽을 수 없는 메시지만 마스킹 후 외부 LLM에 분석 요청</label>
+      <p className="sheet-note">규칙으로만 분석하며 금융 문자를 외부 AI에 보내지 않아요. 읽지 못한 항목은 직접 확인할 수 있어요.</p>
       <button className="btn primary block" disabled={busy || raw.trim().length < 4}
         onClick={() => void analyze()}>거래 내역 분석하기</button>
     </>}
@@ -87,7 +84,7 @@ export function Stage2Sms({ onClose }: { onClose: () => void }) {
           <p><b>{row.merchant ?? row.issuer ?? '가맹점 확인 필요'}</b>
             {row.duplicate_possible && <small className="sheet-note"> · 중복 가능</small>}</p>
           <p><b>{row.amount == null ? '금액 확인 필요' : won(row.amount)}</b>
-            <small className="sheet-note"> · {row.parsing_source === 'rules' ? '규칙 분석' : 'AI 분석'}</small></p>
+            <small className="sheet-note"> · {row.parsing_source === 'rules' ? '규칙 분석' : '직접 확인 필요'}</small></p>
           <label className="field"><span className="lab">거래 상대</span>
             <input className="input" value={row.merchant ?? ''} onChange={e => patch(i, { merchant: e.target.value })} /></label>
           <label className="field"><span className="lab">거래 유형</span>
