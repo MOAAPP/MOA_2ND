@@ -62,7 +62,7 @@ export function briefInput(w: WorldWallet, all: SpendEntry[], today: ISODate): B
     topCategory: top,
     savedThisMonth: ds.reduce((x, d) => x + d.price - d.paid, 0),
     holdsThisMonth: ds.filter((d) => d.choice !== 'buy').length,
-    nextBill: { date: addMonths(month, 1), amount: WORLD_FIXED_BILLS },
+    nextBill: { date: addMonths(month, 1), amount: w.fixedBills ?? WORLD_FIXED_BILLS },
   };
 }
 
