@@ -108,7 +108,11 @@ describe('S01 showcase persona, isolated from 19 unchanged synthetic users',()=>
     expect(bills.find(b=>b.date==='2026-11-14')?.amount).toBe(expected.amount);
     expect(state.schedule.find(x=>x.id==='S01-side-income')?.status).toBe('uncertain');
     expect(state.schedule.find(x=>x.id==='S01-income')?.status).toBe('scheduled');
+    expect(Object.keys(state.dayStatus).length).toBeGreaterThan(20);
+    expect(state.dayStatus['2026-11-02']).toBeUndefined();
     const risk=assessRisk(state,now,snapshot);
+    expect(risk.forecast.ready.ready).toBe(true);
+    expect(risk.forecast.meta.source).toBe('baseline');
     expect(risk.payments.some(p=>p.date==='2026-11-14'&&p.name.includes('카드'))).toBe(true);
     expect(risk.payments.some(p=>p.date==='2026-11-05')).toBe(true);
   });
