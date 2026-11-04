@@ -1,0 +1,14 @@
+﻿id,user_id,date,occurred_at,kind,name,category,amount_krw,method,essential,account_effect,observed,scheduled,split,synthetic
+U01-T0073,U01,2026-11-04,1793758380000,spend,저녁,식비,12500,credit,False,0,0,0,future_scenario,True
+U01-T0074,U01,2026-11-05,1793834040000,fixed,구독료,구독,12900,transfer,True,1,0,1,future_scenario,True
+U01-T0075,U01,2026-11-05,1793844900000,spend,생필품,생활,9900,debit,False,1,0,0,future_scenario,True
+U01-T0076,U01,2026-11-06,1793931360000,spend,저녁,식비,12300,credit,False,0,0,0,future_scenario,True
+U01-T0077,U01,2026-11-07,1794017820000,spend,대중교통,교통,1800,credit,False,0,0,0,future_scenario,True
+U01-T0078,U01,2026-11-07,1794032280000,spend,생필품,생활,11500,debit,False,1,0,0,future_scenario,True
+U01-T0079,U01,2026-11-08,1794104340000,spend,영화,문화·여가,17300,debit,False,1,0,0,future_scenario,True
+U01-T0080,U01,2026-11-08,1794118800000,spend,카페,카페,4300,debit,False,1,0,0,future_scenario,True
+U01-T0081,U01,2026-11-08,1794133260000,spend,편의점,식비,5600,debit,False,1,0,0,future_scenario,True
+U01-T0082,U01,2026-11-09,1794190920000,spend,생활잡화,쇼핑,15500,debit,False,1,0,0,future_scenario,True
+U01-T0083,U01,2026-11-10,1794270180000,income,알바비,수입,850000,transfer,False,1,0,0,future_scenario,True
+U01-T0084,U01,2026-11-10,1794277440000,spend,저녁,식비,10500,debit,False,1,0,0,future_scenario,True
+U01-T0085,U01,2026-11-11,1794363900000,spend,점심,식비,8000,debit,���q�^

@@ -1,0 +1,15 @@
+﻿id,user_id,date,occurred_at,kind,name,category,amount_krw,method,essential,account_effect,observed,scheduled,split,synthetic
+U01-T0002,U01,2026-09-12,1789178520000,spend,저녁,식비,11200,debit,False,1,1,0,train,True
+U01-T0003,U01,2026-09-12,1789192980000,spend,카페,카페,6500,debit,False,1,1,0,train,True
+U01-T0004,U01,2026-09-12,1789207440000,spend,저녁,식비,13700,debit,False,1,1,0,train,True
+U01-T0005,U01,2026-09-13,1789265100000,spend,생필품,생활,11200,debit,False,1,1,0,train,True
+U01-T0006,U01,2026-09-13,1789279560000,spend,편의점,식비,3500,debit,False,1,1,0,train,True
+U01-T0007,U01,2026-09-13,1789294020000,spend,대중교통,교통,1900,debit,False,1,1,0,train,True
+U01-T0008,U01,2026-09-14,1789351680000,spend,편의점,식비,4400,debit,False,1,1,0,train,True
+U01-T0009,U01,2026-09-15,1789427340000,fixed,통신비,통신,49000,transfer,True,1,1,1,train,True
+U01-T0010,U01,2026-09-15,1789438200000,spend,점심,식비,8000,debit,False,1,1,0,train,True
+U01-T0011,U01,2026-09-15,1789452660000,spend,영화,문화·여가,14300,credit,False,0,1,0,train,True
+U01-T0012,U01,2026-09-16,1789524720000,spend,점심,식비,9700,debit,False,1,1,0,train,True
+U01-T0013,U01,2026-09-17,1789611180000,spend,생활잡화,쇼핑,14800,debit,False,1,1,0,train,True
+U01-T0014,U01,2026-09-18,1789697640000,spend,영화,문화·여가,9500,debit,False,1,1,0,train,True
+U01-T0015,U01,2026-09-19,1789784100000,spend,생활잡화,쇼핑,16000,debit,False,1,1,0,train,True���q�^

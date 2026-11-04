@@ -1,0 +1,63 @@
+[
+  {
+    "user_id": "U01",
+    "segment": "자취 대학생",
+    "scenario": "월세 직전 부족",
+    "initial_balance_2026_09_11": 210000,
+    "balance_as_of": -203400,
+    "as_of": "2026-11-03",
+    "income_amount_krw": 850000,
+    "income_day": 10,
+    "simulated_income_delay_days": 0,
+    "observed_day_count": 45,
+    "schedule": [
+      {
+        "id": "U01-income",
+        "name": "월급·용돈",
+        "direction": "in",
+        "amount": 850000,
+        "recurrence": "monthly",
+        "day": 10,
+        "essential": false,
+        "status": "scheduled"
+      },
+      {
+        "id": "U01-fixed0",
+        "name": "월세",
+        "direction": "out",
+        "amount": 380000,
+        "recurrence": "monthly",
+        "day": 25,
+        "essential": true,
+        "saving": false
+      },
+      {
+        "id": "U01-fixed1",
+        "name": "통신비",
+        "direction": "out",
+        "amount": 49000,
+        "recurrence": "monthly",
+        "day": 15,
+        "essential": true,
+        "saving": false
+      },
+      {
+        "id": "U01-fixed2",
+        "name": "구독료",
+        "direction": "out",
+        "amount": 12900,
+        "recurrence": "monthly",
+        "day": 5,
+        "essential": true,
+        "saving": false
+      }
+    ],
+    "synthetic": true
+  },
+  {
+    "user_id": "U02",
+    "segment": "통학 대학생",
+    "scenario": "교통·카페 반복",
+    "initial_balance_2026_09_11": 340000,
+    "balance_as_of": 940500,
+    "as_of": "2026-11-���q�^

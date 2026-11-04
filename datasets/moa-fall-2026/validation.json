@@ -1,0 +1,8 @@
+{
+  "users": 10,
+  "days_per_user": 92,
+  "daily_rows": 920,
+  "observed_transactions": 726,
+  "future_scenario_transactions": 573,
+  "observed_spending_days": 451
+}
