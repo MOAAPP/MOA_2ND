@@ -28,6 +28,7 @@ export function Stage5Agent({ user, day, productName }: {
 }) {
   const [goal, setGoal] = useState('');
   const [stress, setStress] = useState<Stress>('baseline');
+  const [lossRate, setLossRate] = useState<number | null>(null);
   const [conditions, setConditions] = useState<Conditions | null>(null);
   const [search, setSearch] = useState<AgentSearch | null>(null);
   const [analysis, setAnalysis] = useState<AgentAnalysis | null>(null);
@@ -39,12 +40,17 @@ export function Stage5Agent({ user, day, productName }: {
 
   const searchRequest = (rules: Conditions): AgentSearchRequest => ({
     conditions: rules, horizon_days: 30, max_evaluations: 72, max_results: 4, stress,
+    investment_return_percent: stress === 'investment_loss' ? lossRate ?? 0 : 0,
   });
 
   const start = async (mode: 'understand' | 'recalculate') => {
     controller.current?.abort();
     const current = new AbortController();
     controller.current = current;
+    if (stress === 'investment_loss' && (lossRate == null || lossRate >= 0)) {
+      setError('투자 손실률을 직접 설정해 주세요. 없는 위험률을 가정하지 않아요.');
+      return;
+    }
     setBusy(true); setError(''); setSaved('');
     setSearch(null);
     try {
@@ -53,7 +59,7 @@ export function Stage5Agent({ user, day, productName }: {
           setError('어떤 선택을 고민하고 있는지 한 문장으로 적어 주세요.');
           return;
         }
-        const result = await analyzeGoal(user, day, goal.trim(), stress, current.signal);
+        const result = await analyzeGoal(user, day, goal.trim(), stress, stress === 'investment_loss' ? lossRate ?? 0 : 0, current.signal);
         if (current.signal.aborted) return;
         setAnalysis(result); setConditions(result.conditions); setSearch(result.search);
       } else if (conditions) {
@@ -111,6 +117,11 @@ export function Stage5Agent({ user, day, productName }: {
           <option value="investment_loss">투자 손실 가정</option>
         </select>
       </label>
+      {stress === 'investment_loss' && <label htmlFor="st5-loss">가상 투자 손실률 (%)
+        <input id="st5-loss" type="number" min="-100" max="-1" step="1"
+          placeholder="손실률 입력" value={lossRate ?? ''}
+          onChange={e => { setLossRate(e.target.value === '' ? null : Math.max(-100, Math.min(0, Math.round(Number(e.target.value))))); setSearch(null); }} />
+      </label>}
       <button className="st5-primary" disabled={busy} type="button" onClick={() => void start('understand')}>
         {busy ? '금융 경로 분석 중…' : '내 목표 분석하기'}
       </button>
