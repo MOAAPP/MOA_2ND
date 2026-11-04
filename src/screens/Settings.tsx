@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { formatKDate, formatKDateTime, todayKST } from '../../shared/dates';
+import { addDays, formatKDate, formatKDateTime, todayKST } from '../../shared/dates';
+import { appDay, DEMO_END_DAY, DEMO_SNAPSHOT_DAY } from '../lib/appClock';
 import { won } from '../../shared/format';
 import { LEVEL_LABEL } from '../../shared/knowledge';
 import { DiscordPanel } from '../components/DiscordPanel';
@@ -70,6 +71,24 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
           <IconChevron width={18} height={18} color="var(--ink-3)" />
         </button>
       </section>
+
+      {state.demo && (
+        <section className="section ux-demo-settings-section">
+          <div className="section-head"><h2>체험 날짜</h2></div>
+          <div className="card ux-demo-settings">
+            <p className="ux-demo-settings-current">{formatKDate(appDay(state))}</p>
+            <p className="small ink2">예시 기록은 11월 4일까지 확정된 합성 데이터예요. 그 이후 날짜는 가정한 결제 일정만 확인할 수 있어요.</p>
+            <div className="ux-demo-settings-controls" role="group" aria-label="체험 날짜 변경">
+              <button type="button" disabled={appDay(state) <= DEMO_SNAPSHOT_DAY}
+                onClick={() => update(v => ({ ...v, demoDay: addDays(appDay(v), -1) }))}>이전 날짜</button>
+              <button type="button" disabled={appDay(state) >= DEMO_END_DAY}
+                onClick={() => update(v => ({ ...v, demoDay: addDays(appDay(v), 1) }))}>다음 날짜</button>
+              <button type="button" disabled={appDay(state) === DEMO_SNAPSHOT_DAY}
+                onClick={() => update(v => ({ ...v, demoDay: DEMO_SNAPSHOT_DAY }))}>처음 날짜로</button>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="section">
         <div className="section-head"><h2>알림</h2></div>
