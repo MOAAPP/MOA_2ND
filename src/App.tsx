@@ -21,8 +21,7 @@ import { MarketProvider } from './state/market';
 import { FundedInvestDaemon } from './state/fundedInvestDaemon';
 import { NavProvider, useNav, type Screen, type Tab } from './state/nav';
 import { StoreProvider, useStore } from './state/store';
-import { demoData } from './lib/demo';
-import { demoWorldWallet } from './lib/demoWorld';
+import { makeFallDemo } from './lib/fallDemo';
 import { emptyInvestJournal } from './lib/fundedInvest';
 import { V8Home } from './screens/V8Finance';
 import { WorldInvestment } from './screens/ParallelLab';
@@ -43,7 +42,7 @@ import { startSession } from './lib/research/log';
 import { Shortfall } from './screens/moa/Shortfall';
 import { MoaSetup, QuickStart } from './screens/moa/MoaSetup';
 import { MoaAlertsDaemon } from './state/moa';
-import { demoMoa, profileFromMoa } from './lib/moa/bridge';
+import { profileFromMoa } from './lib/moa/bridge';
 
 /**
  * 하단 메뉴 = 모아의 두 축.
@@ -146,13 +145,13 @@ function Shell() {
           // "My account" on replay opens account settings instead of doing nothing.
           if (state.profile) nav.push({ name: 'moaSetup' });
         }}
-        onDemo={() => {
+        onDemo={(profileId) => {
           finishIntroPreview();
           nav.reset();
           if (hasExistingData) {
             update((s) => ({ ...s, introSeen: true }));
           } else {
-            update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWallet(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
+            update((s) => ({ ...s, ...makeFallDemo(profileId), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null }));
           }
           nav.setTab('home');
         }}
