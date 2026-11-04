@@ -1,0 +1,52 @@
+name: One-time archive and remove remaining legacy branches
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/archive-unmerged-branches-once.yml'
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Preserve each branch head as an immutable tag, then delete the branch ref
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const namespace = 'legacy-branch-archive-20261105/';
+            const branches = await github.paginate(github.rest.repos.listBranches, {owner, repo, per_page: 100});
+            for (const branch of branches) {
+              if (branch.name === 'main' || branch.protected) continue;
+              const ref = 'tags/' + namespace + branch.name;
+              try {
+                await github.rest.git.createRef({
+                  owner, repo, ref: 'refs/' + ref, sha: branch.commit.sha
+                });
+                core.info('Preserved branch as archive tag: ' + branch.name + ' at ' + branch.commit.sha);
+              } catch (error) {
+                if (error.status !== 422) {
+                  core.warning('Archive failed; kept branch ' + branch.name + ': ' + error.message);
+                  continue;
+                }
+                try {
+                  const existing = await github.rest.git.getRef({owner, repo, ref});
+                  if (existing.data.object.sha !== branch.commit.sha) {
+                    core.warning('Archive tag conflicts; kept branch: ' + branch.name);
+                    continue;
+                  }
+                  core.info('Matching archive tag already exists for ' + branch.name);
+                } catch (e) {
+                  core.warning('Archive verification failed; kept branch ' + branch.name + ': ' + e.message);
+                  continue;
+                }
+              }
+              try {
+                await github.rest.git.deleteRef({owner, repo, ref: 'heads/' + branch.name});
+                core.info('Deleted archived branch: ' + branch.name);
+              } catch (e) {
+                core.warning('Could not delete archived branch ' + branch.name + ': ' + e.message);
+              }
+            }
