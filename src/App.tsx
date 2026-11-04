@@ -145,13 +145,15 @@ function Shell() {
           // "My account" on replay opens account settings instead of doing nothing.
           if (state.profile) nav.push({ name: 'moaSetup' });
         }}
-        onDemo={(profileId) => {
+        onDemo={async (profileId) => {
+          // Never update saved app state until the fixture loads and validates.
+          const bundle = hasExistingData ? null : await makeFallDemo(profileId);
           finishIntroPreview();
           nav.reset();
           if (hasExistingData) {
             update((s) => ({ ...s, introSeen: true }));
           } else {
-            update((s) => ({ ...s, ...makeFallDemo(profileId), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null }));
+            update((s) => ({ ...s, ...bundle!, investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null }));
           }
           nav.setTab('home');
         }}
