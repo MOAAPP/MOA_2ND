@@ -83,7 +83,7 @@ export function demoMoa(nowMs: number): MoaState {
     schedule: user.schedule.map((x) => ({
       id: x.id, name: x.name, direction: x.direction as 'in' | 'out',
       amount: x.amount, recurrence: 'monthly' as const, day: x.day,
-      essential: x.essential, ...(x.direction === 'in' ? { status: 'scheduled' as const } : {}),
+      essential: x.essential, ...(x.direction === 'in' ? { status: x.status === 'uncertain' ? 'uncertain' as const : 'scheduled' as const } : {}),
     })),
     txns,
     // The app does not ask for daily "completion" clicks. Unrecorded dates
