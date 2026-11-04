@@ -19,7 +19,7 @@ React Vite 개발 서버는 `/api/v4` 경로만 FastAPI `:8000`으로 프록시�
 
 ## 원본 데이터 파일
 
-`backend/app/data/source/moa_20users_financial_test_JSON.zip`은 업로드한 원본 ZIP의 이름만 안전하게 바꾼 복사본으로, 내부 파일은 수정하지 않았습니다. GitHub 저장소에는 이 대용량 합성 원본을 별도로 등록해야 하며, 없으면 API가 명시적 503을 반환합니다. 다른 샘플 숫자로 무단 대체하지 않습니다. 데이터 위치를 바꾸려면 `MOA_DATASET_PATH=/absolute/path/data.zip` 설정.
+`backend/app/data/source/moa_20users_financial_test_JSON.zip`은 업로드한 원본 ZIP의 이름만 안전하게 바꾼 복사본으로, 내부 파일은 수정하지 않았습니다. GitHub 기능 브랜치에도 업로드 ZIP의 원본 바이트를 그대로 포함했습니다. 원본 파일이 없으면 API가 명시적 503을 반환합니다. 다른 샘플 숫자로 무단 대체하지 않습니다. 데이터 위치를 바꾸려면 `MOA_DATASET_PATH=/absolute/path/data.zip` 설정.
 
 ## API
 
