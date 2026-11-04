@@ -1,0 +1,63 @@
+/* Stage 3 uses the existing fintech typography, widths and neutral/card hierarchy. */
+.st3 { color: var(--text, #1d2434); padding-bottom: 110px; }
+.st3 .t-head { margin-bottom: 12px; }
+.st3-scope {
+  margin: 8px 0 18px; padding: 13px 14px; background: #f5f7fa;
+  border: 1px solid #e9edf3; border-radius: 15px; display: grid; gap: 10px;
+}
+.st3-scope>div:first-child { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.st3-eyebrow {font-size:10px;letter-spacing:.07em;font-weight:750;color:#636f80}
+.st3-scope small {font-size:11px;color:#697689}
+.st3-fields {display:flex;gap:7px;align-items:end;flex-wrap:wrap;}
+.st3-fields label {display:flex;flex-direction:column;gap:4px;font-size:10px;color:#697689;font-weight:700;flex:1;min-width:95px}
+.st3-fields select,.st3-fields input,.st3-fields button {
+  border:1px solid #dfe5ee;border-radius:9px;background:#fff;color:#253044;
+  min-height:35px;padding:6px 8px;font-size:13px;font-family:inherit
+}
+.st3-fields button {min-width:34px;font-size:18px;padding:2px 9px}
+.st3-fields button:disabled {opacity:.35}
+.st3-hero {background:linear-gradient(120deg,#f0f2ff,#f8faff);border:1px solid #e0e5fb;border-radius:19px;padding:23px 19px;margin-bottom:15px;}
+.st3-hero>small {color:#5f6cb0;font-size:12px}
+.st3-hero h2 {font-size:15px;font-weight:650;margin:8px 0 5px;}
+.st3-hero>strong {font-size:31px;font-weight:800;letter-spacing:-.05em;color:#2f3eb0;display:block}
+.st3-hero>p {font-size:11px;color:#647087;line-height:1.6;margin:10px 0 17px;}
+.st3-horizons {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #e0e5f7;padding-top:14px;gap:7px;}
+.st3-horizons>div {display:grid;gap:5px;min-width:0}
+.st3-horizons small {font-size:10px;color:#69768d}
+.st3-horizons b {font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st3-section {border:1px solid #edf0f4;border-radius:16px;padding:17px 16px;margin:12px 0;background:var(--surface,#fff)}
+.st3-section>h2 {font-size:16px;font-weight:760;margin:0 0 13px;letter-spacing:-.02em}
+.st3-row {display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #f1f3f6;padding:11px 0}
+.st3-row:first-of-type {border-top:none}
+.st3-row>span {min-width:0;display:grid;gap:3px}
+.st3-row b {font-size:13px;font-weight:650}
+.st3-row small {color:#8390a1;font-size:11px}
+.st3-row>strong {font-size:14px;white-space:nowrap;color:#34415a}
+.st3-muted,.st3-legal {font-size:12px;color:#778397;line-height:1.65}
+.st3-legal {margin:20px 7px}
+.st3-line {width:100%;height:auto;max-height:115px;color:#5965e6;display:block;margin:6px 0}
+.st3-formgrid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.st3-formgrid label,.st3-section>label,.st3-money {display:grid;gap:6px;font-size:12px;font-weight:600;color:#5e6a7b;min-width:0}
+.st3-formgrid input,.st3-formgrid select,.st3-section>label input,.st3-section>label select,.st3-money input {
+  background:#fafbfe;border:1px solid #e2e8f0;border-radius:10px;min-height:39px;
+  padding:8px 10px;color:#253249;font-size:13px;font-family:inherit;width:100%;min-width:0
+}
+.st3-section>.st3-money {margin:6px 0}
+.st3-worlds {display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.st3-world-card {min-width:0;border:1px solid #e8ebf3;border-radius:14px;padding:14px 12px;background:#fcfdff}
+.st3-world-card>strong {font-size:18px;font-weight:750;display:block;margin:10px 0}
+.st3-world-name {display:flex;flex-direction:column;gap:4px;}
+.st3-world-name b {font-size:13px}.st3-world-name small {font-size:10px;color:#75839a}
+.st3-world-grid {display:flex;flex-direction:column;font-size:11px;color:#75839a;gap:2px;margin:4px 0}
+.st3-world-card .st3-line {height:65px;margin-bottom:0}
+.st3-warning,.st3-caution {color:#a74735;font-size:12px;line-height:1.6}
+.st3-error {border:1px solid #ecc9c2;border-radius:14px;padding:19px;margin:14px 0;background:#fff9f8}
+.st3-error b {display:block;font-size:15px}
+.st3-error p {font-size:13px;line-height:1.65}
+.st3-error small {display:block;font-size:11px;color:#7c7580;margin-top:12px}
+.st3-error button,.st3-expand,.st3-save {border:1px solid #cad2ee;border-radius:10px;padding:10px 14px;background:#fff;color:#4450bc;font-weight:750;font-size:12px;font-family:inherit;margin-top:8px}
+.st3-expand {width:100%;margin:8px 0}
+.st3-save {background:#515ce3;color:#fff;border-color:transparent;width:100%;min-height:45px}
+.st3-save:disabled {opacity:.5}
+.st3-loading {padding:40px 12px;text-align:center;color:#6b7890;font-size:13px}
+@media (max-width:360px){.st3-formgrid,.st3-worlds{grid-template-columns:1fr}.st3-horizons b{font-size:11px}}
