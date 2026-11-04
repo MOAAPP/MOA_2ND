@@ -29,13 +29,14 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
   const [product, setProduct] = useState<VisionProduct | null>(null);
   const [candidate, setCandidate] = useState<PurchaseCandidate | null>(null);
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
+  const [simDate, setSimDate] = useState('2026-11-06');
   const [discount, setDiscount] = useState(false);
   const [shippingOk, setShippingOk] = useState(false);
   const [discountOk, setDiscountOk] = useState(false);
   const [totalOk, setTotalOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState(() => URL.createObjectURL(file));
+  const [preview] = useState(() => URL.createObjectURL(file));
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +84,7 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     setBusy(true); setError(null);
     try {
       // The exact next calendar day relative to the dataset snapshot; not a physical purchase.
-      const when = new Date('2026-11-06T12:00:00+09:00').toISOString();
+      const when = new Date(simDate + 'T12:00:00+09:00').toISOString();
       const result = await simulateCandidate('S01', candidate.id, when);
       setSimulation(result);
     } catch (e) {
@@ -112,8 +113,11 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     {candidate && <>
       <p className="sheet-note">실제 잔액이나 ML 예측에는 반영하지 않았어요.</p>
       <p><b>{candidate.product.product_name}</b> · {won(candidate.estimated_checkout_total ?? 0)}</p>
+      <label className="field"><span className="lab">가상 구매 날짜</span>
+        <input className="input" type="date" min="2026-11-05" max="2026-11-18" value={simDate}
+          onChange={e => setSimDate(e.target.value)} /></label>
       <button type="button" className="btn ghost block" disabled={busy}
-        onClick={() => void simulate()}>11월 6일 구매하는 가상 시나리오 계산</button>
+        onClick={() => void simulate()}>선택한 날짜에 구매했을 때 계산</button>
       {simulation && <div className="nc-result">
         <div><span>현금흐름 엔진 기준 잔액</span><b>{won(simulation.available_cash)}</b></div>
         <div><span>14일 후 가상 잔액</span><b>{won(simulation.future_balances['14'])}</b></div>
