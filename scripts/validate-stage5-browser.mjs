@@ -61,6 +61,15 @@ try {
   assert.equal(await page.locator('.st3-world-card').count(),4);
   await page.getByRole('button',{name:'투자·혼합 배분까지 6개 모두 보기'}).click();
   assert.equal(await page.locator('.st3-world-card').count(),6);
+  // Re-search after the user explicitly changes the HARD minimum balance.
+  // A 100M KRW floor is infeasible for this persona; no old route may remain.
+  await page.locator('.st5-conditions > summary').click();
+  await page.getByLabel('최소 유지 잔액 (원)').fill('100000000');
+  await page.getByRole('button',{name:'수정한 조건으로 다시 탐색하기'}).click();
+  await page.waitForFunction(() => document.querySelector('.st5-summary')?.textContent?.includes('0개'));
+  assert.equal(await page.locator('.st5-route').count(),0);
+  await page.locator('.st5-confirm').waitFor();
+  assert.equal(await page.locator('.st3-world-card').count(),6);
   await page.screenshot({path:'/tmp/stage5-agent.png',fullPage:true});
-  console.log('STAGE5_BROWSER_PASS: agent location, 503 fallback, real Python path/result mapping, six-world preservation; live LLM not tested.');
+  console.log('STAGE5_BROWSER_PASS: agent UI, 503 fallback, real Python path mapping, hard-condition re-search, six-world preservation; live LLM not tested.');
 } finally { await browser.close(); }
