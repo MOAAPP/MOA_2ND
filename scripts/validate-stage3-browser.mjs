@@ -81,6 +81,22 @@ try {
   assert.equal(await page.locator('.st3-world-card strong.num').first().innerText(),won(buy.future_balances['14']));
   await page.screenshot({path:'/tmp/stage3-six-worlds.png',fullPage:true});
 
+  // Previous versions persisted introSeen=true without a usable profile.
+  // On a fresh normal navigation, the canonical API demo must still appear.
+  const stale = await browser.newPage({ viewport: {width: 390,height: 844} });
+  try {
+    await stale.goto(base + '/');
+    await stale.evaluate(() => localStorage.setItem('pb.state.v3', JSON.stringify({
+      version:3,introSeen:true,profile:null,demo:false,setupDraft:null,
+      records:[],spendLog:[],moa:{anchor:null},
+    })));
+    await stale.reload();
+    await stale.locator('.st3-hero > strong').waitFor({timeout:25000});
+    assert.equal(await stale.locator('.st3-hero > strong').innerText(),won(s01.available_cash));
+  } finally {
+    await stale.close();
+  }
+
   // An invalid backend response must never silently display the previous user's money.
   await page.route('**/api/v4/users/S03/home**',route=>route.fulfill({
     status:200,contentType:'application/json',body:'{}',

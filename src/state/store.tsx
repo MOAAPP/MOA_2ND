@@ -157,8 +157,9 @@ function load(): { state: AppState; error: string | null } {
     if (!raw) return { state: seedDemoState(initialState()), error: null };
     const parsed = JSON.parse(raw) as Partial<AppState>;
     const base = initialState();
-    // Legacy empty installations should open the canonical synthetic preview, not an empty Home.
-    if (!parsed.profile && !parsed.introSeen && !parsed.setupDraft &&
+    // Legacy empty installations, including old introSeen=true with no saved finance,
+    // should open the canonical synthetic preview. Never overwrite manual financial records.
+    if (!parsed.profile && !parsed.setupDraft &&
         !(parsed.moa?.anchor) && !(parsed.records?.length) && !(parsed.spendLog?.length)) {
       return { state: seedDemoState(base), error: null };
     }
