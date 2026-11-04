@@ -25,17 +25,17 @@ const SAMPLE = (today: ISODate) => {
 
 /** Non-demo offline path. Demo financial SMS uses the canonical FastAPI rule parser. */
 function parseLocalRules(text: string, today: ISODate): { items: ParsedSpend[]; skipped: number } {
-  const messages = text.replace(/(?<!^)(?=\\[Web발신\\])/g, '\\n\\n').split(/\\n\\s*\\n/g).filter(x => x.trim());
+  const messages = text.replace(/(?<!^)(?=\[Web발신\])/g, '\n\n').split(/\n\s*\n/g).filter(x => x.trim());
   const items: ParsedSpend[] = [];
   let skipped = 0;
   for (const message of messages) {
-    const lines = message.split('\\n').map(x => x.trim()).filter(Boolean);
-    const body = lines.filter(x => !/(잔액|누적|한도|가용|포인트)/.test(x)).join('\\n');
-    const amountText = body.match(/(\\d{1,3}(?:,\\d{3})+|\\d{3,10})\\s*원/);
+    const lines = message.split('\n').map(x => x.trim()).filter(Boolean);
+    const body = lines.filter(x => !/(잔액|누적|한도|가용|포인트)/.test(x)).join('\n');
+    const amountText = body.match(/(\d{1,3}(?:,\d{3})+|\d{3,10})\s*원/);
     if (!amountText) { skipped++; continue; }
     const amount = Number(amountText[1].replace(/,/g, ''));
     if (!Number.isSafeInteger(amount) || amount <= 0) { skipped++; continue; }
-    const dm = message.match(/(?:(20\\d{2})[./-])?(\\d{1,2})[./-](\\d{1,2})/);
+    const dm = message.match(/(?:(20\d{2})[./-])?(\d{1,2})[./-](\d{1,2})/);
     let date: string | null = null;
     if (dm) {
       let year = Number(dm[1] || today.slice(0, 4));
@@ -46,10 +46,10 @@ function parseLocalRules(text: string, today: ISODate): { items: ParsedSpend[]; 
         year -= 1;
         candidate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       }
-      const verified = new Date(`${candidate}T12:00:00+09:00`);
-      if (!Number.isNaN(verified.valueOf()) && verified.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }) === candidate) date = candidate;
+      const verified = new Date(Date.UTC(year, month - 1, day));
+      if (!Number.isNaN(verified.valueOf()) && verified.toISOString().slice(0, 10) === candidate) date = candidate;
     }
-    const time = message.match(/(?:^|\\s)([01]?\\d|2[0-3]):([0-5]\\d)(?:\\s|$)/)?.slice(1).join(':') ?? null;
+    const time = message.match(/(?:^|\s)([01]?\d|2[0-3]):([0-5]\d)(?:\s|$)/)?.slice(1).join(':') ?? null;
     const issuer = message.match(/(KB국민|국민|신한|삼성|현대|롯데|하나|우리|농협|NH|카카오뱅크|토스뱅크|IBK기업)/)?.[1] ?? null;
     const isCredit = /신용|할부|일시불/.test(message) || (/카드/.test(message) && !/체크/.test(message));
     const isDebit = /체크/.test(message);
@@ -59,13 +59,13 @@ function parseLocalRules(text: string, today: ISODate): { items: ParsedSpend[]; 
     const kind: ParsedSpend['kind'] = isCardBill ? 'card_payment' : isRefund ? 'refund' : isIncome ? 'income' : 'spend';
     const method: ParsedSpend['method'] = isCardBill ? 'transfer' : isCredit ? 'credit' : isDebit ? 'debit'
       : /이체|송금|출금|입금/.test(message) ? 'transfer' : null;
-    const name = [...lines].reverse().find(l => !/(Web발신|승인|누적|잔액|한도|\\d{2}[:/.-]\\d|\\d[\\d,]*\\s*원|\\d{4}|님)/.test(l))
+    const name = [...lines].reverse().find(l => !/(Web발신|승인|누적|잔액|한도|\d{2}[:/.-]\d|\d[\d,]*\s*원|\d{4}|님)/.test(l))
       ?? issuer ?? '거래 상대 확인 필요';
     const category = /커피|카페|메가|스타벅스/.test(name) ? '카페'
       : /배달|식당|분식|편의점/.test(name) ? '식비'
       : /무신사|의류|패션/.test(name) ? '패션' : '기타';
-    const installment = message.match(/할부\\s*(\\d{1,2})\\s*개?월?/);
-    const balanceAfter = message.match(/잔액\\s*([\\d,]+)\\s*원?/)?.[1];
+    const installment = message.match(/할부\s*(\d{1,2})\s*개?월?/);
+    const balanceAfter = message.match(/잔액\s*([\d,]+)\s*원?/)?.[1];
     items.push({
       amount, date, time, method, kind, issuer, name,
       category, confidence: 0.8,
