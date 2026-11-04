@@ -67,6 +67,9 @@ api
     aiLimiter,
     route(async (req, res) => {
       const task = String(req.params.task) as (typeof AI_TASKS)[number];
+      if (task === 'parseSpend' || task === 'parseSchedule') {
+        throw new ApiError(410, 'rules_only', '금융 문자와 일정은 외부 AI를 사용하지 않습니다. 규칙 분석을 이용해 주세요.');
+      }
       if (!AI_TASKS.includes(task)) throw new ApiError(404, 'unknown_task', '알 수 없는 AI 작업이에요.');
       const raw = (req.body as { input?: unknown })?.input;
       if (!raw || typeof raw !== 'object') throw new ApiError(400, 'bad_input', '입력이 없어요.');

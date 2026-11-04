@@ -713,3 +713,24 @@ button.row-item:active { opacity: 0.7; }
   .bal-card .act-row .btn { font-size: 15px; padding: 0 10px; }
 }
 .bal-card .act-row .btn { white-space: nowrap; }
+
+
+/* V4 stage 2: quiet native-feeling confirmation sheets, no extra dashboard cards */
+.s2-preview {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.s2-preview img { display: block; width: 100%; max-height: 200px; object-fit: contain; border-radius: 6px; }
+.s2-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 12px 0;
+}
+.s2-check input[type="checkbox"] { margin-top: 3px; accent-color: var(--blue); width: 17px; height: 17px; flex: 0 0 auto; }

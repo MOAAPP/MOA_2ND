@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AI_PROMPTS, buildUserMessage, numbersGrounded } from '../shared/aiPrompts';
 import { runAi, setExampleDelay } from '../src/lib/ai';
 import { askContext, briefInput, coachInput, ledgerSummaryInput } from '../src/lib/ai/context';
@@ -97,5 +97,28 @@ describe('AI 공통', () => {
     const input = { total: 121_300, prevTotal: 50_000 };
     expect(numbersGrounded('ledgerSummary', input, { points: ['121,300원 썼어요', '71,300원 더'] })).toBe(true);
     expect(numbersGrounded('ledgerSummary', input, { points: ['99,999원 썼어요'] })).toBe(false);
+  });
+});
+
+
+describe('SMS·일정 구조화는 외부 AI 미사용', () => {
+  it('문자 및 일정 입력 시 fetch 호출 없이 결정적 규칙 파서만 사용', async () => {
+    const spy = vi.fn();
+    vi.stubGlobal('fetch', spy);
+    try {
+      const sms = await runAi('parseSpend', {
+        today: '2026-11-05',
+        text: '[Web발신]\\nKB국민체크 승인\\n18,500원\\n11/05 12:10\\n배달의민족',
+      });
+      const schedule = await runAi('parseSchedule', {
+        today: '2026-11-05',
+        text: '매달 25일 월세 350000원 나가',
+      });
+      expect(sms.data.items[0]?.amount).toBe(18500);
+      expect(schedule.data.items.length).toBeGreaterThan(0);
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

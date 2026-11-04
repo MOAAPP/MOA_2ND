@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { won } from '../../shared/format';
-import { getFinancialCashflow, type FinancialResult } from '../lib/financeApi';
+import { getConfirmedCashflow, type FinancialResult } from '../lib/financeApi';
+import { appDay } from '../lib/appClock';
 import { useStore } from '../state/store';
 
 /** An unobtrusive API-proof footer, not a duplicate payment-risk card.
@@ -8,6 +9,7 @@ import { useStore } from '../state/store';
  */
 export function FinanceEnginePanel() {
   const { state } = useStore();
+  const day = appDay(state);
   const [result, setResult] = useState<FinancialResult | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +20,7 @@ export function FinanceEnginePanel() {
     const controller = new AbortController();
     setLoading(true);
     setError('');
-    getFinancialCashflow('S01', controller.signal)
+    getConfirmedCashflow('S01', day, controller.signal)
       .then(data => { if (!controller.signal.aborted) setResult(data); })
       .catch((err: unknown) => {
         if (!controller.signal.aborted) {
@@ -28,14 +30,20 @@ export function FinanceEnginePanel() {
       })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [state.demo, retry]);
+  }, [state.demo, day, retry]);
+
+  useEffect(() => {
+    const reload = () => setRetry(v => v + 1);
+    window.addEventListener('moa:financial-updated', reload);
+    return () => window.removeEventListener('moa:financial-updated', reload);
+  }, []);
 
   if (!state.demo) return null;
   return (
     <div className="ux-python-audit" aria-label="Python 금융 계산 결과">
       <div className="ux-python-audit-head">
         <strong>예상 잔액 <span>· Python 계산</span></strong>
-        <small>원본 S01 · 11월 4일 기준</small>
+        <small>원본 S01 · {day} 기준</small>
       </div>
       {loading && !result && <p role="status" className="ux-python-audit-status">금융 엔진에 연결하고 있어요…</p>}
       {error && <div className="ux-python-audit-error" role="alert">
@@ -46,11 +54,11 @@ export function FinanceEnginePanel() {
         {[3, 7, 14].map(days => (
           <div key={days}>
             <span>{days}일 뒤</span>
-            <strong className="num">{won(result.future_balances[String(days)])}</strong>
+            <strong className="num">{typeof result.future_balances[String(days)] === 'number' ? won(result.future_balances[String(days)]) : '계산값 없음'}</strong>
           </div>
         ))}
       </div>}
-      {result && <p className="ux-python-audit-note">등록 일정 기준 · 체험 중 직접 추가한 거래는 아직 Python 계산에 포함되지 않아요</p>}
+      {result && <p className="ux-python-audit-note">공통 금융 데이터셋 기준 · 백엔드에서 확정한 금융 문자 거래 반영</p>}
     </div>
   );
 }

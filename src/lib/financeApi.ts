@@ -98,3 +98,69 @@ export function simulateFinancialChoice(userId: string, events: SimulationEventI
   return financeRequest<FinancialResult>('/cashflow/simulate', signal,
     { user_id: userId, horizon_days: 14, simulation_events: events });
 }
+
+/** Canonical read-only user partition of the real 20-person Python dataset. */
+export interface DatasetTransaction {
+  id?: string;
+  user_id: string;
+  occurred_at?: number;
+  debit_at?: number | null;
+  amount?: number;
+  kind?: string;
+  method?: string;
+  name?: string;
+  category?: string;
+  essential?: boolean;
+  status?: string;
+}
+export interface DatasetSnapshot {
+  dataset_id: string;
+  user_id: string;
+  snapshot_date: string;
+  synthetic: true;
+  profile: Record<string, unknown>;
+  accounts: Record<string, unknown>[];
+  schedules: Record<string, unknown>[];
+  transactions: DatasetTransaction[];
+  daily: { user_id: string; date: string; [key: string]: unknown }[];
+  balance_checks: Record<string, unknown>[];
+  pending_card_liabilities: Record<string, unknown>[];
+  investments: Record<string, unknown>[];
+  purchase_intents: Record<string, unknown>[];
+}
+export function getDatasetSnapshot(userId: string, signal?: AbortSignal) {
+  return financeRequest<DatasetSnapshot>(`/users/${encodeURIComponent(userId)}/dataset-snapshot`, signal);
+}
+export function getConfirmedCashflow(userId: string, asOf: string, signal?: AbortSignal) {
+  return financeRequest<FinancialResult>(
+    `/users/${encodeURIComponent(userId)}/confirmed-cashflow?as_of=${encodeURIComponent(asOf)}&horizon_days=14`,
+    signal,
+  );
+}
+
+
+/** Only the synthetic dataset explorer is allowed to list all users. */
+export function getDatasetUsers(signal?: AbortSignal) {
+  return financeRequest<{ users: string[]; synthetic: true; observation_end: string }>('/users', signal);
+}
+export interface ConfirmedSmsLedger {
+  transaction: {
+    source_id: string;
+    user_id: string;
+    kind: string;
+    payment_method: string;
+    merchant: string | null;
+    amount: number | null;
+    occurred_at: string | null;
+    debit_at: string | null;
+  };
+  confirmed_at: string;
+  account_id: string;
+  affects_post_snapshot_balance: boolean;
+}
+export function getConfirmedSmsLedger(userId: string, signal?: AbortSignal) {
+  return financeRequest<{ user_id: string; transactions: ConfirmedSmsLedger[]; count: number }>(
+    `/users/${encodeURIComponent(userId)}/confirmed-transactions`,
+    signal,
+  );
+}

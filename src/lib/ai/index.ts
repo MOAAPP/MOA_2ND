@@ -56,6 +56,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function runAi<T extends AiTask>(task: T, input: AiInput<T>): Promise<AiResult<T>> {
   const t0 = Date.now();
+  // Financial text extraction is deterministic and never contacts an external AI.
+  if (task === 'parseSpend' || task === 'parseSchedule') {
+    return { data: EXAMPLE[task](input), source: 'example', ms: Date.now() - t0 };
+  }
   let fallback: string | undefined;
   if (await liveAvailable()) {
     try {

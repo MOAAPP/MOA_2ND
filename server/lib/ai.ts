@@ -48,7 +48,7 @@ export function sanitizeInput(task: AiTask, input: unknown): unknown {
 
 export const AI_TASKS = Object.keys(AI_PROMPTS) as AiTask[];
 
-export type AiFailure = 'not_configured' | 'http_error' | 'no_json' | 'invalid_output' | 'ungrounded' | 'network';
+export type AiFailure = 'not_configured' | 'http_error' | 'no_json' | 'invalid_output' | 'ungrounded' | 'network' | 'rules_only';
 export type AiRun = { ok: true; data: unknown; model: string; ms: number } | { ok: false; reason: AiFailure; ms: number; issues?: string[] };
 
 /* ── 운영 지표: 개인정보 원문 없이 작업별 성공·실패 사유·응답 시간만 센다 (인스턴스별 메모리) ── */
@@ -80,6 +80,7 @@ export const aiModel = () => llmModel();
 export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fetchWithTimeout = fetchWithTimeout): Promise<AiRun> {
   const t0 = Date.now();
   const done = (r: AiRun) => { record(task, r); return r; };
+  if (task === 'parseSpend' || task === 'parseSchedule') return done({ ok: false, reason: 'rules_only', ms: 0 });
   if (!aiConfigured()) return done({ ok: false, reason: 'not_configured', ms: 0 });
   const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);

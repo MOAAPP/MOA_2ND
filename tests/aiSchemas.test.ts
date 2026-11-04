@@ -51,74 +51,115 @@ describe('AI 출력 스키마', () => {
   });
 });
 
-describe('runAiTask: 실패 사유를 구분해 돌려준다', () => {
-  const reply = (text: string, status = 200) => (async () => new Response(JSON.stringify({ content: [{ type: 'text', text }] }), { status })) as never;
-  afterEach(() => { delete process.env.ANTHROPIC_API_KEY; resetAiStats(); });
 
-  it('키가 없으면 not_configured', async () => {
-    const r = await runAiTask('parseSpend', sms);
-    expect(r).toMatchObject({ ok: false, reason: 'not_configured' });
+describe('runAiTask: 외부 AI 사용 가능한 작업의 오류 구분', () => {
+  const cat = { name: '라떼', categories: ['카페', '식비'] };
+  const valid = { category: '카페', confidence: 0.9, reason: '커피 음료' };
+  const reply = (text: string, status = 200) =>
+    (async () => new Response(JSON.stringify({ content: [{ type: 'text', text }] }), { status })) as never;
+
+  afterEach(() => {
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.FACTCHAT_API_KEY;
+    delete process.env.FACTCHAT_BASE_URL;
+    delete process.env.FACTCHAT_MODEL;
+    delete process.env.AI_ENABLED;
+    resetAiStats();
   });
-  it('스키마를 통과한 응답만 성공', async () => {
+
+  it('문자·일정은 키 설정과 관계없이 AI 모델을 부르지 않는다', async () => {
     process.env.ANTHROPIC_API_KEY = 'test';
-    const good = JSON.stringify({ items: [{ date: '2026-11-02', amount: 12_000, name: '스타벅스', category: '카페', method: 'debit', confidence: 0.9 }], skipped: 0 });
-    const r = await runAiTask('parseSpend', sms, reply(`결과: ${good}`));
-    expect(r.ok).toBe(true);
-    expect(aiStats().parseSpend.ok).toBe(1);
+    process.env.FACTCHAT_API_KEY = 'fc_test';
+    let called = false;
+    const fake = (async () => {
+      called = true;
+      throw new Error('financial SMS must never call the provider');
+    }) as never;
+    expect(await runAiTask('parseSpend', sms, fake)).toMatchObject({ ok: false, reason: 'rules_only' });
+    expect(await runAiTask('parseSchedule', { text: '매달 25일 월세 350000원', today: TODAY }, fake))
+      .toMatchObject({ ok: false, reason: 'rules_only' });
+    expect(called).toBe(false);
   });
-  it('형식이 틀리면 invalid_output, 글에 없는 금액이면 ungrounded, JSON이 없으면 no_json', async () => {
+
+  it('다른 허용된 AI 작업은 키 없으면 not_configured', async () => {
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.FACTCHAT_API_KEY;
+    const result = await runAiTask('categorize', cat);
+    expect(result).toMatchObject({ ok: false, reason: 'not_configured' });
+  });
+
+  it('다른 허용된 AI 작업은 검증된 응답을 처리한다', async () => {
     process.env.ANTHROPIC_API_KEY = 'test';
-    const bad = JSON.stringify({ items: [{ date: '2026-11-02', amount: 12_000, name: 'x', category: '카페', confidence: 'high' }], skipped: 0 });
-    expect(await runAiTask('parseSpend', sms, reply(bad))).toMatchObject({ ok: false, reason: 'invalid_output' });
-    const made = JSON.stringify({ items: [{ date: '2026-11-02', amount: 99_000, name: '스타벅스', category: '카페', confidence: 0.9 }], skipped: 0 });
-    expect(await runAiTask('parseSpend', sms, reply(made))).toMatchObject({ ok: false, reason: 'ungrounded' });
-    expect(await runAiTask('parseSpend', sms, reply('죄송해요'))).toMatchObject({ ok: false, reason: 'no_json' });
-    expect(await runAiTask('parseSpend', sms, reply('{}', 500))).toMatchObject({ ok: false, reason: 'http_error' });
-    expect(aiStats().parseSpend.fail).toEqual({ invalid_output: 1, ungrounded: 1, no_json: 1, http_error: 1 });
+    const result = await runAiTask('categorize', cat, reply(JSON.stringify(valid)));
+    expect(result.ok).toBe(true);
+    expect(aiStats().categorize.ok).toBe(1);
   });
-});
 
-describe('FactChat 게이트웨이 (OpenAI 호환)', () => {
-  afterEach(() => { delete process.env.FACTCHAT_API_KEY; delete process.env.FACTCHAT_BASE_URL; delete process.env.FACTCHAT_MODEL; resetAiStats(); });
+  it('틀린 스키마, 잘못된 JSON, HTTP 오류를 구분한다', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test';
+    const bad = { ...valid, confidence: 'high' };
+    expect(await runAiTask('categorize', cat, reply(JSON.stringify(bad))))
+      .toMatchObject({ ok: false, reason: 'invalid_output' });
+    expect(await runAiTask('categorize', cat, reply('JSON 없음')))
+      .toMatchObject({ ok: false, reason: 'no_json' });
+    expect(await runAiTask('categorize', cat, reply('{}', 500)))
+      .toMatchObject({ ok: false, reason: 'http_error' });
+    expect(aiStats().categorize.fail)
+      .toEqual({ invalid_output: 1, no_json: 1, http_error: 1 });
+  });
 
-  it('FACTCHAT_API_KEY가 있으면 게이트웨이 chat/completions로 Bearer 호출하고 choices에서 답을 읽는다', async () => {
+  it('숫자 근거 검사도 허용된 AI 작업에서 수행한다', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test';
+    const input = brief;
+    const ungrounded = {
+      headline: '99,999원 지출',
+      body: '지출 기록을 확인해 주세요.',
+      action: null,
+    };
+    expect(await runAiTask('brief', input, reply(JSON.stringify(ungrounded))))
+      .toMatchObject({ ok: false, reason: 'ungrounded' });
+  });
+
+  it('FactChat 게이트웨이를 허용된 AI 작업에만 연결한다', async () => {
     process.env.FACTCHAT_API_KEY = 'fc_test';
     process.env.ANTHROPIC_API_KEY = 'should-not-be-used';
     const calls: { url: string; init: RequestInit }[] = [];
-    const good = JSON.stringify({ items: [{ date: '2026-11-02', amount: 12_000, name: '스타벅스', category: '카페', method: 'debit', confidence: 0.9 }], skipped: 0 });
     const fetcher = (async (url: string, init: RequestInit) => {
       calls.push({ url, init });
-      return new Response(JSON.stringify({ choices: [{ message: { content: good } }] }), { status: 200 });
+      return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(valid) } }] }), { status: 200 });
     }) as never;
-    const r = await runAiTask('parseSpend', sms, fetcher);
-    delete process.env.ANTHROPIC_API_KEY;
-    expect(r).toMatchObject({ ok: true, model: 'claude-sonnet-5' });
-    expect(calls[0].url).toBe('https://factchat-cloud.mindlogic.ai/v1/gateway/chat/completions');
+    const result = await runAiTask('categorize', cat, fetcher);
+    expect(result.ok).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toContain('/v1/gateway/chat/completions');
     expect((calls[0].init.headers as Record<string, string>).authorization).toBe('Bearer fc_test');
     const body = JSON.parse(String(calls[0].init.body));
     expect(body.messages[0].role).toBe('system');
-    expect(body.messages[1].content).toContain('[이름]'); // 원문 이름은 서버에서도 가린 뒤 보낸다
+    expect(body.messages[1].content).toContain('라떼');
+    expect(body.messages[1].content).not.toContain('신한체크승인');
   });
 
-  it('주소·모델은 환경변수로 바꿀 수 있고, 게이트웨이 오류는 http_error', async () => {
+  it('FactChat 주소·모델 설정과 실패 시 HTTP 오류를 처리한다', async () => {
     process.env.FACTCHAT_API_KEY = 'fc_test';
     process.env.FACTCHAT_BASE_URL = 'https://swu.factchat.bot/v1/gateway/';
     process.env.FACTCHAT_MODEL = 'gpt-5';
-    let url = '';
-    const r = await runAiTask('parseSpend', sms, (async (u: string) => { url = u; return new Response('{}', { status: 403 }); }) as never);
-    expect(url).toBe('https://swu.factchat.bot/v1/gateway/chat/completions');
-    expect(r).toMatchObject({ ok: false, reason: 'http_error' });
+    let calledUrl = '';
+    const result = await runAiTask('categorize', cat,
+      (async (url: string) => {
+        calledUrl = url;
+        return new Response('{}', { status: 403 });
+      }) as never);
+    expect(calledUrl).toBe('https://swu.factchat.bot/v1/gateway/chat/completions');
+    expect(result).toMatchObject({ ok: false, reason: 'http_error' });
   });
-});
 
-describe('AI_ENABLED 스위치', () => {
-  afterEach(() => { delete process.env.AI_ENABLED; delete process.env.FACTCHAT_API_KEY; resetAiStats(); });
-  it('AI_ENABLED=off면 키가 있어도 부르지 않는다', async () => {
+  it('AI_ENABLED=off면 허용된 AI 작업도 키와 무관하게 비활성', async () => {
     process.env.FACTCHAT_API_KEY = 'fc_test';
     process.env.AI_ENABLED = 'off';
     let called = false;
-    const r = await runAiTask('parseSpend', sms, (async () => { called = true; return new Response('{}'); }) as never);
-    expect(r).toMatchObject({ ok: false, reason: 'not_configured' });
+    const result = await runAiTask('categorize', cat,
+      (async () => { called = true; return new Response('{}'); }) as never);
+    expect(result).toMatchObject({ ok: false, reason: 'not_configured' });
     expect(called).toBe(false);
   });
 });
