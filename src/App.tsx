@@ -21,9 +21,7 @@ import { MarketProvider } from './state/market';
 import { FundedInvestDaemon } from './state/fundedInvestDaemon';
 import { NavProvider, useNav, type Screen, type Tab } from './state/nav';
 import { StoreProvider, useStore } from './state/store';
-import { demoData } from './lib/demo';
-import { demoWorldWalletFromShared } from './lib/demoWorld';
-import { emptyInvestJournal } from './lib/fundedInvest';
+import { seedDemoState } from './lib/demoSeed';
 import { V8Home } from './screens/V8Finance';
 import { WorldInvestment } from './screens/ParallelLab';
 import { WorldTimeline } from './screens/WorldTimeline';
@@ -35,7 +33,6 @@ import { ProductDetail } from './screens/bank/ProductDetail';
 import { Join } from './screens/bank/Join';
 import { Account } from './screens/bank/Account';
 import { BankClock } from './state/bank';
-import { emptyBank } from './lib/bank/engine';
 import { Research } from './screens/Research';
 import { AskAi } from './screens/AskAi';
 import { WorldReport } from './screens/WorldReport';
@@ -43,7 +40,7 @@ import { startSession } from './lib/research/log';
 import { Shortfall } from './screens/moa/Shortfall';
 import { MoaSetup, QuickStart } from './screens/moa/MoaSetup';
 import { MoaAlertsDaemon } from './state/moa';
-import { demoMoa, profileFromMoa } from './lib/moa/bridge';
+import { profileFromMoa } from './lib/moa/bridge';
 
 /**
  * 하단 메뉴 = 모아의 두 축.
@@ -152,7 +149,7 @@ function Shell() {
           if (hasExistingData) {
             update((s) => ({ ...s, introSeen: true }));
           } else {
-            update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWalletFromShared(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, demoFixtureVersion: 4, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
+            update((s) => seedDemoState(s));
           }
           nav.setTab('home');
         }}
@@ -165,6 +162,11 @@ function Shell() {
     return (
       <div className="page t-page mo-page">
         <QuickStart
+          onDemo={() => {
+            update((s) => seedDemoState(s));
+            nav.reset();
+            nav.setTab('home');
+          }}
           onDone={() => {
             update((s) => ({ ...s, profile: profileFromMoa(s.moa, null), setupDraft: null }));
             nav.setTab('home');

@@ -115,6 +115,20 @@
 .mo-qs h1 { margin: 8px 0 10px; font-size: 25px; line-height: 1.35; font-weight: 800; letter-spacing: -0.05em; color: var(--ink); }
 .mo-qs p { margin: 0 0 10px; font-size: 15px; line-height: 1.5; color: var(--mo-g700); }
 .mo-qs .d-btn, .mo-qs button.t-btn { margin-top: 14px; }
+/* Pre-filled synthetic S01 preview is the default, manual keypad is opt-in. */
+.mo-demo-preview { margin: 18px 0 6px; padding: 18px; border: 1px solid var(--mo-g200); border-radius: 18px; background: #fff; }
+.mo-qs .mo-demo-preview-title { margin: 0 0 8px; font-size: 12px; font-weight: 750; color: var(--moa); }
+.mo-demo-preview-balance { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 4px 0 14px; border-bottom: 1px solid var(--mo-g50); }
+.mo-demo-preview-balance span { font-size: 13px; font-weight: 650; color: var(--mo-g700); }
+.mo-demo-preview-balance strong { font-size: clamp(22px, 6vw, 31px); font-weight: 850; white-space: nowrap; color: var(--ink); }
+.mo-demo-preview dl { display: grid; gap: 11px; margin: 15px 0 0; }
+.mo-demo-preview dl > div { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 5px 12px; }
+.mo-demo-preview dt { font-size: 13px; color: var(--mo-g700); }
+.mo-demo-preview dd { margin: 0; font-size: 14px; font-weight: 750; color: var(--ink); text-align: right; }
+.mo-demo-preview dd.positive { color: var(--mo-ok); }
+.mo-qs .mo-demo-manual { display: block; width: 100%; margin-top: 14px; padding: 10px 0; text-align: center; }
+.mo-qs .mo-demo-disclaimer { margin: 8px 0 0; font-size: 12px; color: var(--mo-g500); text-align: center; }
+
 
 /* 입력 */
 .mo-field { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 10px 0; font-size: 15px; color: var(--mo-g700); }

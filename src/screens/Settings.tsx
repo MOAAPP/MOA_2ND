@@ -7,9 +7,9 @@ import { IconChevron } from '../components/Icons';
 import { ScheduleList } from '../components/ScheduleEditor';
 import { AmountInput, ConfirmSheet, CtaBar, Notice, Switch, TopBar, useToast } from '../components/ui';
 import { occurrences } from '../lib/cashflow';
-import { demoData } from '../lib/demo';
-import { demoWorldWalletFromShared } from '../lib/demoWorld';
-import { demoMoa } from '../lib/moa/bridge';
+import { seedDemoState } from '../lib/demoSeed';
+import { emptyMoa } from '../lib/moa';
+import { emptyWorldWallet } from '../lib/worldWallet';
 import { emptyInvestJournal } from '../lib/fundedInvest';
 import { emptyBank } from '../lib/bank/engine';
 import type { Profile } from '../lib/types';
@@ -28,6 +28,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
   const toast = useToast();
   const [reset, setReset] = useState<keyof typeof SCOPES | null>(null);
   const [refreshDemo, setRefreshDemo] = useState(false);
+  const [switchToPersonal, setSwitchToPersonal] = useState(false);
   const p = state.profile;
 
   return (
@@ -46,7 +47,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
           </button>
         )}
         {state.demo ? (
-          <button className="list-item" onClick={() => { update((s) => ({ ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null })); nav.reset(); }}>
+          <button className="list-item" onClick={() => setSwitchToPersonal(true)}>
             <div className="grow"><div className="t">내 생활비로 시작하기</div><div className="s">지금은 예시 데이터로 체험 중이에요</div></div>
             <IconChevron width={18} height={18} color="var(--ink-3)" />
           </button>
@@ -89,6 +90,24 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
 
       <p className="small muted" style={{ textAlign: 'center', margin: '20px 0 32px' }}>모아 · 결제일 예측과 평행세계</p>
 
+      {switchToPersonal && (
+        <ConfirmSheet
+          title="내 정보로 새로 시작할까요?"
+          body="지금 사용 중인 S01 예시 잔액·가계부·카드·가상 투자 데이터가 초기화돼요. 직접 입력한 개인 데이터와 섞이지 않도록 새로 시작합니다."
+          confirm="직접 입력으로 시작"
+          onClose={() => setSwitchToPersonal(false)}
+          onConfirm={() => {
+            update((s) => ({
+              ...s, profile: null, records: [], spendLog: [], demo: false,
+              demoFixtureVersion: 0, setupDraft: null, moa: emptyMoa(),
+              worldWallet: emptyWorldWallet(), bank: emptyBank(),
+              investJournal: emptyInvestJournal(s.investJournal.watchlist),
+            }));
+            setSwitchToPersonal(false);
+            nav.reset();
+          }}
+        />
+      )}
       {refreshDemo && (
         <ConfirmSheet
           title="최신 예시 데이터로 바꿀까요?"
@@ -97,10 +116,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
           onClose={() => setRefreshDemo(false)}
           onConfirm={() => {
             const now=Date.now();
-            update((s) => ({ ...s, ...demoData(now), moa:demoMoa(now),
-              worldWallet:demoWorldWalletFromShared(now),
-              investJournal:emptyInvestJournal(s.investJournal.watchlist),
-              bank:emptyBank(), demo:true, demoFixtureVersion:4 }));
+            update((s) => seedDemoState(s, now));
             setRefreshDemo(false);
             toast('최신 예시 기록을 불러왔어요');
             nav.reset();

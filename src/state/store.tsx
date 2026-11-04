@@ -11,6 +11,7 @@ import { emptyBank, migrateLegacy, type BankState } from '../lib/bank/engine';
 import { todayKST } from '../../shared/dates';
 import { demoWorldWalletFromShared, isEmptyWorld } from '../lib/demoWorld';
 import { demoData } from '../lib/demo';
+import { DEMO_FIXTURE_VERSION } from '../lib/demoSeed';
 import { emptyMoa, type MoaState } from '../lib/moa/types';
 import { demoMoa, moaFromProfile } from '../lib/moa/bridge';
 import { appendEvent, emptyResearch, migrateResearch, type ResearchEventBody, type ResearchState } from '../lib/research/log';
@@ -153,7 +154,7 @@ function load(): { state: AppState; error: string | null } {
     // current-day purchases. Update ONLY untouched sample data. Never replace
     // manually entered transactions, real financial data, or user investments.
     const sampleOnly = !!parsed.demo &&
-      (parsed.demoFixtureVersion ?? 0) < 4 &&
+      (parsed.demoFixtureVersion ?? 0) < DEMO_FIXTURE_VERSION &&
       (parsed.records ?? []).length === 0 &&
       (parsed.spendLog ?? []).every(e => e.from === 'demo') &&
       (parsed.moa?.txns ?? []).every(t => t.source === 'demo') &&
@@ -162,7 +163,7 @@ function load(): { state: AppState; error: string | null } {
         m.id.startsWith('income-') || m.id.startsWith('bills-')) &&
       !(parsed.bank?.contracts?.length) && !(parsed.investJournal?.orders?.length);
     const refreshed = sampleOnly ? { ...demoData(), moa: demoMoa(Date.now()),
-      worldWallet: demoWorldWalletFromShared(), demoFixtureVersion: 4 } : null;
+      worldWallet: demoWorldWalletFromShared(), demoFixtureVersion: DEMO_FIXTURE_VERSION } : null;
     const worldWallet = refreshed ? refreshed.worldWallet : parsed.demo && isEmptyWorld(world) &&
       !parsed.bank?.contracts?.length ? demoWorldWalletFromShared() : world;
     return {
