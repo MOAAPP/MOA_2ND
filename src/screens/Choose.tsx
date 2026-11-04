@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { addDays, formatKDate } from '../../shared/dates';
-import { appNow } from '../lib/appClock';
+import { appDay, appNow } from '../lib/appClock';
 import { saveChoice } from '../lib/decisionSave';
 import { BetterPrice } from '../components/BetterPrice';
 import { IconCamera, IconCheck, IconChevron } from '../components/Icons';
@@ -80,11 +80,11 @@ export function Choose() {
       altPrice: alt > 0 && alt < price ? alt : 0,
       frequency: freq,
       wallet: { cash: w.cash, fixedBills: w.fixedBills ?? WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
-      today: bank.today,
+      today: appDay(state),
       ctx: bank.ctx,
       history: bank.bank.contracts,
     }),
-    [price, alt, freq, w.cash, w.fixedBills, bank.today, bank.ctx, bank.bank.contracts],
+    [price, alt, freq, w.cash, w.fixedBills, state.demo, state.demoDay, bank.ctx, bank.bank.contracts],
   );
   const hasAlt = alt > 0 && alt < price;
   const holdName = hasAlt ? '더 싸게 산 나' : '참은 나';
@@ -102,7 +102,7 @@ export function Choose() {
       simulatedOnly: state.demo,
     };
     const savedState = saveChoice(state, {
-      decision, paid, date: bank.today,
+      decision, paid, date: appDay(state),
       name: p === 'alt' && altLabel ? title + ' (' + altLabel + ')' : title,
       category, method,
     });
@@ -111,7 +111,7 @@ export function Choose() {
       return;
     }
     update(s => saveChoice(s, {
-      decision, paid, date: bank.today,
+      decision, paid, date: appDay(state),
       name: p === 'alt' && altLabel ? title + ' (' + altLabel + ')' : title,
       category, method,
     }) ?? s);
