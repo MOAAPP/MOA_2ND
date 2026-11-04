@@ -1,8 +1,9 @@
 import { ShortfallCard } from './moa/parts';
+import { CashflowCoach } from './moa/CashflowCoach';
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
-import { addDays, parseISO, startOfMonth } from '../../shared/dates';
-import { appDay, appNow, DEMO_END_DAY, DEMO_SNAPSHOT_DAY } from '../lib/appClock';
+import { parseISO, startOfMonth } from '../../shared/dates';
+import { appNow } from '../lib/appClock';
 import { IconChevron, IconGear } from '../components/Icons';
 import { Logo } from '../components/Glyph';
 import { useStore } from '../state/store';
@@ -107,28 +108,6 @@ function HomeSpend() {
   );
 }
 
-function DemoDayBar() {
-  const { state, update } = useStore();
-  if (!state.demo) return null;
-  const day = appDay(state);
-  const date = parseISO(day);
-  const change = (next: string) => {
-    if (next < DEMO_SNAPSHOT_DAY || next > DEMO_END_DAY) return;
-    update(s => ({ ...s, demoDay: next }));
-  };
-  return (
-    <div className="ux-home-demo-clock" aria-label="가상 시연 기준일">
-      <div><span>가상 체험 · S01</span><b>{date.m}월 {date.d}일 기준</b></div>
-      <div className="ux-home-demo-clock-actions">
-        <button type="button" aria-label="시연 날짜 하루 전" disabled={day <= DEMO_SNAPSHOT_DAY} onClick={() => change(addDays(day, -1))}>‹</button>
-        <button type="button" aria-label="시연 날짜 하루 뒤" disabled={day >= DEMO_END_DAY} onClick={() => change(addDays(day, 1))}>›</button>
-        {day !== DEMO_SNAPSHOT_DAY && <button type="button" className="reset" onClick={() => change(DEMO_SNAPSHOT_DAY)}>기준일</button>}
-      </div>
-      <p>{day > DEMO_SNAPSHOT_DAY ? '11월 4일 이후는 가정 시나리오예요. 새로운 날짜의 거래는 아직 기록되지 않았어요.' : '11월 4일까지 관측된 합성 기록을 보여줘요. 날짜를 넘겨도 과거 기록은 유지돼요.'}</p>
-    </div>
-  );
-}
-
 export function V8Home() {
   const { state } = useStore();
   const nav = useNav();
@@ -154,12 +133,14 @@ export function V8Home() {
   return (
     <div className="page t-page t-home ux-home">
       <TopHeader title="모아" logo sub="결제일을 확인하고, 오늘의 소비를 관리해요" />
-      <DemoDayBar />
 
       {/* 01 · Payment-account risk, the primary service promise */}
       <div className="ux-home-risk" aria-label="다가오는 결제일 상태">
         <ShortfallCard />
       </div>
+
+      {/* Plan pp. 6–9: LLM reason + ML/baseline source + deterministic payment result */}
+      <CashflowCoach report={report} />
 
       {/* 02 · Actual or entered spending, not simulated investment returns */}
       <HomeSpend />
