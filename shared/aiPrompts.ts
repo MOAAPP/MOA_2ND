@@ -8,7 +8,7 @@
  * - 사기·투자 권유, 단정적인 판단 대신 선택지를 보여준다.
  */
 
-export type AiTask = 'brief' | 'coach' | 'ledgerSummary' | 'parseSpend' | 'parseSchedule' | 'ask' | 'categorize';
+export type AiTask = 'cashflow' | 'brief' | 'coach' | 'ledgerSummary' | 'parseSpend' | 'parseSchedule' | 'ask' | 'categorize';
 
 /* ───────── 입력·출력 ───────── */
 
@@ -28,6 +28,25 @@ export interface BriefOut {
   headline: string;
   body: string;
   action: { label: string; to: 'choose' | 'ledger' | 'save' | 'forks' } | null;
+}
+
+/** 결제일 위험 설명: 금액·날짜·등급은 앱의 결정적 계산 결과이며 LLM이 변경하지 않는다. */
+export interface CashflowIn {
+  payment: {
+    name: string; date: string; amount: number;
+    grade: 'registered' | 'high' | 'caution' | 'combo' | 'ok';
+    shortBy: number; baseBalance: number; delayBalance: number;
+  } | null;
+  accountBalance: number | null;
+  forecastMethod: 'none' | 'weekday' | 'ml';
+  forecastReadiness: string;
+  reliability: 'enough' | 'check' | 'low';
+  scheduledIncome: { name: string; date: string; amount: number }[];
+  uncertainIncome: { name: string; date: string; amount: number }[];
+}
+export interface CashflowOut {
+  insight: string;
+  nextStep: string;
 }
 
 /** 사기 전 결정 코치 */
@@ -152,6 +171,7 @@ export interface AskOut {
 }
 
 export interface AiIO {
+  cashflow: [CashflowIn, CashflowOut];
   brief: [BriefIn, BriefOut];
   coach: [CoachIn, CoachOut];
   ledgerSummary: [LedgerSummaryIn, LedgerSummaryOut];
@@ -175,6 +195,11 @@ const COMMON = [
 ].join('\n');
 
 export const AI_PROMPTS: { [T in AiTask]: { system: string; schema: string; maxTokens: number } } = {
+  cashflow: {
+    system: `${COMMON}\n다가오는 필수결제일의 위험을 설명하는 현금흐름 코치예요. payment.grade와 잔액·입금 상태는 코드가 이미 계산했어요. 위험 등급, 부족 여부, 날짜, 금액을 재판단하거나 지어내지 말고 원인만 설명해요. forecastMethod가 none이면 예측 모델 사용을 주장하지 않고, weekday면 요일별 평균 기준선이라고, ml일 때만 채택된 ML이라고 설명해요. reliability가 낮으면 확정처럼 말하지 않아요. insight 110자 이내, nextStep 90자 이내. 대출·투자 권유는 하지 않아요.`,
+    schema: '{"insight":string,"nextStep":string}',
+    maxTokens: 220,
+  },
   brief: {
     system: `${COMMON}\n홈 화면 맨 위에 보일 오늘의 한 줄 브리핑을 써요. headline 25자 이내, body 70자 이내. 가장 도움이 되는 행동 하나를 action으로 고르거나 없으면 null.`,
     schema: '{"headline":string,"body":string,"action":{"label":string,"to":"choose"|"ledger"|"save"|"forks"}|null}',
