@@ -1,4 +1,5 @@
 import { ShortfallCard } from './moa/parts';
+import { FinanceEnginePanel } from '../components/FinanceEnginePanel';
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
 import { addDays, parseISO, startOfMonth } from '../../shared/dates';
