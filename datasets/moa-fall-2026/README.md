@@ -6,6 +6,8 @@
 
 ## 팀원별로 바로 사용하기
 
+이 폴더에는 스키마·검증 설정과 생성 스크립트가 포함돼요. 전체 원본 CSV·JSON은 프로젝트 루트에서 `python3 scripts/generate_fall_2026.py .` 명령으로 생성하거나 팀 공유용 ZIP에서 받으면 됩니다. 대용량 원본은 GitHub에 불완전한 조각으로 업로드하지 않았어요. 프론트는 `public/data/moa-fall-observed.json.gz`로 관측 거래 10명치를 포함합니다.
+
 | 파일 | 목적 | 주의 |
 | --- | --- | --- |
 | `metadata.json` | 기간, 분할, 시드, 원칙 | 데이터 계약 |
@@ -14,7 +16,7 @@
 | `daily_truth.csv` | 920행 일별 합성 실제 지출·잔액·부족 정답 | 평가용 정답. 모델 입력에 사용 금지 |
 | `future_scenario_transactions.csv` | 11/04~12/11 미래 가상 거래 573건 | 개발/시뮬레이션 전용, 실제 관측 기록으로 사용 금지 |
 | `validation.json` | 파일 생성 결과 건수 | 무결성 검사 |
-| `../../src/data/moa-fall-observed.json` | **프론트에 번들되는 10명 전체 관측 스냅샷** | 미래 정답 데이터 없음 |
+| `../../public/data/moa-fall-observed.json.gz` | **프론트에서 압축 해제해 읽는 10명 전체 관측 스냅샷** | 미래 정답 데이터 없음 |
 
 ### 데이터 분할
 
