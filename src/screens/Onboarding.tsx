@@ -10,6 +10,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { addDays, startOfMonth, todayKST, type ISODate } from '../../shared/dates';
 import { exampleCoach } from '../lib/ai/example';
+import { fallDemoProfiles } from '../lib/fallDemo';
 import { Won } from '../components/ds';
 import { FREQ_LABEL, futureCost, type Frequency } from '../lib/futureCost';
 import { WORLD_FIXED_BILLS, WORLD_MONTHLY_INCOME, WORLD_SAFETY_BUFFER } from '../lib/worldWallet';
@@ -44,9 +45,10 @@ function useDemo() {
 }
 type Demo = ReturnType<typeof useDemo>;
 
-export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: () => void; onDemo: () => void; existingData?: boolean }) {
+export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: () => void; onDemo: (profileId: string) => void; existingData?: boolean }) {
   const [step, setStep] = useState(0);
   const [start, setStart] = useState<'demo' | 'mine'>('demo');
+  const [scenario, setScenario] = useState('U03');
   const demo = useDemo();
   const [itemId, setItemId] = useState(ITEMS[2].id);
 
@@ -80,7 +82,7 @@ export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: (
       kicker: '이제 시작해요',
       title: <>내 돈으로 시작할까요?</>,
       sub: '로그인이나 은행 연결은 필요 없어요. 직접 입력하거나 예시로 둘러볼 수 있어요.',
-      body: <StartPick start={start} setStart={setStart} existingData={existingData} />,
+      body: <StartPick start={start} setStart={setStart} existingData={existingData} scenario={scenario} setScenario={setScenario} />,
       cta: start === 'demo' ? (existingData ? '기존 기록으로 돌아가기' : '예시로 바로 둘러보기') : '내 결제계좌 입력하기',
     },
   ];
@@ -105,7 +107,7 @@ export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: (
         <button
           type="button"
           className="ob-btn"
-          onClick={() => (!last ? next() : start === 'demo' ? onDemo() : onDone())}
+          onClick={() => (!last ? next() : start === 'demo' ? onDemo(scenario) : onDone())}
         >{s.cta}</button>
       </div>
     </div>
@@ -231,7 +233,7 @@ function AiDecisionDemo({ itemId }: { itemId: string }) {
 }
 
 /* ───────── 4. 시작 ───────── */
-function StartPick({ start, setStart, existingData }: { start: 'demo' | 'mine'; setStart: (v: 'demo' | 'mine') => void; existingData: boolean }) {
+function StartPick({ start, setStart, existingData, scenario, setScenario }: { start: 'demo' | 'mine'; setStart: (v: 'demo' | 'mine') => void; existingData: boolean; scenario: string; setScenario: (id: string) => void }) {
   return (
     <>
       <div className="ob-start" role="radiogroup" aria-label="시작 방법">
@@ -245,6 +247,16 @@ function StartPick({ start, setStart, existingData }: { start: 'demo' | 'mine'; 
           <small>{existingData ? '기존 기록을 지우지 않고 결제계좌 잔액과 예정 결제를 확인해요.' : '잔액과 가장 가까운 필수결제 한 건만 입력하면 바로 시작해요.'}</small>
         </button>
       </div>
+      {start === 'demo' && !existingData && (
+        <details className="ob-scenario-panel">
+          <summary>팀 테스트용 예시 시나리오 선택</summary>
+          <label htmlFor="fall-scenario-select">가상 사용자 10명 중 선택</label>
+          <select id="fall-scenario-select" aria-label="테스트 시나리오" value={scenario} onChange={(e) => setScenario(e.target.value)}>
+            {fallDemoProfiles().map((p) => <option key={p.id} value={p.id}>{p.id} · {p.title} · {p.scenario}</option>)}
+          </select>
+          <small>2026.09.11~12.11 공통 합성 데이터 · 관측 기록은 11월 3일까지 · 실제 사용자가 아니에요.</small>
+        </details>
+      )}
       <p className="ob-note">{existingData ? '소개를 다시 보는 동안 기존 데이터는 지우지 않아요.' : '예시는 가상 돈으로 시작해요. 내 정보를 처음 입력하면 그 잔액을 평행세계 투자 지갑에도 반영해요.'}</p>
     </>
   );
