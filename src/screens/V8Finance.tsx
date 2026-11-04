@@ -156,6 +156,7 @@ export function V8Home() {
     <div className="page t-page t-home ux-home">
       <TopHeader title="모아" logo sub="결제일을 확인하고, 오늘의 소비를 관리해요" />
       <DemoDayBar />
+      <FinanceEnginePanel />
 
       {/* 01 · Payment-account risk, the primary service promise */}
       <div className="ux-home-risk" aria-label="다가오는 결제일 상태">
