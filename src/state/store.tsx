@@ -12,6 +12,7 @@ import { todayKST } from '../../shared/dates';
 import { demoWorldWalletFromShared, isEmptyWorld } from '../lib/demoWorld';
 import { demoData } from '../lib/demo';
 import { DEMO_FIXTURE_VERSION } from '../lib/demoSeed';
+import { DEMO_SNAPSHOT_DAY } from '../lib/appClock';
 import { emptyMoa, type MoaState } from '../lib/moa/types';
 import { demoMoa, moaFromProfile } from '../lib/moa/bridge';
 import { appendEvent, emptyResearch, migrateResearch, type ResearchEventBody, type ResearchState } from '../lib/research/log';
@@ -77,6 +78,8 @@ export interface AppState {
   demo: boolean;
   /** Ensures an old untouched sample can reload the latest daily fixture. */
   demoFixtureVersion?: number;
+  /** Pinned S01 presentation date. Advance explicitly; never use future oracle balances. */
+  demoDay?: string;
   portfolio: PortfolioState;
   /** 단일 가상 지갑 투자 주문·체결 장부. 구형 독립 1,000만 원 기록은 portfolio에 보존. */
   investJournal: InvestJournal;
@@ -131,6 +134,7 @@ export function initialState(): AppState {
     categoryMemory: {},
     demo: false,
     demoFixtureVersion: 0,
+    demoDay: undefined,
     portfolio: emptyPortfolio(),
     investJournal: emptyInvestJournal(),
     level: null,
@@ -162,8 +166,9 @@ function load(): { state: AppState; error: string | null } {
       (parsed.worldWallet?.movements ?? []).every(m => m.id.startsWith('S01-') ||
         m.id.startsWith('income-') || m.id.startsWith('bills-')) &&
       !(parsed.bank?.contracts?.length) && !(parsed.investJournal?.orders?.length);
-    const refreshed = sampleOnly ? { ...demoData(), moa: demoMoa(Date.now()),
-      worldWallet: demoWorldWalletFromShared(), demoFixtureVersion: DEMO_FIXTURE_VERSION } : null;
+    const snapshotAt = Date.parse(`${DEMO_SNAPSHOT_DAY}T23:59:00+09:00`);
+    const refreshed = sampleOnly ? { ...demoData(snapshotAt), moa: demoMoa(snapshotAt),
+      worldWallet: demoWorldWalletFromShared(snapshotAt), demoFixtureVersion: DEMO_FIXTURE_VERSION, demoDay: DEMO_SNAPSHOT_DAY } : null;
     const worldWallet = refreshed ? refreshed.worldWallet : parsed.demo && isEmptyWorld(world) &&
       !parsed.bank?.contracts?.length ? demoWorldWalletFromShared() : world;
     return {
@@ -181,6 +186,7 @@ function load(): { state: AppState; error: string | null } {
         research: migrateResearch(parsed.research),
         moa: refreshed?.moa ?? loadMoa(parsed),
         version: 3,
+        demoDay: parsed.demo ? (refreshed?.demoDay ?? parsed.demoDay ?? DEMO_SNAPSHOT_DAY) : undefined,
       },
       error: null,
     };
@@ -249,7 +255,7 @@ export function withEvent(s: AppState, body: ResearchEventBody, now = Date.now()
 
 export function resetScope(s: AppState, scope: 'finance' | 'invest' | 'all'): AppState {
   if (scope === 'all') return { ...initialState(), introSeen: true, research: { ...s.research, events: s.research.joined ? s.research.events : [] } };
-  if (scope === 'finance') return { ...s, profile: null, records: [], spendLog: [], demo: false, setupDraft: null, moa: emptyMoa() };
+  if (scope === 'finance') return { ...s, profile: null, records: [], spendLog: [], demo: false, demoDay: undefined, setupDraft: null, moa: emptyMoa() };
   // 투자 내역을 지워도 세계 지갑의 주식·현금은 보존한다.
   return { ...s, portfolio: emptyPortfolio(), investJournal: emptyInvestJournal(s.investJournal.watchlist), cardJobIds: {}, level: null, learning: emptyLearning() };
 }
