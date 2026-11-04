@@ -4,7 +4,7 @@ import sample from '../src/data/moa-demo-s01.json';
 import { demoData } from '../src/lib/demo';
 import { demoMoa } from '../src/lib/moa/bridge';
 import { demoWorldWalletFromShared } from '../src/lib/demoWorld';
-import { walletSummary, WORLD_START_CASH } from '../src/lib/worldWallet';
+import { walletSummary } from '../src/lib/worldWallet';
 
 const all=JSON.parse(readFileSync('public/data/moa-92days.json','utf8'));
 const now=Date.parse('2026-11-04T10:00:00+09:00');
@@ -55,9 +55,12 @@ describe('single MOA dataset · Sep 11 through Dec 11 (synthetic)',()=>{
  it('investment shares remain assets but are not spendable until a sale',()=>{
   const wallet=demoWorldWalletFromShared(now);
   expect(wallet.etfs['360750'].qty).toBeGreaterThanOrEqual(0);
-  const income=wallet.movements.filter(m=>m.kind==='income'||m.kind==='sellStock').reduce((a,m)=>a+m.amount,0);
-  const debit=wallet.movements.filter(m=>m.kind==='bills'||m.kind==='buyStock').reduce((a,m)=>a+m.amount,0);
-  expect(wallet.cash).toBe(WORLD_START_CASH+income-debit-wallet.decisions.reduce((a,d)=>a+d.paid,0));
+  const account = demoMoa(now);
+  expect(wallet.cash).toBe(account.anchor?.balance);
+  expect(wallet.openingCash).toBe(sample.profiles[0].opening_balance);
+  expect(wallet.fixedBills).toBe(sample.profiles[0].schedule.filter(s=>s.direction==='out'&&s.essential).reduce((a,s)=>a+s.amount,0));
+  expect(wallet.decisions.every(d=>d.simulatedOnly)).toBe(true);
+  expect(wallet.movements.filter(m=>m.kind==='buyStock'||m.kind==='sellStock').every(m=>m.simulatedOnly)).toBe(true);
   expect(walletSummary(wallet).totalAssets).toBe(wallet.cash+walletSummary(wallet).stockValue);
  });
 });
