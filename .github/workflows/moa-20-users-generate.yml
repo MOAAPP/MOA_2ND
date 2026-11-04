@@ -34,6 +34,12 @@ on:
       - src/ux-v19.css
       - tests/onboardingEntry.test.ts
       - tests/homeUxAndDemoClock.test.ts
+      - tests/homeLayoutUx.test.tsx
+      - src/screens/ParallelLab.tsx
+      - src/screens/NewChoice.tsx
+      - src/screens/bank/SaveHome.tsx
+      - src/screens/moa/MoaSetup.tsx
+      - docs/UX_HOME_V22.md
       - src/lib/appClock.ts
       - src/lib/decisionSave.ts
       - src/lib/bank/sync.ts
