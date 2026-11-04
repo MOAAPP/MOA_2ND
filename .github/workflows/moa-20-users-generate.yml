@@ -7,6 +7,7 @@ on:
       - feat/shared-92-day-dataset-20-users
       - feat/s01-complex-showcase
       - fix/daily-five-spends-unified-s01-ledger
+      - fix/demo-filled-from-first-setup
     paths:
       - .github/workflows/moa-20-users-generate.yml
       - scripts/data/build-moa-dataset.mjs
@@ -18,6 +19,10 @@ on:
       - src/screens/Ledger.tsx
       - src/lib/worldWallet.ts
       - src/lib/worldHistory.ts
+      - src/lib/demoSeed.ts
+      - src/screens/moa/MoaSetup.tsx
+      - src/ux-moa.css
+      - tests/demoFirstSetup.test.ts
       - src/state/store.tsx
       - src/App.tsx
       - src/screens/Onboarding.tsx
