@@ -15,14 +15,30 @@ export function normalizeDailyLedger(data) {
   const startDate = data.metadata.start_date;
   const endDate = data.metadata.end_date;
   const templates = [
-    ['식비', '아침 간편식', 3900, 'debit'],
+    ['식비', '아침 샌드위치', 4800, 'debit'],
     ['교통', '시내버스', 1500, 'debit'],
-    ['식비', '점심 식사', 6500, 'debit'],
-    ['카페', '테이크아웃 커피', 4200, 'debit'],
-    ['생활', '생활 소모품', 3300, 'debit'],
-    ['식비', '저녁 식사', 7900, 'debit'],
+    ['식비', '학식 점심', 6500, 'debit'],
+    ['카페', '아이스 아메리카노', 3500, 'debit'],
+    ['생활', '문구점 필기구', 3100, 'debit'],
+    ['식비', '저녁 도시락', 5900, 'debit'],
     ['교통', '지하철', 1500, 'debit'],
-    ['식비', '편의점 간식', 2800, 'debit'],
+    ['식비', '편의점 간식', 2900, 'debit'],
+    ['식비', '점심 국밥', 9000, 'debit'],
+    ['카페', '카페 라떼', 5200, 'debit'],
+    ['생활', '세제 리필', 3500, 'debit'],
+    ['식비', '김밥 한 줄', 4500, 'debit'],
+    ['식비', '간단 장보기', 8900, 'debit'],
+    ['문화·여가', '웹툰 대여', 3300, 'debit'],
+    ['교통', '버스 환승', 1500, 'debit'],
+    ['식비', '분식 저녁', 6200, 'debit'],
+    ['카페', '아이스티', 3800, 'debit'],
+    ['생활', '노트·볼펜', 2600, 'debit'],
+    ['식비', '포장 식사', 9500, 'debit'],
+    ['식비', '편의점 음료', 2000, 'debit'],
+    ['문화·여가', '전자책 대여', 3200, 'debit'],
+    ['생활', '세탁세제', 4800, 'debit'],
+    ['식비', '아침 빵', 3600, 'debit'],
+    ['교통', '마을버스', 1200, 'debit'],
   ];
   const at = (date, h, m = 0) =>
     Date.parse(date + 'T' + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':00+09:00');
@@ -81,6 +97,18 @@ export function normalizeDailyLedger(data) {
         n++;
       }
       if (n !== missing) throw new Error('Daily top-up failed: ' + id + ':' + d.date);
+    }
+
+    // Keep the main presentation day's five purchases distinct and useful.
+    // The original random sample happened to repeat the generic "생활용품"
+    // label twice, hiding category diversity in the first screen.
+    if (id === 'S01') {
+      const onSnapshot = txs.filter(t => t.date === snapshot && t.kind === 'spend' &&
+        t.name === '생활용품').sort((a, b) => a.id.localeCompare(b.id));
+      if (onSnapshot.length > 1) {
+        onSnapshot[0].name = '수업용 필기구';
+        onSnapshot[0].category = '학업';
+      }
     }
 
     // Statement cutoff is the last day of the purchase month, payment the 14th
