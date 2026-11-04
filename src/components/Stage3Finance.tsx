@@ -18,10 +18,6 @@ function splitBudget(amount: number) {
   const investment = Math.floor(amount * .2);
   return {purchase, savings, investment, cash: amount-purchase-savings-investment};
 }
-const labels: Record<string,string> = {
-  purchase_now: '지금 구매', no_purchase: '미구매', purchase_delay: '구매 연기',
-  virtual_savings: '가상 저축', virtual_investment: '가상 투자', mixed: '혼합 배분',
-};
 const emptyReq: CompareRequest = {
   user_id: '', as_of: '', horizon_days: 30, purchase_amount: 0,
   purchase_date: '', purchase_delay_days: 7, payment_method: 'debit',
