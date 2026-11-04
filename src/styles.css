@@ -734,3 +734,30 @@ button.row-item:active { opacity: 0.7; }
   margin: 12px 0;
 }
 .s2-check input[type="checkbox"] { margin-top: 3px; accent-color: var(--blue); width: 17px; height: 17px; flex: 0 0 auto; }
+
+
+/* Canonical Python finance home — single primary summary, not decorative cards. */
+.ux-python-main { display: flex; flex-direction: column; gap: 14px; }
+.ux-python-main-title { font-size: 1.28rem; line-height: 1.4; margin: 0; letter-spacing: -.02em; }
+.ux-python-main-sub { font-size: .84rem; color: var(--muted, #6b7280); line-height: 1.55; margin: 0; }
+.ux-python-main-balance { padding: 14px 0 16px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid var(--line, #e5e7eb); }
+.ux-python-main-balance > span { font-size: .86rem; color: var(--muted, #6b7280); }
+.ux-python-main-balance > strong { font-size: clamp(1.55rem, 5vw, 2.12rem); font-weight: 750; letter-spacing: -.045em; }
+.ux-python-main-balance > small { font-size: .71rem; color: var(--muted, #6b7280); line-height: 1.5; }
+.ux-python-main .ux-python-audit-values { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.ux-python-main .ux-python-audit-values > div { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.ux-python-main .ux-python-audit-values span { font-size: .76rem; color: var(--muted, #6b7280); }
+.ux-python-main .ux-python-audit-values strong { font-size: clamp(.79rem, 3vw, 1.08rem); font-weight: 720; overflow-wrap: anywhere; }
+.ux-python-main-section { border-top: 1px solid var(--line, #e5e7eb); padding-top: 14px; }
+.ux-python-main-section h3 { font-size: .96rem; margin: 0 0 9px; }
+.ux-python-main-rows { margin: 0; padding: 0; list-style: none; }
+.ux-python-main-rows li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 7px 0; border-bottom: 1px solid var(--line, #e5e7eb); }
+.ux-python-main-rows li:last-child { border-bottom: 0; }
+.ux-python-main-rows li > span:first-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.ux-python-main-rows li b { font-size: .86rem; overflow-wrap: anywhere; }
+.ux-python-main-rows li small { font-size: .74rem; color: var(--muted, #6b7280); }
+.ux-python-main-rows li strong { font-size: .9rem; white-space: nowrap; }
+.ux-python-main-status { font-size: .73rem; white-space: nowrap; }
+.ux-python-main-empty,.ux-python-main-foot { font-size: .76rem; line-height: 1.5; color: var(--muted, #6b7280); margin: 0; }
+.ux-python-main .ux-python-audit-error { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.ux-python-main .ux-python-audit-error p { margin: 0; }
