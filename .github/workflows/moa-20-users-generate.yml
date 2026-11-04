@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/shared-92-day-dataset-20-users
+      - feat/s01-complex-showcase
     paths:
       - .github/workflows/moa-20-users-generate.yml
       - scripts/data/build-moa-dataset.mjs
@@ -45,6 +46,11 @@ jobs:
           }
           console.log('Validated 20 synthetic profiles and 1840 distinct daily rows');
           NODE
+      - name: Run S01 demo and shared dataset tests
+        run: |
+          npm ci
+          npx vitest run tests/sharedDataset.test.ts tests/s01Showcase.test.ts
+          npm run typecheck
       - name: Create shareable team ZIP
         run: |
           python3 - <<'PY'
@@ -64,5 +70,5 @@ jobs:
           git add public/data/moa-92days.json public/data/moa-92days-*.csv public/data/moa-92days-20users-team.zip src/data/moa-demo-s01.json
           if ! git diff --cached --quiet; then
             git commit -m "chore(data): generate 20-user 92-day synthetic fixtures"
-            git push origin HEAD:feat/shared-92-day-dataset-20-users
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
