@@ -11,7 +11,8 @@ const fetchJSON = async path => {
   if (res.status !== 200) throw new Error(path + ': ' + await res.text());
   return res.json();
 };
-const won = amount => Math.round(amount).toLocaleString('ko-KR') + '원';
+// UI shows negatives with the typographic minus (U+2212), e.g. −8,200원
+const won = amount => { const r = Math.round(amount); return (r < 0 ? '\u2212' : '') + Math.abs(r).toLocaleString('ko-KR') + '원'; };
 const defaultUser = await fetchJSON('/api/v4/demo/default');
 const users = await fetchJSON('/api/v4/users');
 assert.equal(users.users.length, 20);
@@ -23,6 +24,16 @@ const s02Old = await fetchJSON('/api/v4/users/S02/home?as_of=2026-11-03');
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 page.on('pageerror', e => { throw e; });
+// Account/date pickers are developer controls outside the user screen:
+// on phone width they live in the '체험 설정' sheet.
+const openDev = async () => {
+  if (await page.locator('select[aria-label="가상 사용자 선택"]').count()) return;
+  await page.getByRole('button',{name:'체험 설정',exact:true}).click();
+};
+const closeDev = async () => {
+  const close = page.getByRole('button',{name:'체험 설정 닫기'}).last();
+  if (await close.count()) await close.click();
+};
 try {
   await page.goto(base + '/?demo=1');
   const hero = page.locator('.st3-hero > strong');
@@ -30,6 +41,7 @@ try {
   await page.waitForFunction(expected =>
     document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
     won(s01.available_cash));
+  await openDev();
   assert.equal((await page.locator('select[aria-label="가상 사용자 선택"] option').count()),20);
   assert.equal(await page.locator('input[aria-label="금융 관측 기준일"]').inputValue(),'2026-11-04');
   assert.equal(await hero.innerText(), won(s01.available_cash));
@@ -53,7 +65,8 @@ try {
     document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
     won(s01.available_cash));
 
-  await page.getByRole('button',{name:'평행세계'}).click();
+  await closeDev();
+  await page.getByRole('button',{name:'평행세계',exact:true}).click();
   await page.locator('.st3-world-card').first().waitFor({timeout:25000});
   assert.equal(await page.locator('.st3-world-card').count(),4);
   await page.getByRole('button',{name:'투자·혼합 배분까지 6개 모두 보기'}).click();
@@ -85,10 +98,11 @@ try {
   await page.route('**/api/v4/users/S03/home**',route=>route.fulfill({
     status:200,contentType:'application/json',body:'{}',
   }));
+  await openDev();
   await page.locator('select[aria-label="가상 사용자 선택"]').selectOption('S03');
   await page.locator('.st3-error').first().waitFor({timeout:25000});
   assert.equal(await page.locator('.st3-hero > strong').count(),0);
-  assert.match(await page.locator('.st3-error').innerText(),/응답 스키마/);
+  assert.match(await page.locator('.st3-error').innerText(),/데이터 형식/);
   console.log('STAGE3_BROWSER_PASS: 20 users, S01 home amount, S02 isolation, date movement, 6 worlds, API matching, schema-error state.');
 } finally {
   await browser.close();
