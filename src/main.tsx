@@ -23,6 +23,7 @@ import './ux-v19.css';
 import './ux-moa.css';
 import './ux-v21-schedule-ledger.css';
 import './ux-v22-home.css';
+import './ux-v23-cashflow.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
