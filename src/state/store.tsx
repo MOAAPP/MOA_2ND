@@ -162,14 +162,14 @@ function load(): { state: AppState; error: string | null } {
         m.id.startsWith('income-') || m.id.startsWith('bills-')) &&
       !(parsed.bank?.contracts?.length) && !(parsed.investJournal?.orders?.length);
     const refreshed = sampleOnly ? { ...demoData(), moa: demoMoa(Date.now()),
-      worldWallet: demoWorldWalletFromShared(), demoFixtureVersion: 4 } : {};
-    const worldWallet = sampleOnly ? refreshed.worldWallet! : parsed.demo && isEmptyWorld(world) &&
+      worldWallet: demoWorldWalletFromShared(), demoFixtureVersion: 4 } : null;
+    const worldWallet = refreshed ? refreshed.worldWallet : parsed.demo && isEmptyWorld(world) &&
       !parsed.bank?.contracts?.length ? demoWorldWalletFromShared() : world;
     return {
       state: {
         ...base,
         ...parsed,
-        ...refreshed,
+        ...(refreshed ?? {}),
         settings: { ...base.settings, ...(parsed.settings ?? {}) },
         portfolio: { ...base.portfolio, ...(parsed.portfolio ?? {}) },
         investJournal: { ...emptyInvestJournal(parsed.portfolio?.watchlist), ...(parsed.investJournal ?? {}) },
@@ -178,7 +178,7 @@ function load(): { state: AppState; error: string | null } {
         learning: { ...base.learning, ...(parsed.learning ?? {}) },
         daily: { ...base.daily, ...(parsed.daily ?? {}) },
         research: migrateResearch(parsed.research),
-        moa: sampleOnly ? refreshed.moa! : loadMoa(parsed),
+        moa: refreshed?.moa ?? loadMoa(parsed),
         version: 3,
       },
       error: null,
