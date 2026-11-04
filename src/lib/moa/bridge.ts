@@ -1,4 +1,5 @@
 import { todayKST } from '../../../shared/dates';
+import { DEMO_SNAPSHOT_DAY } from '../appClock';
 import half from '../../data/moa-demo-s01.json';
 import type { SpendEntry } from '../ml/types';
 import type { Profile, ScheduleItem } from '../types';
@@ -56,7 +57,7 @@ export function spendEntryOf(t: Txn): SpendEntry | null {
 
 /** Same S01 fixture as the ledger and the team's ML data; no invented extra 21-day transactions. */
 export function demoMoa(nowMs: number): MoaState {
-  const today = todayKST(new Date(nowMs));
+  const today = todayKST(new Date(nowMs)) > DEMO_SNAPSHOT_DAY ? DEMO_SNAPSHOT_DAY : todayKST(new Date(nowMs));
   const user = half.profiles.find((p) => p.user_id === 'S01')!;
   const current = half.daily.filter((d) => d.user_id === user.user_id && d.date <= today).at(-1);
   const txns: Txn[] = half.transactions
@@ -75,7 +76,7 @@ export function demoMoa(nowMs: number): MoaState {
   return {
     ...m,
     payAccountName: '가상 결제계좌 · S01',
-    anchor: { balance: current?.account_balance_eod ?? user.opening_balance, at: nowMs, source: 'manual', reflected: [] },
+    anchor: { balance: current?.account_balance_eod ?? user.opening_balance, at: Math.min(nowMs, Date.parse(`${DEMO_SNAPSHOT_DAY}T23:59:00+09:00`)), source: 'manual', reflected: [] },
     cards: [
       { id: 'demo_credit', name: '가상 신용카드', kind: 'credit', linked: false, cutoffDay: 31, payDay: 14 },
       { id: 'demo_debit', name: '가상 체크카드', kind: 'debit', linked: true },
