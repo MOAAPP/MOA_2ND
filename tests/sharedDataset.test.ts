@@ -10,18 +10,18 @@ const all=JSON.parse(readFileSync('public/data/moa-92days.json','utf8'));
 const now=Date.parse('2026-11-04T10:00:00+09:00');
 
 describe('single MOA dataset · Sep 11 through Dec 11 (synthetic)',()=>{
- it('contains exactly 92 dates for each of ten synthetic users with no duplicate IDs',()=>{
+ it('contains exactly 92 dates for each of twenty synthetic users with no duplicate IDs',()=>{
   expect(all.metadata.start_date).toBe('2026-09-11');
   expect(all.metadata.end_date).toBe('2026-12-11');
-  expect(all.profiles).toHaveLength(10);
-  expect(all.daily).toHaveLength(920);
-  expect(new Set(all.daily.map((x:{user_id:string,date:string})=>x.user_id+':'+x.date)).size).toBe(920);
-  expect(all.transactions.length).toBe(1778);
-  expect(new Set(all.transactions.map((x:{id:string})=>x.id)).size).toBe(1778);
+  expect(all.profiles).toHaveLength(20);
+  expect(all.daily).toHaveLength(1840);
+  expect(new Set(all.daily.map((x:{user_id:string,date:string})=>x.user_id+':'+x.date)).size).toBe(1840);
+  expect(all.transactions.length).toBeGreaterThanOrEqual(3000);
+  expect(new Set(all.transactions.map((x:{id:string})=>x.id)).size).toBe(all.transactions.length);
  });
  it('never exposes a future scenario as an observed label',()=>{
   const future=all.daily.filter((x:{date:string})=>x.date>'2026-11-04');
-  expect(future).toHaveLength(370);
+  expect(future).toHaveLength(740);
   expect(future.every((x:{split:string,future_scenario:boolean,model_label:unknown})=>
     x.split==='future_scenario'&&x.future_scenario&&x.model_label===null)).toBe(true);
   expect(all.transactions.filter((x:{future_scenario:boolean})=>x.future_scenario)
