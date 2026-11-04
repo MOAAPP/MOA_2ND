@@ -6,6 +6,7 @@ import { won } from '../../shared/format';
 import { BetterPrice } from '../components/BetterPrice';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { usePhotoReader } from '../components/PhotoReader';
+import { Stage2Vision } from '../components/Stage2Vision';
 import { TopBar } from '../components/ui';
 import { CATEGORIES } from '../lib/categories';
 import { ruleClassify } from '../lib/ml/classify';
@@ -38,6 +39,7 @@ export function NewChoice() {
   const [category, setCategory] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
+  const [stage2File, setStage2File] = useState<File | null>(null);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -48,7 +50,8 @@ export function NewChoice() {
   const take = (f?: File | null) => {
     if (!f || !f.type.startsWith('image/')) return;
     setPreview((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(f); });
-    void photo.read(f);
+    if (state.demo) setStage2File(f); // Synthetic S01 preview: real Python vision pipeline
+    else void photo.read(f); // Preserve existing receipt OCR for non-demo records
   };
   // 캡처 후 Cmd/Ctrl+V 로 붙여넣기
   useEffect(() => {
@@ -200,9 +203,14 @@ export function NewChoice() {
 
         {error && <p className="nc-error" role="alert">{error}</p>}
         <button className="nc-save" disabled={!name.trim() || p <= 0} onClick={save}>기록하고 평행세계에 반영하기</button>
-        <p className="v8-footer-disclaimer">산 금액은 가계부에도 함께 기록돼요. 사진은 금액을 읽는 데만 쓰고 저장하지 않아요.</p>
+        <p className="v8-footer-disclaimer">산 금액은 가계부에도 함께 기록돼요. 합성 S01 데모에서는 캡처가 서버를 거쳐 외부 비전 AI로 전달돼요. 이미지는 저장하지 않고, 구매 후보도 실제 거래로 기록하지 않아요.</p>
       </div>
       {photo.sheet}
+      {stage2File && <Stage2Vision key={stage2File.name + stage2File.lastModified} file={stage2File}
+        onClose={() => setStage2File(null)} onApply={({ amount, name: n }) => {
+          setPrice(String(amount));
+          if (n) setName(n.slice(0, 40));
+        }} />}
     </div>
   );
 }
