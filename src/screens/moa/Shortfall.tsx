@@ -17,12 +17,12 @@ import { AiLabel, BalanceChart, fmt, Fold, GradeBadge, HelpCard, md, Reliability
  * 결제일 잔고 상세 — 이 화면의 일: "다가오는 필수결제마다 그날 결제계좌에 돈이 남는지" 보여주기.
  * 위에서부터 결론 → 결제 목록(고른 결제의 핵심 두 경우) → 할 수 있는 일. 그래프와 계산 근거는 접어 둔다.
  */
-export function Shortfall() {
+export function Shortfall({ paymentKey }: { paymentKey?: string } = {}) {
   const nav = useNav();
   const { moa, report, today, set } = useMoa();
   const [view, setView] = useState<'onTime' | 'late'>('onTime');
   const [balOpen, setBalOpen] = useState(false);
-  const [sel, setSel] = useState<string | null>(null);
+  const [sel, setSel] = useState<string | null>(paymentKey ?? null);
   const [allCases, setAllCases] = useState(false);
 
   const until = addDays(today, 14);
