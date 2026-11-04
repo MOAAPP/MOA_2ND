@@ -5,7 +5,7 @@
  */
 import type {
   AskIn, AskOut, BriefIn, BriefOut, CategorizeIn, CategorizeOut, CoachIn, CoachOut,
-  LedgerSummaryIn, LedgerSummaryOut, ParseScheduleIn, ParseScheduleOut, ParseSpendIn, ParseSpendOut,
+  CashflowIn, CashflowOut, LedgerSummaryIn, LedgerSummaryOut, ParseScheduleIn, ParseScheduleOut, ParseSpendIn, ParseSpendOut,
 } from '../../../shared/aiPrompts';
 import { CATEGORIES } from '../categories';
 import { ruleClassify } from '../ml/classify';
@@ -17,6 +17,37 @@ const man = (n: number) => {
   if (a >= 10_000) { const v = Math.round(a / 1000) / 10; return `${Number.isInteger(v) ? v : v.toFixed(1)}만 원`; }
   return won(a);
 };
+
+/* ───────── 결제일 위험 설명: LLM 미연결 때 정직한 계산 기반 대체 문장 ───────── */
+export function exampleCashflow(i: CashflowIn): CashflowOut {
+  const p = i.payment;
+  if (!p) return {
+    insight: '등록된 필수결제 일정으로 결제계좌 잔액을 확인하고 있어요.',
+    nextStep: '카드 청구일과 월세·알바비 일정을 추가하면 비교할 날짜가 늘어나요.',
+  };
+  if (i.reliability !== 'enough') return {
+    insight: '입력한 잔액이나 거래 기록을 추가로 확인해야 예측을 더 믿을 수 있어요.',
+    nextStep: '결제계좌 잔액과 빠진 결제 문자를 먼저 확인해 주세요.',
+  };
+  if (p.grade === 'registered') return {
+    insight: '등록된 필수결제와 확정 입출금만으로도 부족이 예상돼요. 생활비 예측과 무관하게 확인할 수 있는 신호예요.',
+    nextStep: '결제 전 잔액을 재확인하고, 들어올 돈이 확정됐는지 살펴보세요.',
+  };
+  if (p.grade === 'high') return {
+    insight: i.forecastMethod === 'ml'
+      ? '채택된 지출 예측을 반영하면 이 결제일의 잔액이 부족할 수 있어요.'
+      : '요일별 소비 패턴을 반영하면 이 결제일의 잔액이 부족할 수 있어요.',
+    nextStep: '구매를 결정하기 전에 결제 수단과 입금 지연 경우를 비교해 보세요.',
+  };
+  if (p.grade === 'caution' || p.grade === 'combo') return {
+    insight: '평소보다 많이 쓰거나 입금이 늦어지는 조건에서 결제일의 잔액이 달라져요.',
+    nextStep: '입금 지연과 지출 증가 경우를 각각 비교해 보세요.',
+  };
+  return {
+    insight: '현재 등록된 일정과 선택한 예측 방법에서는 해당 결제일의 부족이 확인되지 않았어요.',
+    nextStep: '새로운 지출이 생기면 결제 문자를 추가해 결과를 다시 확인해 보세요.',
+  };
+}
 
 /* ───────── 홈 브리핑 ───────── */
 export function exampleBrief(i: BriefIn): BriefOut {
