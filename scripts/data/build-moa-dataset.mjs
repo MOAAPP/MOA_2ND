@@ -1,4 +1,4 @@
-/** One deterministic data build: 2026-09-11..2026-12-11 (92 days, 10 synthetic users).
+/** One deterministic data build: 2026-09-11..2026-12-11 (92 days, 20 synthetic users).
  * Execute from project root: node scripts/data/build-moa-dataset.mjs
  * No database, network access, credentials, or actual financial information.
  */
@@ -16,7 +16,17 @@ const buildHalf=function buildHalf(){
  ["S07","시험기간 소비 급증형",450000,720000,300000,42000,11900,1.1,"spike"],
  ["S08","절약·저축형",1480000,1500000,430000,65000,17000,.65,"thrifty"],
  ["S09","불규칙 소득형",490000,950000,360000,53000,17900,1.16,"irregular_income"],
- ["S10","월말 자금 부족형",350000,780000,400000,63000,23000,1.3,"shortfall"]
+ ["S10","월말 자금 부족형",350000,780000,400000,63000,23000,1.3,"shortfall"],
+ ["S11","카페·외식 비중이 높은 대학생",550000,850000,360000,44000,14900,1.25,"regular"],
+ ["S12","야간 알바 급여 지연형",450000,1050000,380000,59000,9900,1.08,"late_income"],
+ ["S13","주말 여행·여가 소비 집중형",1380000,1350000,470000,69000,20900,1.5,"weekend"],
+ ["S14","지출 수기 기록 누락형",740000,980000,420000,49000,15900,.95,"missing"],
+ ["S15","자취 고정비 부담이 큰 대학생",680000,880000,500000,65000,32900,1.15,"fixed_heavy"],
+ ["S16","후불 신용카드 결제 집중형",980000,1180000,460000,65000,24900,1.18,"credit"],
+ ["S17","시험·취업 준비기 지출 증가형",360000,640000,320000,45000,11900,1.2,"spike"],
+ ["S18","생활비 절약·저축 우선형",1630000,1450000,370000,42000,9900,.58,"thrifty"],
+ ["S19","프리랜서형 불규칙 소득",570000,900000,395000,55000,12900,1.3,"irregular_income"],
+ ["S20","월말·연말 잔액 부족 위험형",290000,760000,410000,60000,21900,1.47,"shortfall"]
  ];
  const menu=[["식비","학식",6500],["식비","편의점 도시락",4900],["식비","배달 식사",18500],["카페","아메리카노",4500],["카페","카페 라떼",5600],["교통","대중교통",1500],["생활","생활용품",8900],["쇼핑","온라인 쇼핑",29900],["문화·여가","영화",15000],["식비","외식",15500],["카페","디저트",7900],["생활","세탁",6000]];
  const iso=d=>d.toISOString().slice(0,10);const dates=[];for(let t=new Date(START+"T00:00:00Z");iso(t)<=END;t=new Date(t.getTime()+86400000))dates.push(iso(t));
@@ -173,7 +183,7 @@ const buildSecond=function buildSecond(first){
     }
   }
   if(dates.length!==46)throw Error("Second half not 46 days");
-  return {metadata:{dataset_id:"MOA-2026-H2",version:"2.0.0",start_date:START,end_date:END,days:dates.length,profiles:10,
+  return {metadata:{dataset_id:"MOA-2026-H2",version:"2.0.0",start_date:START,end_date:END,days:dates.length,profiles:profiles.length,
     seed:SEED,source:"synthetic",timezone:"Asia/Seoul",snapshot_date:SNAP,continuation_of:"MOA-2026-H1",
     future_scenario_start:"2026-11-05",future_scenario_end:END,
     warning:"All fictitious. 2026-11-05 onward is an unobserved future scenario; never use it as a model target or observed transaction."},
@@ -185,10 +195,11 @@ const combine=function combine(first,second){
   const daily=[...first.daily,...second.daily].map(d=>{const future=d.date>snapshot,complete=!future&&d.observation_complete;return {...d,split:split(d.date),future_scenario:future,observation_complete:complete,model_label:complete?d.true_variable_spend:null}});
   const choices=[...first.choices.map(d=>({...d,phase:"historical_synthetic",future_scenario:false})),...second.choices];
   const investments=[...first.investments.map(d=>({...d,phase:"historical_synthetic",future_scenario:false})),...second.investments];
-  if(daily.length!==920||new Set(daily.map(x=>x.user_id+":"+x.date)).size!==920)throw Error("Daily grain error");
+  const expected=first.profiles.length*92;
+  if(daily.length!==expected||new Set(daily.map(x=>x.user_id+":"+x.date)).size!==expected)throw Error("Daily grain error");
   for(const rows of [transactions,choices,investments])if(rows.length!==new Set(rows.map(x=>x.id)).size)throw Error("Duplicate IDs");
   return {metadata:{dataset_id:"MOA-2026-92D",version:"2.0.0",source:"synthetic",start_date:"2026-09-11",end_date:"2026-12-11",
-    snapshot_date:snapshot,days:92,profiles:10,observed_synthetic_days:55,future_scenario_days:37,timezone:"Asia/Seoul",
+    snapshot_date:snapshot,days:92,profiles:first.profiles.length,observed_synthetic_days:55,future_scenario_days:37,timezone:"Asia/Seoul",
     seed_half1:first.metadata.seed,seed_half2:second.metadata.seed,
     split:{train:"2026-09-11..2026-10-20",validation:"2026-10-21..2026-10-27",test:"2026-10-28..2026-11-04",future_scenario:"2026-11-05..2026-12-11"},
     warning:"Every value is synthetic, not a real user's bank data. Future days are hypothetical; model_label null for incomplete/future rows. true_variable_spend is oracle-only."},
