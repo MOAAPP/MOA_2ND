@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Won } from '../components/ds';
 import { TopBar, useToast } from '../components/ui';
 import { appToday } from '../lib/bank/sync';
+import { appDay } from '../lib/appClock';
 import { demoWorldWallet, isEmptyWorld } from '../lib/demoWorld';
 import { koreanDayLabel } from '../lib/worldHistory';
 import { worldReport, type WorldReport as Report } from '../lib/worldReport';
@@ -45,7 +46,7 @@ export function WorldReport() {
   const toast = useToast();
   const sample = isEmptyWorld(state.worldWallet);
   const decisions = useMemo(() => (sample ? demoWorldWallet() : state.worldWallet).decisions, [sample, state.worldWallet]);
-  const today = appToday(state.bank);
+  const today = state.demo ? appDay(state) : appToday(state.bank);
   const r = useMemo(() => worldReport(decisions, today), [decisions, today]);
   const max = Math.max(1, ...r.months.map((m) => m.fullPrice));
 
