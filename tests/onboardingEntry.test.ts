@@ -18,6 +18,8 @@ describe('onboarding: an immediate, visible and safe example entry', () => {
       onDemo: () => {}, onDone: () => {}, existingData: true,
     }));
     expect(markup).toContain('기존 기록으로 돌아가기');
+    expect(markup).toContain('S01 예시로 체험하기 · 기존 기록은 그대로');
+    expect(markup).toContain('/?demo=1');
     expect(markup).not.toContain('일단 예시 데이터로 시작하기');
   });
 });

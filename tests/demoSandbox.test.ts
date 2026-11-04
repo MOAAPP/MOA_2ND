@@ -1,0 +1,24 @@
+import { describe, expect, it } from 'vitest';
+import { isSandboxDemo } from '../src/lib/demoSandbox';
+import { initialState } from '../src/state/store';
+import { seedDemoState } from '../src/lib/demoSeed';
+
+describe('isolated S01 demo entry', () => {
+  it('requires an explicit ?demo=1 URL and not a regular user session', () => {
+    expect(isSandboxDemo('?demo=1')).toBe(true);
+    expect(isSandboxDemo('?intro=1&demo=1')).toBe(true);
+    expect(isSandboxDemo('')).toBe(false);
+    expect(isSandboxDemo('?demo=0')).toBe(false);
+  });
+  it('starts from S01 observations without changing the original app state', () => {
+    const personal = initialState();
+    const demo = seedDemoState(personal);
+    expect(personal.demo).toBe(false);
+    expect(personal.profile).toBeNull();
+    expect(demo.demo).toBe(true);
+    expect(demo.demoDay).toBe('2026-11-04');
+    expect(demo.profile?.baseBalance).toBe(27800);
+    expect(demo.spendLog.filter(e => e.date === '2026-11-04')).toHaveLength(5);
+    expect(demo.spendLog.filter(e => e.date === '2026-11-04').reduce((sum,e) => sum+e.amount,0)).toBe(31000);
+  });
+});

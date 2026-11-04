@@ -40,3 +40,14 @@ npm run dev
 **범위 제한:** 이 패널은 합성 사용자 S01의 Python 계산만 보여줍니다. 기존 `src/lib/moa/`, `src/lib/cashflow.ts`, 가계부·차트의 TypeScript 계산은 기존 기능 보존을 위해 아직 교체하지 않았습니다. 따라서 두 계산 결과가 동일하다고 보장하지 않습니다. 실사용자 데이터의 Python 동기화, 전체 차트/평행세계 엔진의 API 단일화, 인증은 후속 단계에 해당합니다.
 
 [백엔드 API·데이터 검증 문서](https://github.com/MOAAPP/MOA_2ND_BE/tree/main/docs)
+
+## S01 임시 데이터가 보이지 않을 때 (로컬)
+
+1. 백엔드를 `cd ~/Projects/MOA_2ND_BE && bash scripts/dev-local.sh`로 실행한 후 `http://127.0.0.1:8000/api/v4/health`에서 사용자 20명 확인
+2. 별도 터미널에서 기능 브랜치 `feature/v4-finance-fastapi-stage1-20261104`를 체크아웃하고 `VITE_FINANCE_API_BASE= npm run dev` 실행
+3. 일반 계정의 저장된 기록을 손대지 않고 테스트하려면 **`http://localhost:5173/?demo=1`** 로 접속. 이 체험은 메모리 내 독립 S01 상태로 열리고 기존 `pb.state.v3`을 읽거나 덮어쓰지 않음
+4. 홈 상단 `가상 체험 · S01` 확인, 기준일 계좌 잔액 27,800원, 11/04 가계부 5건(31,000원) 확인
+5. 기존 `결제일 위험` 아래에 별도 큰 카드 대신 작은 `예상 잔액 · Python 계산` 정보가 붙었는지 확인
+6. `http://localhost:5173/api/v4/health`에서 프록시 200 OK 확인. 연결이 끊어지면 정보 줄의 재연결 버튼을 테스트
+
+주의: Python 결과는 원본 S01 합성 데이터 기반이며 프론트에서 직접 추가한 결제·구매는 API에 동기화하지 않았습니다. 저장 데이터가 있는 일반 모드의 온보딩은 기존 기록을 보호하기 위해 S01로 자동 초기화하지 않습니다.
