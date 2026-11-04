@@ -118,8 +118,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 const json = <T,>(path: string, body: unknown) => request<T>(path, {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
 });
-export function analyzeSms(userId: string, text: string, useLlm = false) {
-  return json<SmsAnalysis>('/sms/analyze', { user_id: userId, text, use_llm_for_unknown: useLlm });
+export function analyzeSms(userId: string, text: string) {
+  return json<SmsAnalysis>('/sms/analyze', { user_id: userId, text });
 }
 export function confirmSms(userId: string, transaction: ParsedTransaction, accountId?: string) {
   return json<{ status: 'confirmed'; warnings: string[] }>('/sms/confirm', {
