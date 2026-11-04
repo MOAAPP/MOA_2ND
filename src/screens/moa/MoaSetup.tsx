@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { addDays, formatKDate, todayKST } from '../../../shared/dates';
 import type { ParsedSchedule } from '../../../shared/aiPrompts';
 import { AiSourceNote } from '../../components/Ai';
 import { Button, Chip, Chips, NumberPad } from '../../components/ds';
 import { ConfirmSheet, Sheet, Switch, TopBar } from '../../components/ui';
 import { runAi, type AiSource } from '../../lib/ai';
+import { demoSetupPreview, seedDemoState } from '../../lib/demoSeed';
 import {
   emptyMoa,
   METHOD_LABEL,
@@ -60,8 +61,10 @@ function exportForEval(m: MoaState) {
 const dayLabel = (d?: number) => (d === 31 ? '말일' : `${d}일`);
 
 /** 1분 설정: 결제계좌 잔액 + 가장 가까운 필수결제 1건 → 바로 결과 */
-export function QuickStart({ onDone }: { onDone?: () => void }) {
+export function QuickStart({ onDone, onDemo }: { onDone?: () => void; onDemo: () => void }) {
   const { update } = useStore();
+  const [mode, setMode] = useState<'demo' | 'manual'>('demo');
+  const preview = useMemo(() => demoSetupPreview(), []);
   const [step, setStep] = useState<0 | 1>(0);
   const [balance, setBalance] = useState(0);
   const [name, setName] = useState('월세');
@@ -88,14 +91,35 @@ export function QuickStart({ onDone }: { onDone?: () => void }) {
   };
   return (
     <div className="mo-qs">
-      {step === 0 ? (
+      {mode === 'demo' ? (
         <>
-          <span className="mo-qs-step">1/2 · 1분이면 돼요</span>
+          <span className="mo-qs-step">예시 데이터 · 입력 없이 시작</span>
+          <h1>잔액부터 월세까지<br />이미 채워진 기록으로 체험해요</h1>
+          <p>20명의 합성 데이터 중 복합 시나리오가 있는 S01 사용자예요. 결제계좌·고정비·카드·가계부·평행세계가 같은 기록을 사용해요.</p>
+          <section className="mo-demo-preview" aria-label="S01 미리 채워진 예시 데이터">
+            <p className="mo-demo-preview-title">S01 · {preview.date} 기준</p>
+            <div className="mo-demo-preview-balance"><span>결제계좌 잔액</span><strong className="num">{fmt(preview.balance)}</strong></div>
+            <dl>
+              {preview.rentAmount !== null && <div><dt>월세 · 매월 {preview.rentDay}일</dt><dd className="num">−{fmt(preview.rentAmount)}</dd></div>}
+              {preview.salaryAmount !== null && <div><dt>알바비 · 매월 {preview.salaryDay}일</dt><dd className="num positive">+{fmt(preview.salaryAmount)}</dd></div>}
+              {preview.nextCardAmount !== null && <div><dt>신용카드 · {preview.nextCardDate} 출금 예정</dt><dd className="num">−{fmt(preview.nextCardAmount)}</dd></div>}
+              <div><dt>오늘 가계부</dt><dd>{preview.expenseCountToday}건 · 총 {preview.totalRecordedExpenses}건 기록</dd></div>
+              <div><dt>연결된 설정</dt><dd>정기 일정 {preview.scheduleCount}개 · 카드 {preview.cardCount}개</dd></div>
+            </dl>
+          </section>
+          <Button onClick={onDemo}>이 예시 데이터로 바로 시작</Button>
+          <button type="button" className="mo-link mo-demo-manual" onClick={() => setMode('manual')}>내 잔액과 결제일 직접 입력하기</button>
+          <p className="mo-demo-disclaimer">예시 금액은 모두 가상 데이터예요. 내 은행 정보와 연결하지 않아요.</p>
+        </>
+      ) : step === 0 ? (
+        <>
+          <span className="mo-qs-step">1/2 · 직접 입력하기</span>
           <h1>필수결제가 빠져나가는<br />결제계좌에 지금 얼마 있어요?</h1>
           <p>월세·카드값이 실제로 빠지는 통장 하나만요. 계좌 연결 없이 숫자만 받아요.</p>
           <p className="mo-amount num">{fmt(balance)}</p>
           <NumberPad value={balance} onChange={setBalance} max={100_000_000} />
           <Button onClick={() => setStep(1)}>다음</Button>
+          <button type="button" className="mo-link mo-demo-manual" onClick={() => setMode('demo')}>예시 데이터 자동으로 채우기</button>
         </>
       ) : (
         <>
@@ -128,7 +152,10 @@ export function MoaSetup() {
     return (
       <div className="page t-page mo-page">
         <TopBar onBack={nav.pop} title="" />
-        <QuickStart onDone={() => nav.replace({ name: 'shortfall' })} />
+        <QuickStart
+          onDemo={() => { update((s) => seedDemoState(s)); nav.goTab('home'); }}
+          onDone={() => nav.replace({ name: 'shortfall' })}
+        />
       </div>
     );
   }
