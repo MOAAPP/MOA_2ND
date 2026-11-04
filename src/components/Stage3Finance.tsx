@@ -177,7 +177,24 @@ export function Stage3Home() {
       {!home.has_observation_on_date&&<p className="st3-caution">이 날짜에는 완전한 관측 일별 기록이 없어요. 가장 가까운 이전 잔액 기준을 확인하세요.</p>}
       <Info title="앞으로 14일 결제계좌 흐름">
         <MiniLine values={[home.available_cash,...home.daily_cashflow.map(d=>d.closing_balance)]}/>
-        <p className="st3-muted">Python 금융 엔진의 등록 일정 기준 · ML 예측 미반영 · 기간 최저 잔액 {W(home.minimum_balance)}</p>
+        <p className="st3-muted">확정 결제 일정과 예상 변동 지출을 출금일 기준으로 합산 · 기간 최저 잔액 {W(home.minimum_balance)}</p>
+        {home.variable_forecast.model_type==='unavailable'?
+          <p className="st3-caution">미래 지출 전망에 사용할 관측 기록이 부족해요. 확정 일정만 반영했어요.</p>:
+          <>
+            <div className="st3-row">
+              <span><b>앞으로 7일 변동 지출 전망</b><small>아직 발생하지 않은 결제계좌 변동 지출 · 확정 결제와 구분</small></span>
+              <strong className="num">{W(home.variable_forecast.forecasts?.find(f=>f.horizon_days===7)?.predicted_variable_outflow)}</strong>
+            </div>
+            <p className="st3-muted">{home.variable_forecast.model_type==='lightgbm'?
+              '과거 합성 지출 기록을 학습한 모델의 전망이에요':
+              '관측 기록으로 계산한 기준선 전망이에요 · 머신러닝 예측은 아직 선택되지 않았어요'}
+              {' · '}기록 품질: {home.variable_forecast.data_quality_status==='complete'?'충분한 관측':
+              '일부 관측 제한'} · 실제 소비액과 달라질 수 있어요
+            </p>
+            <p className="st3-muted">지출 25% 증가 가정: 향후 7일 {W(home.variable_forecast.upper_scenario?.daily.slice(0,7).reduce((sum,d)=>sum+d.amount,0))}
+              {' '}· 통계적으로 검증된 상한값이나 위험 확률이 아닌 비교 가정이에요</p>
+          </>}
+
       </Info>
       <section className="ux-home-decision" aria-label="구매 선택 비교하기">
         <small className="ux-home-overline">BEFORE YOU BUY · 소비 결정</small>
@@ -197,15 +214,15 @@ export function Stage3Home() {
       </Info>
       <Info title="최근 거래">
         {home.recent_transactions.length?home.recent_transactions.slice(0,6).map(tx=>
-          <div className="st3-row" key={tx.id}><span><b>{tx.name}</b><small>{tx.date} · {tx.method}</small></span><strong>{W(tx.amount)}</strong></div>
+          <div className="st3-row" key={tx.id}><span><b>{tx.name}</b><small>{tx.date} · {tx.method}</small></span><strong>{tx.kind==='spend'?'−':''}{W(tx.amount)}</strong></div>
         ):<p className="st3-muted">해당 날짜까지 확인된 거래 내역이 없어요.</p>}
       </Info>
       <Info title="가상 저축·투자 현황">
         <p className="st3-muted">목표 저축: {home.savings_goals.length?'등록된 목표 있음':'공통 데이터셋에 목표 정보 없음 · 시나리오에서 새 목표 설정 가능'}</p>
         <p className="st3-muted">가상 투자: {Object.keys(home.virtual_investments.positions??{}).length}개 종목 보유 (원본 테스트 지갑, 실제 결제계좌에 영향 없음)</p>
-        {comparison&&<p className="st3-muted">평행세계 비교: {comparison.paths.filter(p=>p.status==='calculated').length}개 계산됨 · 기본 변동 지출 전망은 최근 관측 평균이며 ML 예측이 아닙니다.</p>}
+        {comparison&&<p className="st3-muted">평행세계 비교: {comparison.paths.filter(p=>p.status==='calculated').length}개 계산됨 · 모든 경로에 동일한 기본 변동 지출 전망이 적용됩니다.</p>}
       </Info>
-      <p className="st3-legal">AI 아침 브리핑: 실제 모델이 연결되지 않아 현재는 제공하지 않습니다. 합성 금융 데이터로 재현한 시연 결과이며 실제 계좌·시세·검증된 AI 예측이 아닙니다.</p>
+      <p className="st3-legal">AI 아침 브리핑은 별도 기능이며 아직 제공되지 않습니다. 지출 모델의 검증은 합성 데이터에만 해당합니다. 실제 은행 계좌·시세·실사용자 성능을 뜻하지 않습니다.</p>
       <button className="st3-expand" type="button" onClick={()=>update(s=>({...s,demo:false,profile:null,introSeen:false,setupDraft:null}))}>내 재무 정보 직접 입력하기</button>
     </>}
   </div>;

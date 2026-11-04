@@ -30,6 +30,15 @@ export interface DemoDefault {
   user_id: string; display_name: string; as_of_date: string; observation_start: string;
   observation_end: string; data_source: string; is_synthetic: boolean; user_count: number;
 }
+export interface VariableForecast {
+  user_id?: string; forecast_as_of?: string; forecast_run_id?: string;
+  model_type: 'lightgbm'|'recent7'|'weekday'|'unavailable';
+  model_version?: string; data_quality_status: string;
+  observed_days?: number; forecasts?: { horizon_days: number; predicted_variable_outflow: number }[];
+  upper_scenario?: {kind: string; increase_percent: number; daily: {date: string; amount: number}[]};
+  daily?: {date: string; amount: number; method: string}[];
+  error?: string;
+}
 export interface HomeEvent {
   id: string; debit_at: string; amount: number; label: string; kind: string;
   essential: boolean; payment_method: string; transaction_status: string;
@@ -50,6 +59,7 @@ export interface HomeState {
   virtual_investments: { virtual_cash: number | null; positions: Record<string, { qty: number; cost_basis: number }>; status: string; actual_payment_account_impact: number };
   purchase_candidates: { id: string; date: string; main_product: { name: string; final_estimated_payment: number } }[];
   warnings: string[];
+  variable_forecast: VariableForecast;
 }
 export interface Allocation { purchase: number; savings: number; investment: number; cash: number }
 export interface CompareRequest {
@@ -108,7 +118,9 @@ export const getDemoHome = (user: string, day: string, signal?: AbortSignal) =>
     isObject(x) && x.user_id === user && x.as_of_date === day &&
     Number.isFinite(x.available_cash) && Array.isArray(x.recent_transactions) &&
     Array.isArray(x.daily_cashflow) && isObject(x.virtual_investments) &&
-    Array.isArray(x.upcoming_essential_payments));
+    Array.isArray(x.upcoming_essential_payments) && isObject(x.variable_forecast) &&
+    typeof x.variable_forecast.model_type === 'string' &&
+    typeof x.variable_forecast.data_quality_status === 'string');
 
 export const getInstruments = (user: string, day: string, signal?: AbortSignal) =>
   request(`/instruments?user_id=${encodeURIComponent(user)}&as_of=${encodeURIComponent(day)}`,
@@ -127,3 +139,11 @@ export const saveScenario = (payload: CompareRequest, signal?: AbortSignal) =>
   request('/scenarios/save', { method: 'POST', signal,
     body: JSON.stringify({ request: payload, label: '내가 선택한 금융 시나리오' }) },
   (x): x is { id: string; saved: boolean } => isObject(x) && typeof x.id === 'string' && x.saved === true);
+
+
+/** Stage-4 inspectable prediction. Never retrain on request or invent an AI label. */
+export const getVariableForecast = (user: string, day: string, signal?: AbortSignal) =>
+  request('/users/'+encodeURIComponent(user)+'/forecast?as_of='+encodeURIComponent(day), { signal },
+    (x): x is VariableForecast =>
+      isObject(x) && x.user_id === user && x.forecast_as_of === day &&
+      typeof x.model_type === 'string' && Array.isArray(x.forecasts));
