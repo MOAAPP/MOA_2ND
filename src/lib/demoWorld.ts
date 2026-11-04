@@ -99,7 +99,7 @@ export function demoWorldWalletFromShared(now = Date.now()): WorldWallet {
     .filter((x) => x.user_id === 'S01' && x.date <= today && x.at <= now)
     .map((x) => ({ id: x.id, title: x.item, price: x.price, paid: x.paid, choice: x.choice as WorldDecision['choice'], note: '공통 합성 데이터 체험', at: x.at }));
   const movements: WorldMovement[] = half.transactions
-    .filter((x) => x.user_id === 'S01' && x.date <= today && x.logged && (x.kind === 'income' || (x.kind === 'spend' && x.essential)))
+    .filter((x) => x.user_id === 'S01' && x.date <= today && x.logged && (x.kind === 'income' || x.kind === 'card_payment' || (x.kind === 'spend' && x.essential)))
     .map((x) => ({
       id: x.kind === 'income' ? 'income-' + x.date : 'bills-' + x.id,
       kind: x.kind === 'income' ? 'income' : 'bills',
