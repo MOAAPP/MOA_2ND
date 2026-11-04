@@ -12,16 +12,16 @@ async function request<T>(path: string, options: RequestInit = {}, valid: (item:
       headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers } });
   } catch (e) {
     if (options.signal?.aborted) throw e;
-    throw new FinanceLoadError('server_unreachable', 'FastAPI 연결에 실패했어요. 백엔드(127.0.0.1:8000)를 실행하고 다시 시도해 주세요.');
+    throw new FinanceLoadError('server_unreachable', '금융 계산 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
   }
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const detail = (data as { detail?: { code?: string; message?: string } | string } | null)?.detail;
     const code = typeof detail === 'object' ? detail?.code : undefined;
     const message = typeof detail === 'object' ? detail?.message : typeof detail === 'string' ? detail : undefined;
-    throw new FinanceLoadError(code ?? (response.status === 503 ? 'dataset_unavailable' : response.status === 404 ? 'user_not_found' : 'api_error'), message ?? `금융 API 오류 ${response.status}`);
+    throw new FinanceLoadError(code ?? (response.status === 503 ? 'dataset_unavailable' : response.status === 404 ? 'user_not_found' : 'api_error'), message ?? `금융 계산 서버가 요청을 처리하지 못했어요. (오류 ${response.status})`);
   }
-  if (!valid(data)) throw new FinanceLoadError('schema_invalid', 'FastAPI 응답 스키마가 예상과 달라요. 프론트·백엔드 버전을 확인해 주세요.');
+  if (!valid(data)) throw new FinanceLoadError('schema_invalid', '받은 데이터 형식이 화면과 맞지 않아 표시하지 않았어요. 새로고침 후 다시 시도해 주세요.');
   return data;
 }
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -47,16 +47,20 @@ export interface HomeDay {
   date: string; opening_balance: number; inflow: number; outflow: number;
   closing_balance: number; lowest_balance: number; events: HomeEvent[];
 }
+export interface LedgerTransaction {
+  id: string; name: string; date: string; kind: string; amount: number; method: string;
+  category?: string; direction?: 'in' | 'out'; occurred_at?: number;
+}
 export interface HomeState {
   user_id: string; display_name: string; as_of_date: string;
   observation_start: string; observation_end: string; has_observation_on_date: boolean;
   financial_state_status: string; data_source: string; is_synthetic: boolean;
   current_account_id: string; available_cash: number; observed_transaction_count: number;
-  recent_transactions: { id: string; name: string; date: string; kind: string; amount: number; method: string }[];
+  recent_transactions: LedgerTransaction[];
   upcoming_essential_payments: HomeEvent[]; upcoming_income: HomeEvent[];
   daily_cashflow: HomeDay[]; future_balances: Record<string, number>; minimum_balance: number;
   savings_goals: unknown[]; savings_goal_status: string;
-  virtual_investments: { virtual_cash: number | null; positions: Record<string, { qty: number; cost_basis: number }>; status: string; actual_payment_account_impact: number };
+  virtual_investments: { snapshot_date?: string; virtual_cash: number | null; positions: Record<string, { qty: number; cost_basis: number }>; status: string; actual_payment_account_impact: number };
   purchase_candidates: { id: string; date: string; main_product: { name: string; final_estimated_payment: number } }[];
   warnings: string[];
   variable_forecast: VariableForecast;
@@ -140,6 +144,11 @@ export const saveScenario = (payload: CompareRequest, signal?: AbortSignal) =>
     body: JSON.stringify({ request: payload, label: '내가 선택한 금융 시나리오' }) },
   (x): x is { id: string; saved: boolean } => isObject(x) && typeof x.id === 'string' && x.saved === true);
 
+export const getTransactions = (user: string, day: string, signal?: AbortSignal) =>
+  request(`/users/${encodeURIComponent(user)}/transactions?as_of=${encodeURIComponent(day)}&limit=1000`, { signal },
+    (x): x is { user_id: string; as_of_date: string; total: number; transactions: LedgerTransaction[] } =>
+      isObject(x) && x.user_id === user && x.as_of_date === day && Array.isArray(x.transactions) &&
+      x.transactions.every((t: unknown) => isObject(t) && typeof t.id === 'string' && typeof t.date === 'string' && Number.isFinite(t.amount)));
 
 /** Stage-4 inspectable prediction. Never retrain on request or invent an AI label. */
 export const getVariableForecast = (user: string, day: string, signal?: AbortSignal) =>

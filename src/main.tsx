@@ -2,7 +2,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
-import '@fontsource-variable/bricolage-grotesque';
 import './styles.css';
 import './ux-refresh.css';
 import './ux-v3.css';
@@ -23,7 +22,8 @@ import './ux-v19.css';
 import './ux-moa.css';
 import './ux-v21-schedule-ledger.css';
 import './ux-v22-home.css';
-import './ux-v4-stage3.css';
+import './design/tokens.css';
+import './design/stage3.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
