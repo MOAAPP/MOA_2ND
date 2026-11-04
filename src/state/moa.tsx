@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appDay, appNow } from '../lib/appClock';
+import { todayKST } from '../../shared/dates';
 import { addTxns, addTxnsChecked, assessRisk, decideAlerts, pushAlerts, type MoaState, type NewTxn, type RiskOptions } from '../lib/moa';
 import { profileFromMoa, spendEntryOf } from '../lib/moa/bridge';
 import { useStore } from './store';
@@ -39,8 +40,23 @@ export function useMoa(opts: RiskOptions = {}) {
       const preview = addTxnsChecked(state.moa, list);
       update((s) => {
         const before = new Set(s.moa.txns.map((t) => t.id));
-        const moa = addTxns(s.moa, list);
+        let moa = addTxns(s.moa, list);
         const added = moa.txns.filter((t) => !before.has(t.id));
+        // S01's opening anchor is an already reconciled end-of-day balance.
+        // Newly entered spending for that same snapshot date is not in B0 yet.
+        // Update it ONCE when the spend is recorded; future-day spending is
+        // after the anchor and will be projected by the standard ledger.
+        if (s.demo && moa.anchor) {
+          const anchorDay = todayKST(new Date(moa.anchor.at));
+          const newlyDebited = added
+            .filter(t => t.date === anchorDay && t.occurredAt <= moa.anchor!.at &&
+              t.account === 'pay' && t.kind === 'spend' &&
+              ['debit', 'transfer', 'atm'].includes(t.method))
+            .reduce((sum, t) => sum + t.amount, 0);
+          if (newlyDebited > 0) {
+            moa = { ...moa, anchor: { ...moa.anchor, balance: moa.anchor.balance - newlyDebited } };
+          }
+        }
         const entries = added.map(spendEntryOf).filter((e): e is NonNullable<typeof e> => !!e);
         return { ...s, moa, spendLog: [...s.spendLog, ...entries], profile: s.profile ? profileFromMoa(moa, s.profile) : s.profile };
       });
