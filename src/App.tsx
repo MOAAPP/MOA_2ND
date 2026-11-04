@@ -101,6 +101,7 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'report': return <WorldReport />;
     case 'shortfall': return <Shortfall paymentKey={screen.paymentKey} />;
     case 'ledgerAdd': return <Ledger initialSheet="add" />;
+    case 'ledgerPaste': return <Ledger initialSheet="paste" />;
     case 'moaSetup': return <MoaSetup />;
   }
 }
