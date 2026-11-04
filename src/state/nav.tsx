@@ -32,6 +32,7 @@ export type Screen =
   | { name: 'ask'; q?: string }
   | { name: 'shortfall'; paymentKey?: string }
   | { name: 'ledgerAdd' }
+  | { name: 'ledgerPaste' }
   | { name: 'moaSetup' };
 
 interface Nav {
