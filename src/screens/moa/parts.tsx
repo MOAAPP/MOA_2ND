@@ -56,7 +56,7 @@ export function BalanceChart({ series, keys, payments, from, until, height = 180
   /** 살까 말까: 비교할 다른 갈래 */
   alt?: { days: DayBalance[]; label: string };
 }) {
-  const W = 340, H = height, P = { l: 6, r: 6, t: 14, b: 22 };
+  const W = 340, H = height, P = { l: 12, r: 12, t: 18, b: 36 };
   const pick = (d: DayBalance[]) => d.filter((x) => x.date >= from && x.date <= until);
   const lines = keys.map((k) => ({ k, days: pick(series[k]) })).filter((l) => l.days.length);
   const altDays = alt ? pick(alt.days) : [];
@@ -75,10 +75,14 @@ export function BalanceChart({ series, keys, payments, from, until, height = 180
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`결제계좌 일별 잔고 ${md(from)}~${md(until)}`}>
         <line x1={P.l} x2={W - P.r} y1={y(0)} y2={y(0)} className="zero" />
         <text x={W - P.r} y={y(0) - 4} className="zero-t" textAnchor="end">0원</text>
-        {payments.filter((p) => idx(p.date) >= 0).map((p) => (
+        <text x={P.l} y={P.t - 5} className="pay-t" textAnchor="start">{fmt(hi)}</text>
+        {lo < 0 && <text x={P.l} y={H - P.b - 3} className="pay-t" textAnchor="start">{fmt(lo)}</text>}
+        {payments.filter((p) => idx(p.date) >= 0).map((p, i) => (
           <g key={p.key}>
             <line x1={x(idx(p.date))} x2={x(idx(p.date))} y1={P.t} y2={H - P.b} className={`pay g-${p.grade}`} />
-            <text x={x(idx(p.date))} y={H - 6} textAnchor={x(idx(p.date)) > W - 24 ? 'end' : x(idx(p.date)) < 24 ? 'start' : 'middle'} className="pay-t">{md(p.date)}</text>
+            <text x={x(idx(p.date))} y={H - (i % 2 === 0 ? 20 : 6)}
+              textAnchor={x(idx(p.date)) > W - 24 ? 'end' : x(idx(p.date)) < 24 ? 'start' : 'middle'}
+              className="pay-t">{md(p.date)}</text>
           </g>
         ))}
         {altDays.length > 0 && <path d={path(altDays)} className="ln alt" />}
