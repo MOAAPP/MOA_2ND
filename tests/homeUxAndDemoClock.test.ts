@@ -84,13 +84,14 @@ describe('choosing and saving without double-counting', () => {
   });
   it('a saved credit purchase increases future card due but not current payment-account cash', () => {
     const s = state();
-    const before = pendingBills(s.moa).find(b => b.date === '2026-11-14')!.amount;
+    // A November purchase joins the December 14 bill, not October's November bill.
+    const before = pendingBills(s.moa).find(b => b.date === '2026-12-14')?.amount ?? 0;
     const d = saveChoice(s, { decision: decision(100000), paid: 100000, date: DATE,
       name: '비교용 지출', category: '쇼핑', method: 'credit' });
     expect(d).not.toBeNull();
     expect(d!.moa.anchor?.balance).toBe(s.moa.anchor?.balance);
     expect(d!.worldWallet.cash).toBe(s.worldWallet.cash);
-    const after = pendingBills(d!.moa).find(b => b.date === '2026-11-14')!.amount;
+    const after = pendingBills(d!.moa).find(b => b.date === '2026-12-14')!.amount;
     expect(after).toBe(before + 100000);
     expect(d!.spendLog.length).toBe(s.spendLog.length + 1);
   });
