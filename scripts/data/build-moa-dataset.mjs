@@ -258,8 +258,10 @@ function enrichShowcaseS01(data) {
   // Repeating bills and a small second income stream create an actionable
   // upcoming-payment calendar, rather than unrelated random spending.
   for (const month of ['2026-09','2026-10','2026-11','2026-12']) {
-    add(month + '-08', 'spend', 19000, '보험료', '보험', 'transfer', true, { schedule_ref:'S01-insurance:' + month + '-08', event:'recurring_insurance' });
-    add(month + '-27', 'spend', 45000, '관리비', '주거', 'transfer', true, { schedule_ref:'S01-maint:' + month + '-27', event:'recurring_maintenance' });
+    if (month + '-08' >= data.metadata.start_date && month + '-08' <= data.metadata.end_date)
+      add(month + '-08', 'spend', 19000, '보험료', '보험', 'transfer', true, { schedule_ref:'S01-insurance:' + month + '-08', event:'recurring_insurance' });
+    if (month + '-27' >= data.metadata.start_date && month + '-27' <= data.metadata.end_date)
+      add(month + '-27', 'spend', 45000, '관리비', '주거', 'transfer', true, { schedule_ref:'S01-maint:' + month + '-27', event:'recurring_maintenance' });
     if (month !== '2026-12') add(month + '-19', 'income', 120000, '과외비 입금', '수입', 'transfer', false, { schedule_ref:'S01-side-income:' + month + '-19', event:'side_income' });
   }
   const events = [
