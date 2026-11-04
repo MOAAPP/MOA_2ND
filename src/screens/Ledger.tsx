@@ -142,8 +142,8 @@ export function Ledger({ initialSheet = null }: { initialSheet?: 'add' | 'paste'
           : <p className="small muted">지출 내역을 입력하면 AI 분석을 볼 수 있어요.</p>)}
       </section>
 
-      {sheet === 'add' && <AddSheet today={today} onClose={() => setSheet(null)} />}
-      {sheet === 'paste' && <PasteFlow onClose={() => setSheet(null)} />}
+      {sheet === 'add' && <AddSheet today={today} onClose={() => { setSheet(null); if (initialSheet) nav.pop(); }} />}
+      {sheet === 'paste' && <PasteFlow onClose={() => { setSheet(null); if (initialSheet) nav.pop(); }} />}
     </div>
   );
 }
