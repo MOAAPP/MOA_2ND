@@ -9,6 +9,7 @@ import { uid } from '../../lib/id';
 import { useMoa } from '../../state/moa';
 import { useStore } from '../../state/store';
 import { Stage2Sms } from '../../components/Stage2Sms';
+import { ruleParseSpend } from '../../lib/ai/parseRules';
 import { fmt } from './parts';
 
 /** 금융 문자는 규칙 기반만 사용. 원문은 모델이나 별도 외부 서비스로 보내지 않는다. */
@@ -22,60 +23,6 @@ const SAMPLE = (today: ISODate) => {
   ].join('\n\n');
 };
 
-
-/** Non-demo offline path. Demo financial SMS uses the canonical FastAPI rule parser. */
-function parseLocalRules(text: string, today: ISODate): { items: ParsedSpend[]; skipped: number } {
-  const messages = text.replace(/(?<!^)(?=\[Web발신\])/g, '\n\n').split(/\n\s*\n/g).filter(x => x.trim());
-  const items: ParsedSpend[] = [];
-  let skipped = 0;
-  for (const message of messages) {
-    const lines = message.split('\n').map(x => x.trim()).filter(Boolean);
-    const body = lines.filter(x => !/(잔액|누적|한도|가용|포인트)/.test(x)).join('\n');
-    const amountText = body.match(/(\d{1,3}(?:,\d{3})+|\d{3,10})\s*원/);
-    if (!amountText) { skipped++; continue; }
-    const amount = Number(amountText[1].replace(/,/g, ''));
-    if (!Number.isSafeInteger(amount) || amount <= 0) { skipped++; continue; }
-    const dm = message.match(/(?:(20\d{2})[./-])?(\d{1,2})[./-](\d{1,2})/);
-    let date: string | null = null;
-    if (dm) {
-      let year = Number(dm[1] || today.slice(0, 4));
-      const month = Number(dm[2]);
-      const day = Number(dm[3]);
-      let candidate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      if (!dm[1] && candidate > today) {
-        year -= 1;
-        candidate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      }
-      const verified = new Date(Date.UTC(year, month - 1, day));
-      if (!Number.isNaN(verified.valueOf()) && verified.toISOString().slice(0, 10) === candidate) date = candidate;
-    }
-    const time = message.match(/(?:^|\s)([01]?\d|2[0-3]):([0-5]\d)(?:\s|$)/)?.slice(1).join(':') ?? null;
-    const issuer = message.match(/(KB국민|국민|신한|삼성|현대|롯데|하나|우리|농협|NH|카카오뱅크|토스뱅크|IBK기업)/)?.[1] ?? null;
-    const isCredit = /신용|할부|일시불/.test(message) || (/카드/.test(message) && !/체크/.test(message));
-    const isDebit = /체크/.test(message);
-    const isRefund = /취소|환불/.test(message);
-    const isIncome = /급여|월급|입금|용돈/.test(message) && !isRefund;
-    const isCardBill = /카드(?:이용)?대금|카드값|청구.*출금/.test(message);
-    const kind: ParsedSpend['kind'] = isCardBill ? 'card_payment' : isRefund ? 'refund' : isIncome ? 'income' : 'spend';
-    const method: ParsedSpend['method'] = isCardBill ? 'transfer' : isCredit ? 'credit' : isDebit ? 'debit'
-      : /이체|송금|출금|입금/.test(message) ? 'transfer' : null;
-    const name = [...lines].reverse().find(l => !/(Web발신|승인|누적|잔액|한도|\d{2}[:/.-]\d|\d[\d,]*\s*원|\d{4}|님)/.test(l))
-      ?? issuer ?? '거래 상대 확인 필요';
-    const category = /커피|카페|메가|스타벅스/.test(name) ? '카페'
-      : /배달|식당|분식|편의점/.test(name) ? '식비'
-      : /무신사|의류|패션/.test(name) ? '패션' : '기타';
-    const installment = message.match(/할부\s*(\d{1,2})\s*개?월?/);
-    const balanceAfter = message.match(/잔액\s*([\d,]+)\s*원?/)?.[1];
-    items.push({
-      amount, date, time, method, kind, issuer, name,
-      category, confidence: 0.8,
-      essential: /월세|관리비|통신비|보험료|전기|수도/.test(name),
-      installments: installment ? Number(installment[1]) : null,
-      balanceAfter: balanceAfter ? Number(balanceAfter.replace(/,/g, '')) : null,
-    });
-  }
-  return { items, skipped };
-}
 
 const KIND_LABEL: Record<TxnKind, string> = { spend: '소비', income: '입금', card_payment: '카드 대금', transfer_self: '내 계좌 이체', saving: '저축', refund: '취소·환불' };
 
@@ -109,7 +56,7 @@ export function PasteFlow({ onClose }: { onClose: () => void }) {
   const [skipped, setSkipped] = useState(0);
 
   const next = () => {
-    const result = parseLocalRules(raw, today);
+    const result = ruleParseSpend({ text: raw, today });
     setRows(result.items.map(item => guessRow(item, moa)));
     setSkipped(result.skipped);
     setRaw('');
