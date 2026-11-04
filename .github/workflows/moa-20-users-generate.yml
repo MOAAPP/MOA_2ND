@@ -28,6 +28,8 @@ on:
       - src/state/store.tsx
       - src/App.tsx
       - src/screens/Onboarding.tsx
+      - src/screens/V8Finance.tsx
+      - src/screens/Choose.tsx
       - src/ux-v19.css
       - tests/onboardingEntry.test.ts
       - src/screens/Settings.tsx
