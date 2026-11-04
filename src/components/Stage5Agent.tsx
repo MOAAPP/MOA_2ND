@@ -76,9 +76,18 @@ export function Stage5Agent({ user, day, productName }: {
     }
   };
 
-  const edit = (key: keyof Conditions, value: string | number | boolean | null) => {
+  const edit = (
+    key: keyof Conditions,
+    value: string | number | boolean | null | Conditions['allowed_payment_methods'],
+  ) => {
     if (!conditions) return;
-    setConditions({ ...conditions, [key]: value });
+    const resolved = conditions.confirmations_required.filter(message => !(
+      (key === 'required_savings_amount' && value != null && /저축|savings/i.test(message)) ||
+      (key === 'purchase_amount' && value != null && /구매|purchase_amount/i.test(message)) ||
+      (key === 'credit_debit_date' && value != null && /카드|출금|credit/i.test(message)) ||
+      (key === 'minimum_balance' && value != null && /잔액|minimum_balance/i.test(message))
+    ));
+    setConditions({ ...conditions, [key]: value, confirmations_required: resolved });
     setSearch(null); setSaved('');
   };
 
@@ -140,6 +149,21 @@ export function Stage5Agent({ user, day, productName }: {
           <input type="number" min="0" value={conditions.purchase_amount ?? ''}
             onChange={e => edit('purchase_amount', e.target.value === '' ? null : Math.max(0, Number(e.target.value)))} />
         </label>
+        <label>원하는 구매일
+          <input type="date" min={day} value={conditions.preferred_purchase_date ?? ''}
+            onChange={e => edit('preferred_purchase_date', e.target.value || null)} />
+        </label>
+        <label>결제 수단
+          <select value={conditions.allowed_payment_methods[0] ?? 'debit'}
+            onChange={e => edit('allowed_payment_methods', [e.target.value as Conditions['allowed_payment_methods'][number]])}>
+            <option value="debit">체크카드</option><option value="transfer">계좌이체</option>
+            <option value="credit">신용카드 (출금일 지정)</option>
+          </select>
+        </label>
+        {conditions.allowed_payment_methods.includes('credit') && <label>신용카드 출금일
+          <input type="date" min={day} value={conditions.credit_debit_date ?? ''}
+            onChange={e => edit('credit_debit_date', e.target.value || null)} />
+        </label>}
         <label>최소 유지 잔액 (원)
           <input type="number" min="0" value={conditions.minimum_balance ?? ''}
             onChange={e => edit('minimum_balance', e.target.value === '' ? null : Math.max(0, Number(e.target.value)))} />
