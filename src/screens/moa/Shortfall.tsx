@@ -19,7 +19,7 @@ import { AiLabel, BalanceChart, fmt, Fold, GradeBadge, HelpCard, md, Reliability
  */
 export function Shortfall({ paymentKey }: { paymentKey?: string } = {}) {
   const nav = useNav();
-  const { moa, report, today, set } = useMoa();
+  const { moa, report, today, now, set } = useMoa();
   const [view, setView] = useState<'onTime' | 'late'>('onTime');
   const [balOpen, setBalOpen] = useState(false);
   const [sel, setSel] = useState<string | null>(paymentKey ?? null);
@@ -117,7 +117,7 @@ export function Shortfall({ paymentKey }: { paymentKey?: string } = {}) {
         </>
       )}
 
-      {balOpen && <BalanceSheet initial={report.anchorBalance ?? 0} onClose={() => setBalOpen(false)} onDone={(b) => { set((m) => setAnchor(m, b, Date.now())); setBalOpen(false); }} />}
+      {balOpen && <BalanceSheet initial={report.anchorBalance ?? 0} onClose={() => setBalOpen(false)} onDone={(b) => { set((m) => setAnchor(m, b, now)); setBalOpen(false); }} />}
     </div>
   );
 }
