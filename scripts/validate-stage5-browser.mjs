@@ -13,7 +13,7 @@ const post = async (path, data) => {
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify(data),
   });
-  assert.equal(res.status, 200, await res.text());
+  if (res.status !== 200) throw new Error(path + ': ' + await res.text());
   return res.json();
 };
 const conditions = {
