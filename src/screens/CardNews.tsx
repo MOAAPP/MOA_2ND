@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { currentStreak, dailyQuizFor, nextLesson } from '../../shared/curriculum';
 import { formatKDate, formatKDateTime, todayKST } from '../../shared/dates';
 import { won, shares } from '../../shared/format';
@@ -83,6 +83,26 @@ function useJob(jobId: string | undefined) {
 export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJob: (j: PublicJob) => void; reload: () => void; onError: (m: string) => void }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const [visibleCard, setVisibleCard] = useState(0);
+  const showCard = (index: number) => {
+    const image = galleryRef.current?.children.item(index) as HTMLElement | null;
+    if (!image) return;
+    setVisibleCard(index);
+    image.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
+  const updateVisibleCard = () => {
+    const gallery = galleryRef.current;
+    if (!gallery) return;
+    const center = gallery.getBoundingClientRect().left + gallery.clientWidth / 2;
+    const cards = Array.from(gallery.children) as HTMLElement[];
+    const next = cards.reduce((best, card, index) => {
+      const rect = card.getBoundingClientRect();
+      const gap = Math.abs(rect.left + rect.width / 2 - center);
+      return gap < best.gap ? { index, gap } : best;
+    }, { index: 0, gap: Number.POSITIVE_INFINITY }).index;
+    setVisibleCard(next);
+  };
   const act = async (path: 'retry-send' | 'regenerate', body?: unknown) => {
     if (busy) return;
     setBusy(true);
@@ -123,14 +143,28 @@ export function JobView({ job, setJob, reload, onError }: { job: PublicJob; setJ
       )}
       {job.images.length > 0 && (
         <>
-          <div className="cardnews-viewer" style={{ marginTop: 14 }} aria-label="카드뉴스 4장">
+          <div className="cn-gallery-heading">
+            <strong>카드뉴스 한 장씩 읽기</strong>
+            <span aria-live="polite">{Math.min(visibleCard + 1, job.images.length)} / {job.images.length}</span>
+          </div>
+          <div ref={galleryRef} onScroll={updateVisibleCard} className="cardnews-viewer cn-gallery" aria-label="카드뉴스 ${job.images.length}장">
             {job.images.map((src, i) => (
               <a key={src} href={src} target="_blank" rel="noopener noreferrer" style={{ width: '78%', flex: 'none' }}>
-                <img src={src} alt={`${i + 1}/4 ${job.titles[i] ?? ''}`} style={{ width: '100%' }} loading="lazy" />
+                <img src={src} alt={`${i + 1}/${job.images.length} ${job.titles[i] ?? ''}`} style={{ width: '100%' }} loading="lazy" />
               </a>
             ))}
           </div>
-          <p className="xs muted" style={{ margin: '4px 4px 0' }}>옆으로 넘겨 4장을 볼 수 있어요. 누르면 원본 PNG가 열려요.</p>
+          <div className="cn-gallery-footer">
+            <span className="cn-gallery-caption">{job.titles[visibleCard] || `${visibleCard + 1}번째 카드`}</span>
+            <div className="cn-gallery-pages" role="group" aria-label="카드뉴스 페이지 이동">
+              {job.images.map((_, i) => (
+                <button key={i} type="button" aria-label={`${i + 1}번째 카드 보기`}
+                  aria-current={i === visibleCard ? 'step' : undefined}
+                  onClick={() => showCard(i)}>{i + 1}</button>
+              ))}
+            </div>
+          </div>
+          <p className="xs muted cn-gallery-hint">좌우로 넘기거나 번호를 누르세요 · 카드를 누르면 크게 볼 수 있어요.</p>
         </>
       )}
       <section className="section">
@@ -176,7 +210,7 @@ export function CardNews({ tradeId, jobId: givenJobId }: { tradeId: string; jobI
   const nav = useNav();
   const m = useMarket();
   const jobId = givenJobId ?? state.cardJobIds[tradeId];
-  const fill = state.portfolio.fills.find((f) => f.id === tradeId);
+  const fill = state.investJournal.fills.find((f) => f.id === tradeId) ?? state.portfolio.fills.find((f) => f.id === tradeId);
   const { job, setJob, err, setErr, load } = useJob(jobId);
   const [creating, setCreating] = useState(false);
 
@@ -227,6 +261,7 @@ export function DailyScreen() {
   const [latest, setLatest] = useState<{ job: PublicJob | null; history: PublicJob[] } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [making, setMaking] = useState(false);
+  const [showDelivery, setShowDelivery] = useState(false);
   const today = todayKST();
   const load = useCallback(async () => {
     try {
@@ -250,14 +285,29 @@ export function DailyScreen() {
 
   return (
     <div className="page no-nav">
-      <TopBar onBack={nav.pop} title="데일리 카드뉴스" center />
-      <p className="small ink2" style={{ margin: '0 4px 12px' }}>매일 정해진 시각, 시장·내 종목·움직인 이유·오늘의 퀴즈를 4장 카드로 Discord에 보내드려요. 앱에서도 같은 카드를 볼 수 있어요.</p>
+      <TopBar onBack={nav.pop} title="카드뉴스" center />
+      <p className="cn-hub-intro">앱에서 카드를 읽는 것과 Discord로 받아보는 것은 서로 달라요.</p>
+      <div className="cn-hub-grid">
+        <section className="cn-hub-card">
+          <span className="cn-hub-number">01 · 읽기</span>
+          <h2>앱에서 카드 보기</h2>
+          <p>오늘의 내용과 지난 기록을 언제든 확인해요.</p>
+          <button type="button" onClick={() => nav.push({ name: 'cardnewsDemo' })}>예시 4장 읽어보기</button>
+        </section>
+        <section className="cn-hub-card">
+          <span className="cn-hub-number">02 · 받기</span>
+          <h2>Discord로 받기</h2>
+          <p>받는 시간을 정하고 공개 채널 전송을 설정해요.</p>
+          <button type="button" onClick={() => setShowDelivery((v) => !v)} aria-expanded={showDelivery}>{showDelivery ? '설정 닫기' : '시간·수신 설정'}</button>
+        </section>
+      </div>
+      {showDelivery && <div className="cn-hub-settings"><DiscordPanel /></div>}
       {err && <Notice kind="danger">{err}</Notice>}
       <section className="card">
         <div className="row between">
           <div>
             <div className="bold">{formatKDate(today, { weekday: true })} 카드</div>
-            <div className="small muted">{todayJob ? (todayJob.sends.some((s) => s.ok) ? 'Discord로 보냈어요' : todayJob.autoSend ? '전송 대기·진행 중' : '앱 미리보기 (Discord 전송은 정해진 시각에)') : on ? `오늘 ${state.daily.time}에 보내요` : '데일리 카드뉴스가 꺼져 있어요'}</div>
+            <div className="small muted">{todayJob ? (todayJob.sends.some((s) => s.ok) ? 'Discord로 보냈어요' : todayJob.autoSend ? '전송 대기·진행 중' : '앱 미리보기 (Discord 전송은 정해진 시각에)') : on ? `요청한 시간 ${state.daily.time} · 서버 자동 전송은 아직 미지원` : '데일리 카드뉴스가 꺼져 있어요'}</div>
           </div>
           {todayJob && statusPill(todayJob)}
         </div>
@@ -283,7 +333,7 @@ export function DailyScreen() {
         <p className="xs muted" style={{ margin: '6px 4px 0' }}>연속 학습 {currentStreak(state.learning.streak, today)}일</p>
       </section>
 
-      <section className="section"><DiscordPanel /></section>
+      <div className="cn-archive-entry"><button type="button" onClick={() => nav.push({ name: 'cards' })}>모든 카드뉴스 기록 보기</button></div>
 
       {latest && latest.history.filter((h) => h.dailyDate !== today).length > 0 && (
         <section className="section">
@@ -316,12 +366,13 @@ export function CardsList() {
   }, []);
   return (
     <div className="page no-nav">
-      <TopBar onBack={nav.pop} title="카드뉴스 기록" center />
+      <TopBar onBack={nav.pop} title="내 카드뉴스 기록" center />
+      <p className="cn-hub-intro">이곳은 이미 생성된 카드의 보관함이에요. Discord 수신 시간은 ‘카드뉴스’ 화면에서 따로 설정할 수 있어요.</p>
       {err && <Notice kind="danger">목록을 불러오지 못했어요. {err}</Notice>}
       {!jobs && !err && <div className="card"><Spinner /></div>}
       {jobs && (
         <div className="card" style={{ padding: '4px 18px' }}>
-          {jobs.length === 0 && <Empty title="아직 카드뉴스가 없어요">데일리 카드뉴스를 켜거나 모의 매수·매도를 하면 만들어져요.</Empty>}
+          {jobs.length === 0 && <Empty title="아직 카드뉴스가 없어요">오늘 카드뉴스가 생성되거나 가상 거래가 체결되면 이곳에서 볼 수 있어요.</Empty>}
           {jobs.map((j) => (
             <button key={j.id} className="list-item" onClick={() => nav.push({ name: 'cardnews', tradeId: j.tradeId, jobId: j.id })}>
               {j.images[0] ? <img src={j.images[0]} alt="" style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 8 }} /> : <div className="avatar"><IconImage width={20} height={20} /></div>}

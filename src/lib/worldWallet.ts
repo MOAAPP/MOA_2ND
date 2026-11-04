@@ -45,7 +45,7 @@ export type WorldWalletAction=
   | {type:'spend';decision:WorldDecision}
   | {type:'undoDecision'} | {type:'reset'};
 
-const memo:Record<WorldMovement['kind'],string>={save:'자유 저축',withdraw:'자유 저축 꺼내기',deposit:'가상 예금 가입',redeemDeposit:'가상 예금 해지',installment:'가상 적금 납입',cancelInstallment:'가상 적금 해지',buyStock:'ETF 매수',sellStock:'ETF 매도',income:'월급 입금',bills:'고정지출 결제'};
+const memo:Record<WorldMovement['kind'],string>={save:'자유 저축',withdraw:'자유 저축 꺼내기',deposit:'가상 예금 가입',redeemDeposit:'가상 예금 해지',installment:'가상 적금 납입',cancelInstallment:'가상 적금 해지',buyStock:'주식·ETF 매수',sellStock:'주식·ETF 매도',income:'월급 입금',bills:'고정지출 결제'};
 let seq=0;
 function record(w:WorldWallet,kind:WorldMovement['kind'],amount:number,patch:Partial<WorldWallet>,extra:Partial<WorldMovement>={}):WorldWallet{
   const at=Date.now();

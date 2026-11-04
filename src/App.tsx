@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { IconChartBars, IconFork, IconHome, IconPiggy, IconReceipt } from './components/Icons';
 import { ToastProvider, useKeyboardInset } from './components/ui';
 import { CardNews, CardsList, DailyScreen } from './screens/CardNews';
+import { CardNewsDemo } from './screens/CardNewsDemo';
 import { Decide } from './screens/Decide';
 import { Future } from './screens/Future';
 import { Onboarding } from './screens/Onboarding';
@@ -17,10 +18,12 @@ import { RecordDetail } from './screens/RecordDetail';
 import { FinanceEdit, Settings } from './screens/Settings';
 import { StockDetail } from './screens/StockDetail';
 import { MarketProvider } from './state/market';
+import { FundedInvestDaemon } from './state/fundedInvestDaemon';
 import { NavProvider, useNav, type Screen, type Tab } from './state/nav';
 import { StoreProvider, useStore } from './state/store';
 import { demoData } from './lib/demo';
-import { demoWorldWallet } from './lib/demoWorld';
+import { demoWorldWalletFromShared } from './lib/demoWorld';
+import { emptyInvestJournal } from './lib/fundedInvest';
 import { V8Home } from './screens/V8Finance';
 import { WorldInvestment } from './screens/ParallelLab';
 import { WorldTimeline } from './screens/WorldTimeline';
@@ -89,6 +92,7 @@ function ScreenView({ screen, onReplayIntro }: { screen: Screen; onReplayIntro: 
     case 'daily': return <DailyScreen />;
     case 'cardnews': return <CardNews tradeId={screen.tradeId} jobId={screen.jobId} />;
     case 'cards': return <CardsList />;
+    case 'cardnewsDemo': return <CardNewsDemo />;
     case 'portfolio': return <Portfolio />;
     case 'newChoice': return <NewChoice />;
     case 'product': return <ProductDetail key={screen.id} id={screen.id} />;
@@ -130,17 +134,26 @@ function Shell() {
   }, [state.settings.reduceMotion]);
 
   if (!state.introSeen || replayIntro) {
+    // Replaying onboarding must never replace existing cash, records or investments with demo data.
+    const hasExistingData = Boolean(state.profile || state.demo || state.records.length || state.spendLog.length || state.moa.anchor);
     return (
       <Onboarding
+        existingData={hasExistingData}
         onDone={() => {
           finishIntroPreview();
           nav.reset();
           update((s) => ({ ...s, introSeen: true }));
+          // "My account" on replay opens account settings instead of doing nothing.
+          if (state.profile) nav.push({ name: 'moaSetup' });
         }}
         onDemo={() => {
           finishIntroPreview();
           nav.reset();
-          update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWallet(), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
+          if (hasExistingData) {
+            update((s) => ({ ...s, introSeen: true }));
+          } else {
+            update((s) => ({ ...s, ...demoData(), worldWallet: demoWorldWalletFromShared(), investJournal: emptyInvestJournal(s.investJournal.watchlist), bank: emptyBank(), demo: true, introSeen: true, setupDraft: null, moa: demoMoa(Date.now()) }));
+          }
           nav.setTab('home');
         }}
       />
@@ -188,6 +201,7 @@ export function App() {
       <NavProvider>
         <ToastProvider>
           <MarketProvider>
+            <FundedInvestDaemon />
             <div className="app">
               <Shell />
             </div>

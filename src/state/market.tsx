@@ -7,7 +7,9 @@ import type { IndexQuote, Quote, QuoteSource } from '../../shared/market';
 import { api, errorMessage } from '../lib/api';
 import { getDeviceId } from '../lib/id';
 import { progressOf } from '../lib/learning';
-import { evaluatePending, totalAssets, type Fill } from '../lib/trading';
+import type { Fill } from '../lib/trading';
+import { fundedPortfolio } from '../lib/fundedInvest';
+import { walletSummary } from '../lib/worldWallet';
 import { useStore } from './store';
 
 export interface MarketInfo {
@@ -67,9 +69,9 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       if (inflight.current.has(fill.id)) return null;
       inflight.current.add(fill.id);
       try {
-        const pos = s.portfolio.positions[fill.code];
+        const pos = fundedPortfolio(s.worldWallet, s.investJournal).positions[fill.code];
         const prices = Object.fromEntries(Object.values(quotesRef.current).map((q) => [q.code, q.price]));
-        const ta = totalAssets(s.portfolio, prices);
+        const ta = walletSummary(s.worldWallet, prices);
         const posValue = pos ? pos.qty * (prices[fill.code] ?? fill.price) : 0;
         const res = await api<{ job: { id: string } }>('/api/cardnews', {
           method: 'POST',
@@ -77,7 +79,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
             trade: {
               tradeId: fill.id, code: fill.code, side: fill.side, qty: fill.qty, price: fill.price, filledAt: fill.time,
               avgPriceBefore: fill.avgPriceBefore, holdingQty: pos?.qty ?? 0, holdingAvg: pos?.avgPrice,
-              weightPct: ta.total > 0 ? Math.round((posValue / ta.total) * 1000) / 10 : undefined,
+              weightPct: ta.totalAssets > 0 ? Math.round((posValue / ta.totalAssets) * 1000) / 10 : undefined,
               priceSource: fill.quoteSource ?? 'yahoo',
             },
             level: s.level ?? 1,
@@ -101,19 +103,11 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     [update],
   );
 
-  /** 새 시세가 들어올 때마다 대기 주문 확인 */
-  const onQuotes = useCallback(
-    (quotes: Record<string, Quote>) => {
-      const current = stateRef.current.portfolio;
-      if (!current.orders.some((o) => o.status === 'pending')) return;
-      const r = evaluatePending(current, quotes, Date.now());
-      if (r.state !== current) {
-        update((st) => ({ ...st, portfolio: r.state }));
-        r.fills.forEach((f) => window.setTimeout(() => void requestCard(f), 50));
-      }
-    },
-    [update, requestCard],
-  );
+  /** 이전 1,000만 원 연습계좌는 보존만 하고 자동 체결하지 않는다.
+   * 현재 통합 지갑의 지정가 주문은 FundedInvestDaemon이 처리한다. */
+  const onQuotes = useCallback((_quotes: Record<string, Quote>) => {
+    // The legacy portfolio is archived; never create new legacy fills.
+  }, []);
 
   const merge = useCallback((quotes: Record<string, Quote>, errors: Record<string, string>, info?: MarketInfo) => {
     setQs((s) => {
@@ -162,9 +156,8 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const holdKey = useMemo(() => {
-    const p = state.portfolio;
-    return [...new Set([...Object.keys(p.positions), ...p.orders.filter((o) => o.status === 'pending').map((o) => o.code)])].sort().join(',');
-  }, [state.portfolio]);
+    return [...new Set([...Object.keys(state.worldWallet.etfs), ...state.investJournal.orders.filter((o) => o.status === 'pending').map((o) => o.code)])].sort().join(',');
+  }, [state.worldWallet.etfs, state.investJournal.orders]);
 
   useEffect(() => {
     const codes = [...new Set([...watchKey.split(','), ...holdKey.split(',')])].filter(Boolean).slice(0, 20);
@@ -238,10 +231,10 @@ export function MarketProvider({ children }: { children: ReactNode }) {
       level: state.level ?? 1,
       nextLessonId: nl?.id ?? null,
       streak: currentStreak(state.learning.streak, todayKST()),
-      holdings: Object.values(state.portfolio.positions).map((p) => ({ code: p.code, qty: p.qty, avgPrice: Math.round(p.avgPrice * 100) / 100 })),
-      watchlist: state.portfolio.watchlist.slice(0, 20),
+      holdings: Object.values(fundedPortfolio(state.worldWallet, state.investJournal).positions).map((p) => ({ code: p.code, qty: p.qty, avgPrice: Math.round(p.avgPrice * 100) / 100 })),
+      watchlist: state.investJournal.watchlist.slice(0, 20),
     };
-  }, [state.daily, state.settings.discordConsent, state.level, nl?.id, state.learning.streak, state.portfolio.positions, state.portfolio.watchlist]);
+  }, [state.daily, state.settings.discordConsent, state.level, nl?.id, state.learning.streak, state.worldWallet.etfs, state.investJournal]);
   const subKey = JSON.stringify(subPayload);
   const wasEnabled = useRef(false);
   useEffect(() => {

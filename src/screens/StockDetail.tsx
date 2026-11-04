@@ -9,6 +9,7 @@ import { ChangeText, QuoteMeta, SourceBadge, Spark } from '../components/QuoteBi
 import { CtaBar, Notice, Spinner, TopBar, WorldTag } from '../components/ui';
 import { api, errorMessage } from '../lib/api';
 import type { Side } from '../lib/trading';
+import { fundedPortfolio } from '../lib/fundedInvest';
 import { useLiveQuotes } from '../state/market';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
@@ -63,13 +64,13 @@ export function StockDetail({ code }: { code: string }) {
   if (quote && liveQ && liveQ.fetchedAt > quote.fetchedAt) {
     quote = { ...liveQ, candles: quote.candles.length >= liveQ.candles.length ? quote.candles : liveQ.candles };
   }
-  const pos = state.portfolio.positions[code];
-  const watched = state.portfolio.watchlist.includes(code);
+  const pos = fundedPortfolio(state.worldWallet, state.investJournal).positions[code];
+  const watched = state.investJournal.watchlist.includes(code);
   const vol = quote ? volatility(quote.candles, 20) : null;
   const avgVol = quote ? averageVolume(quote.candles, quote.date) : null;
   const evalPnl = pos && quote ? (quote.price - pos.avgPrice) * pos.qty : null;
   const toggleWatch = () =>
-    update((s) => ({ ...s, portfolio: { ...s.portfolio, watchlist: watched ? s.portfolio.watchlist.filter((c) => c !== code) : [...s.portfolio.watchlist, code] } }));
+    update((s) => ({ ...s, investJournal: { ...s.investJournal, watchlist: s.investJournal.watchlist.includes(code) ? s.investJournal.watchlist.filter((c) => c !== code) : [...s.investJournal.watchlist, code] } }));
 
   return (
     <div className="page no-nav has-cta">

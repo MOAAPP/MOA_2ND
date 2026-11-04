@@ -65,13 +65,13 @@ export function ConsentSheet({ onClose, onAgree }: { onClose: () => void; onAgre
   );
 }
 
-const TIMES = [
-  { v: '07:30', l: '오전 7:30' },
-  { v: '08:30', l: '오전 8:30 · 장 시작 전 (추천)' },
-  { v: '12:30', l: '오후 12:30 · 점심' },
-  { v: '15:45', l: '오후 3:45 · 장 마감 직후' },
-  { v: '21:00', l: '오후 9:00 · 저녁 복습' },
+const QUICK_TIMES = [
+  { v: '08:30', l: '장 시작 전' },
+  { v: '12:30', l: '점심' },
+  { v: '15:45', l: '장 마감 후' },
+  { v: '21:00', l: '저녁' },
 ];
+const validTime = (v: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
 
 /** 매일 Discord로 오는 데일리 카드뉴스 설정 + Discord 연결 상태 */
 export function DiscordPanel({ compact }: { compact?: boolean }) {
@@ -123,11 +123,11 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
   const on = d.enabled && state.settings.discordConsent;
 
   return (
-    <div className="card">
-      <div className="row between">
+    <section className="card cn-delivery-settings" aria-label="Discord 카드뉴스 수신 설정">
+      <div className="row between cn-delivery-header">
         <div>
-          <div className="bold" style={{ fontSize: 17 }}>매일 카드뉴스 받기</div>
-          <div className="small muted">정해진 시각에 Discord로 4장이 와요</div>
+          <div className="bold" style={{ fontSize: 17 }}>Discord로 카드뉴스 받기</div>
+          <div className="small muted">앱에서 읽는 것과 별개로, Discord 공용 채널에 보내는 설정이에요.</div>
         </div>
         <Switch
           label="데일리 카드뉴스"
@@ -135,36 +135,44 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
           onChange={(v) => {
             if (v && !state.settings.discordConsent) return setConsent('daily');
             setDaily({ enabled: v });
-            toast(v ? '데일리 카드뉴스를 켰어요' : '데일리 카드뉴스를 껐어요');
+            toast(v ? '수신 요청을 저장했어요. 현재 자동 발송은 준비 중이에요' : '수신 요청을 껐어요');
           }}
         />
       </div>
 
-      {on && (
-        <>
-          <label className="field" style={{ marginTop: 14 }}>
-            <span className="lab">받는 시각</span>
-            <select className="select" value={d.time} onChange={(e) => setDaily({ time: e.target.value })}>
-              {TIMES.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}
-            </select>
-          </label>
+      <div className="cn-delivery-fields">
+          <div className="cn-time-field">
+            <label htmlFor="cn-custom-time" className="lab">받고 싶은 시간 <span className="cn-time-zone">한국 시간 · 매일</span></label>
+            <input id="cn-custom-time" className="cn-time-input" type="time" step={60}
+              value={validTime(d.time) ? d.time : '08:30'}
+              onChange={(e) => { if (validTime(e.target.value)) setDaily({ time: e.target.value }); }}
+              aria-label="카드뉴스 받는 시간 직접 선택" />
+            <div className="cn-time-presets" role="group" aria-label="추천 시간 바로 선택">
+              {QUICK_TIMES.map((t) => <button key={t.v} type="button" aria-pressed={d.time === t.v}
+                onClick={() => setDaily({ time: t.v })}>{t.l}</button>)}
+            </div>
+            <p className="cn-time-help">원하는 시각을 직접 선택할 수 있어요. 위 추천 시간 외에도 분 단위로 설정돼요.</p>
+          </div>
           {!compact && (
             <label className="field">
               <span className="lab">카드에 표시할 닉네임 (선택)</span>
               <input className="input" value={d.nickname} maxLength={12} onChange={(e) => setDaily({ nickname: e.target.value })} placeholder="예: 지현" />
-              <div className="hint">여러 사람이 보는 채널이라 실명은 피하세요.</div>
+              <div className="hint">Discord 공용 채널에 표시돼요. 실명 대신 별명을 권장해요.</div>
             </label>
           )}
-          {sub?.nextRunAt && <p className="small muted" style={{ margin: '10px 0 0' }}>다음 카드 {formatKDateTime(sub.nextRunAt)}</p>}
-          <div className="row between" style={{ marginTop: 14 }}>
-            <div>
-              <div className="bold" style={{ fontSize: 15 }}>모의투자 체결 카드도 받기</div>
-              <div className="small muted">사고팔면 그 거래 카드도 바로 와요.</div>
+          {on && !import.meta.env.PROD && sub?.nextRunAt && <p className="small muted" style={{ margin: '8px 0 0' }}>서버의 다음 실행 예정: {formatKDateTime(sub.nextRunAt)}</p>}
+          {on && m.dailySync.error && <Notice kind="danger">시간 설정 동기화에 실패했어요: {m.dailySync.error}</Notice>}
+          {on && (
+            <div className="row between" style={{ marginTop: 14 }}>
+              <div>
+                <div className="bold" style={{ fontSize: 15 }}>매수·매도 카드도 받기</div>
+                <div className="small muted">모의투자 체결 시 공유 채널로 보내요.</div>
+              </div>
+              <Switch label="체결 카드 자동 전송" checked={state.settings.autoSendDiscord} onChange={(v) => update((s) => ({ ...s, settings: { ...s.settings, autoSendDiscord: v } }))} />
             </div>
-            <Switch label="체결 카드 자동 전송" checked={state.settings.autoSendDiscord} onChange={(v) => update((s) => ({ ...s, settings: { ...s.settings, autoSendDiscord: v } }))} />
-          </div>
-        </>
-      )}
+          )}
+        </div>
+      <div className="cn-delivery-caution" role="status">현재 Vercel 배포에서는 예약 자동 발송 서버가 실행되지 않아요. 시간을 선택·저장할 수 있지만, 해당 시각에 Discord로 자동 전송되지는 않습니다. 카드뉴스는 앱에서 직접 확인할 수 있어요.</div>
       {testResult && !testResult.ok && <div style={{ marginTop: 10 }}><Notice kind="danger">{testResult.msg}</Notice></div>}
       <div className="row" style={{ gap: 8, marginTop: 14 }}>
         <a className="btn secondary flex sm" href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>Discord 채널 들어가기</a>
@@ -177,10 +185,10 @@ export function DiscordPanel({ compact }: { compact?: boolean }) {
             update((s) => ({ ...s, settings: { ...s.settings, discordConsent: true }, daily: { ...s.daily, enabled: was === 'daily' ? true : s.daily.enabled } }));
             setConsent(null);
             if (was === 'test') void test();
-            else toast('데일리 카드뉴스를 켰어요');
+            else toast('수신 요청을 저장했어요. 실제 자동 전송은 준비 중이에요');
           }}
         />
       )}
-    </div>
+    </section>
   );
 }

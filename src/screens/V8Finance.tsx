@@ -122,7 +122,7 @@ export function V8Home() {
   const nav = useNav();
   const { summary: w, wallet } = useWallet();
   const held = Object.entries(wallet.etfs || {}).filter(([, h]) => h.qty > 0);
-  const etfDetail = held.length ? held.map(([c, h]) => `${INSTRUMENT_BY_CODE[c]?.name ?? c} ${h.qty}주`).join(' · ') : '실제 시세로 사고팔아요';
+  const etfDetail = held.length ? held.map(([c, h]) => `${INSTRUMENT_BY_CODE[c]?.name ?? c} ${h.qty}주`).join(' · ') : '홈 가상 지갑으로 모의투자해요';
   const gap = useMemo(() => { const p = worldHistory(state.worldWallet, 30); return p[p.length - 1]?.gap ?? 0; }, [state.worldWallet]);
   const choices = state.worldWallet.decisions.length;
   const [how, setHow] = useState(false);
@@ -189,7 +189,7 @@ export function V8Home() {
           <AssetRow kind="saving" title="자유 저축" detail="참은 돈이 먼저 모이는 곳" amount={w.freeSavings} onClick={() => nav.setTab('save')} />
           <AssetRow kind="deposit" title="정기예금" detail="목돈을 묶어 이자 받기" amount={w.deposit} onClick={() => nav.setTab('save')} />
           <AssetRow kind="installment" title="적금" detail="매달 같은 금액 모으기" amount={w.installment} onClick={() => nav.setTab('save')} />
-          <AssetRow kind="invest" title="ETF" detail={etfDetail} amount={w.stockValue} onClick={() => nav.setTab('invest')} />
+          <AssetRow kind="invest" title="주식·ETF" detail={etfDetail} amount={w.stockValue} onClick={() => nav.setTab('invest')} />
         </div>
       </section>
 

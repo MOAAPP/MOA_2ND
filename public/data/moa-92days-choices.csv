@@ -1,0 +1,211 @@
+id,user_id,date,at,item,price,paid,choice,source,phase,future_scenario
+S02-D3,S02,2026-09-14,1789380000000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S02-D12,S02,2026-09-23,1790157600000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S02-D21,S02,2026-10-02,1790935200000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S02-D30,S02,2026-10-11,1791712800000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S02-D39,S02,2026-10-20,1792490400000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S03-D3,S03,2026-09-14,1789380000000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S03-D12,S03,2026-09-23,1790157600000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S03-D21,S03,2026-10-02,1790935200000,운동화,89000,57850,alternative,synthetic,historical_synthetic,false
+S03-D30,S03,2026-10-11,1791712800000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S03-D39,S03,2026-10-20,1792490400000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S04-D3,S04,2026-09-14,1789380000000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S04-D12,S04,2026-09-23,1790157600000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S04-D21,S04,2026-10-02,1790935200000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S04-D30,S04,2026-10-11,1791712800000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S04-D39,S04,2026-10-20,1792490400000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S05-D3,S05,2026-09-14,1789380000000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S05-D12,S05,2026-09-23,1790157600000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S05-D21,S05,2026-10-02,1790935200000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S05-D30,S05,2026-10-11,1791712800000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S05-D39,S05,2026-10-20,1792490400000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S06-D3,S06,2026-09-14,1789380000000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S06-D12,S06,2026-09-23,1790157600000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S06-D21,S06,2026-10-02,1790935200000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S06-D30,S06,2026-10-11,1791712800000,운동화,89000,57850,alternative,synthetic,historical_synthetic,false
+S06-D39,S06,2026-10-20,1792490400000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S07-D3,S07,2026-09-14,1789380000000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S07-D12,S07,2026-09-23,1790157600000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S07-D21,S07,2026-10-02,1790935200000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S07-D30,S07,2026-10-11,1791712800000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S07-D39,S07,2026-10-20,1792490400000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S08-D3,S08,2026-09-14,1789380000000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S08-D12,S08,2026-09-23,1790157600000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S08-D21,S08,2026-10-02,1790935200000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S08-D30,S08,2026-10-11,1791712800000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S08-D39,S08,2026-10-20,1792490400000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S09-D3,S09,2026-09-14,1789380000000,운동화,89000,57850,alternative,synthetic,historical_synthetic,false
+S09-D12,S09,2026-09-23,1790157600000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S09-D21,S09,2026-10-02,1790935200000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S09-D30,S09,2026-10-11,1791712800000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S09-D39,S09,2026-10-20,1792490400000,운동화,89000,57850,alternative,synthetic,historical_synthetic,false
+S10-D3,S10,2026-09-14,1789380000000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S10-D12,S10,2026-09-23,1790157600000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S10-D21,S10,2026-10-02,1790935200000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S10-D30,S10,2026-10-11,1791712800000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S10-D39,S10,2026-10-20,1792490400000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S11-D3,S11,2026-09-14,1789380000000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S11-D12,S11,2026-09-23,1790157600000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S11-D21,S11,2026-10-02,1790935200000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S11-D30,S11,2026-10-11,1791712800000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S11-D39,S11,2026-10-20,1792490400000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S12-D3,S12,2026-09-14,1789380000000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S12-D12,S12,2026-09-23,1790157600000,운동화,89000,57850,alternative,synthetic,historical_synthetic,false
+S12-D21,S12,2026-10-02,1790935200000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S12-D30,S12,2026-10-11,1791712800000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S12-D39,S12,2026-10-20,1792490400000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S13-D3,S13,2026-09-14,1789380000000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S13-D12,S13,2026-09-23,1790157600000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S13-D21,S13,2026-10-02,1790935200000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S13-D30,S13,2026-10-11,1791712800000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S13-D39,S13,2026-10-20,1792490400000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S14-D3,S14,2026-09-14,1789380000000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S14-D12,S14,2026-09-23,1790157600000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S14-D21,S14,2026-10-02,1790935200000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S14-D30,S14,2026-10-11,1791712800000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S14-D39,S14,2026-10-20,1792490400000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S15-D3,S15,2026-09-14,1789380000000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S15-D12,S15,2026-09-23,1790157600000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S15-D21,S15,2026-10-02,1790935200000,운동화,89000,57850,alternative,synthetic,historical_synthetic,false
+S15-D30,S15,2026-10-11,1791712800000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S15-D39,S15,2026-10-20,1792490400000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S16-D3,S16,2026-09-14,1789380000000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S16-D12,S16,2026-09-23,1790157600000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S16-D21,S16,2026-10-02,1790935200000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S16-D30,S16,2026-10-11,1791712800000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S16-D39,S16,2026-10-20,1792490400000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S17-D3,S17,2026-09-14,1789380000000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S17-D12,S17,2026-09-23,1790157600000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S17-D21,S17,2026-10-02,1790935200000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S17-D30,S17,2026-10-11,1791712800000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S17-D39,S17,2026-10-20,1792490400000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S18-D3,S18,2026-09-14,1789380000000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S18-D12,S18,2026-09-23,1790157600000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S18-D21,S18,2026-10-02,1790935200000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S18-D30,S18,2026-10-11,1791712800000,운동화,89000,57850,alternative,synthetic,historical_synthetic,false
+S18-D39,S18,2026-10-20,1792490400000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S19-D3,S19,2026-09-14,1789380000000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S19-D12,S19,2026-09-23,1790157600000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S19-D21,S19,2026-10-02,1790935200000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S19-D30,S19,2026-10-11,1791712800000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S19-D39,S19,2026-10-20,1792490400000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S20-D3,S20,2026-09-14,1789380000000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S20-D12,S20,2026-09-23,1790157600000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S20-D21,S20,2026-10-02,1790935200000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S20-D30,S20,2026-10-11,1791712800000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S20-D39,S20,2026-10-20,1792490400000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S02-D48,S02,2026-10-29,1793268000000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S02-D57,S02,2026-11-07,1794045600000,배달 식사,19500,0,wait,synthetic,future_scenario,true
+S02-D66,S02,2026-11-16,1794823200000,운동화,89000,0,wait,synthetic,future_scenario,true
+S02-D75,S02,2026-11-25,1795600800000,카페 라떼,5600,0,wait,synthetic,future_scenario,true
+S02-D84,S02,2026-12-04,1796378400000,무선 이어폰,159000,0,wait,synthetic,future_scenario,true
+S03-D48,S03,2026-10-29,1793268000000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S03-D57,S03,2026-11-07,1794045600000,운동화,89000,57850,alternative,synthetic,future_scenario,true
+S03-D66,S03,2026-11-16,1794823200000,카페 라떼,5600,3640,alternative,synthetic,future_scenario,true
+S03-D75,S03,2026-11-25,1795600800000,무선 이어폰,159000,103350,alternative,synthetic,future_scenario,true
+S03-D84,S03,2026-12-04,1796378400000,배달 식사,19500,12675,alternative,synthetic,future_scenario,true
+S04-D48,S04,2026-10-29,1793268000000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S04-D57,S04,2026-11-07,1794045600000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true
+S04-D66,S04,2026-11-16,1794823200000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
+S04-D75,S04,2026-11-25,1795600800000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
+S04-D84,S04,2026-12-04,1796378400000,운동화,89000,89000,buy,synthetic,future_scenario,true
+S05-D48,S05,2026-10-29,1793268000000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S05-D57,S05,2026-11-07,1794045600000,무선 이어폰,159000,0,wait,synthetic,future_scenario,true
+S05-D66,S05,2026-11-16,1794823200000,배달 식사,19500,0,wait,synthetic,future_scenario,true
+S05-D75,S05,2026-11-25,1795600800000,운동화,89000,0,wait,synthetic,future_scenario,true
+S05-D84,S05,2026-12-04,1796378400000,카페 라떼,5600,0,wait,synthetic,future_scenario,true
+S06-D48,S06,2026-10-29,1793268000000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S06-D57,S06,2026-11-07,1794045600000,배달 식사,19500,12675,alternative,synthetic,future_scenario,true
+S06-D66,S06,2026-11-16,1794823200000,운동화,89000,57850,alternative,synthetic,future_scenario,true
+S06-D75,S06,2026-11-25,1795600800000,카페 라떼,5600,3640,alternative,synthetic,future_scenario,true
+S06-D84,S06,2026-12-04,1796378400000,무선 이어폰,159000,103350,alternative,synthetic,future_scenario,true
+S07-D48,S07,2026-10-29,1793268000000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S07-D57,S07,2026-11-07,1794045600000,운동화,89000,89000,buy,synthetic,future_scenario,true
+S07-D66,S07,2026-11-16,1794823200000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true
+S07-D75,S07,2026-11-25,1795600800000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
+S07-D84,S07,2026-12-04,1796378400000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
+S08-D48,S08,2026-10-29,1793268000000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S08-D57,S08,2026-11-07,1794045600000,카페 라떼,5600,0,wait,synthetic,future_scenario,true
+S08-D66,S08,2026-11-16,1794823200000,무선 이어폰,159000,0,wait,synthetic,future_scenario,true
+S08-D75,S08,2026-11-25,1795600800000,배달 식사,19500,0,wait,synthetic,future_scenario,true
+S08-D84,S08,2026-12-04,1796378400000,운동화,89000,0,wait,synthetic,future_scenario,true
+S09-D48,S09,2026-10-29,1793268000000,카페 라떼,5600,3640,alternative,synthetic,historical_synthetic,false
+S09-D57,S09,2026-11-07,1794045600000,무선 이어폰,159000,103350,alternative,synthetic,future_scenario,true
+S09-D66,S09,2026-11-16,1794823200000,배달 식사,19500,12675,alternative,synthetic,future_scenario,true
+S09-D75,S09,2026-11-25,1795600800000,운동화,89000,57850,alternative,synthetic,future_scenario,true
+S09-D84,S09,2026-12-04,1796378400000,카페 라떼,5600,3640,alternative,synthetic,future_scenario,true
+S10-D48,S10,2026-10-29,1793268000000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S10-D57,S10,2026-11-07,1794045600000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
+S10-D66,S10,2026-11-16,1794823200000,운동화,89000,89000,buy,synthetic,future_scenario,true
+S10-D75,S10,2026-11-25,1795600800000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true
+S10-D84,S10,2026-12-04,1796378400000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
+S11-D48,S11,2026-10-29,1793268000000,배달 식사,19500,0,wait,synthetic,historical_synthetic,false
+S11-D57,S11,2026-11-07,1794045600000,운동화,89000,0,wait,synthetic,future_scenario,true
+S11-D66,S11,2026-11-16,1794823200000,카페 라떼,5600,0,wait,synthetic,future_scenario,true
+S11-D75,S11,2026-11-25,1795600800000,무선 이어폰,159000,0,wait,synthetic,future_scenario,true
+S11-D84,S11,2026-12-04,1796378400000,배달 식사,19500,0,wait,synthetic,future_scenario,true
+S12-D48,S12,2026-10-29,1793268000000,운동화,89000,57850,alternative,synthetic,historical_synthetic,false
+S12-D57,S12,2026-11-07,1794045600000,카페 라떼,5600,3640,alternative,synthetic,future_scenario,true
+S12-D66,S12,2026-11-16,1794823200000,무선 이어폰,159000,103350,alternative,synthetic,future_scenario,true
+S12-D75,S12,2026-11-25,1795600800000,배달 식사,19500,12675,alternative,synthetic,future_scenario,true
+S12-D84,S12,2026-12-04,1796378400000,운동화,89000,57850,alternative,synthetic,future_scenario,true
+S13-D48,S13,2026-10-29,1793268000000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S13-D57,S13,2026-11-07,1794045600000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
+S13-D66,S13,2026-11-16,1794823200000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
+S13-D75,S13,2026-11-25,1795600800000,운동화,89000,89000,buy,synthetic,future_scenario,true
+S13-D84,S13,2026-12-04,1796378400000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true
+S14-D48,S14,2026-10-29,1793268000000,무선 이어폰,159000,0,wait,synthetic,historical_synthetic,false
+S14-D57,S14,2026-11-07,1794045600000,배달 식사,19500,0,wait,synthetic,future_scenario,true
+S14-D66,S14,2026-11-16,1794823200000,운동화,89000,0,wait,synthetic,future_scenario,true
+S14-D75,S14,2026-11-25,1795600800000,카페 라떼,5600,0,wait,synthetic,future_scenario,true
+S14-D84,S14,2026-12-04,1796378400000,무선 이어폰,159000,0,wait,synthetic,future_scenario,true
+S15-D48,S15,2026-10-29,1793268000000,배달 식사,19500,12675,alternative,synthetic,historical_synthetic,false
+S15-D57,S15,2026-11-07,1794045600000,운동화,89000,57850,alternative,synthetic,future_scenario,true
+S15-D66,S15,2026-11-16,1794823200000,카페 라떼,5600,3640,alternative,synthetic,future_scenario,true
+S15-D75,S15,2026-11-25,1795600800000,무선 이어폰,159000,103350,alternative,synthetic,future_scenario,true
+S15-D84,S15,2026-12-04,1796378400000,배달 식사,19500,12675,alternative,synthetic,future_scenario,true
+S16-D48,S16,2026-10-29,1793268000000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S16-D57,S16,2026-11-07,1794045600000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true
+S16-D66,S16,2026-11-16,1794823200000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
+S16-D75,S16,2026-11-25,1795600800000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
+S16-D84,S16,2026-12-04,1796378400000,운동화,89000,89000,buy,synthetic,future_scenario,true
+S17-D48,S17,2026-10-29,1793268000000,카페 라떼,5600,0,wait,synthetic,historical_synthetic,false
+S17-D57,S17,2026-11-07,1794045600000,무선 이어폰,159000,0,wait,synthetic,future_scenario,true
+S17-D66,S17,2026-11-16,1794823200000,배달 식사,19500,0,wait,synthetic,future_scenario,true
+S17-D75,S17,2026-11-25,1795600800000,운동화,89000,0,wait,synthetic,future_scenario,true
+S17-D84,S17,2026-12-04,1796378400000,카페 라떼,5600,0,wait,synthetic,future_scenario,true
+S18-D48,S18,2026-10-29,1793268000000,무선 이어폰,159000,103350,alternative,synthetic,historical_synthetic,false
+S18-D57,S18,2026-11-07,1794045600000,배달 식사,19500,12675,alternative,synthetic,future_scenario,true
+S18-D66,S18,2026-11-16,1794823200000,운동화,89000,57850,alternative,synthetic,future_scenario,true
+S18-D75,S18,2026-11-25,1795600800000,카페 라떼,5600,3640,alternative,synthetic,future_scenario,true
+S18-D84,S18,2026-12-04,1796378400000,무선 이어폰,159000,103350,alternative,synthetic,future_scenario,true
+S19-D48,S19,2026-10-29,1793268000000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S19-D57,S19,2026-11-07,1794045600000,운동화,89000,89000,buy,synthetic,future_scenario,true
+S19-D66,S19,2026-11-16,1794823200000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true
+S19-D75,S19,2026-11-25,1795600800000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
+S19-D84,S19,2026-12-04,1796378400000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
+S20-D48,S20,2026-10-29,1793268000000,운동화,89000,0,wait,synthetic,historical_synthetic,false
+S20-D57,S20,2026-11-07,1794045600000,카페 라떼,5600,0,wait,synthetic,future_scenario,true
+S20-D66,S20,2026-11-16,1794823200000,무선 이어폰,159000,0,wait,synthetic,future_scenario,true
+S20-D75,S20,2026-11-25,1795600800000,배달 식사,19500,0,wait,synthetic,future_scenario,true
+S20-D84,S20,2026-12-04,1796378400000,운동화,89000,0,wait,synthetic,future_scenario,true
+S01-SHOW-D01,S01,2026-09-13,1789293600000,배달 야식,23000,0,wait,synthetic,historical_synthetic,false
+S01-D3,S01,2026-09-14,1789380000000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S01-SHOW-D02,S01,2026-09-22,1790071200000,작업용 키보드,85000,85000,buy,synthetic,historical_synthetic,false
+S01-D12,S01,2026-09-23,1790157600000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S01-D21,S01,2026-10-02,1790935200000,무선 이어폰,159000,159000,buy,synthetic,historical_synthetic,false
+S01-SHOW-D03,S01,2026-10-04,1791108000000,택시 대신 버스,14800,1500,alternative,synthetic,historical_synthetic,false
+S01-D30,S01,2026-10-11,1791712800000,배달 식사,19500,19500,buy,synthetic,historical_synthetic,false
+S01-D39,S01,2026-10-20,1792490400000,운동화,89000,89000,buy,synthetic,historical_synthetic,false
+S01-SHOW-D04,S01,2026-10-24,1792836000000,고가 헤드폰,249000,0,wait,synthetic,historical_synthetic,false
+S01-D48,S01,2026-10-29,1793268000000,카페 라떼,5600,5600,buy,synthetic,historical_synthetic,false
+S01-SHOW-D05,S01,2026-10-29,1793268000000,편의점 커피 대신 집 커피,4900,700,alternative,synthetic,historical_synthetic,false
+S01-SHOW-D06,S01,2026-11-01,1793527200000,배달 떡볶이,18000,0,wait,synthetic,historical_synthetic,false
+S01-SHOW-D07,S01,2026-11-03,1793700000000,취업 준비 온라인 특강,49000,49000,buy,synthetic,historical_synthetic,false
+S01-SHOW-D08,S01,2026-11-06,1793959200000,새 스마트워치,289000,0,wait,synthetic,future_scenario,true
+S01-D57,S01,2026-11-07,1794045600000,무선 이어폰,159000,159000,buy,synthetic,future_scenario,true
+S01-D66,S01,2026-11-16,1794823200000,배달 식사,19500,19500,buy,synthetic,future_scenario,true
+S01-SHOW-D09,S01,2026-11-21,1795255200000,주말 카페 vs 텀블러,8500,1200,alternative,synthetic,future_scenario,true
+S01-D75,S01,2026-11-25,1795600800000,운동화,89000,89000,buy,synthetic,future_scenario,true
+S01-SHOW-D10,S01,2026-12-02,1796205600000,겨울 아우터,149000,95000,alternative,synthetic,future_scenario,true
+S01-D84,S01,2026-12-04,1796378400000,카페 라떼,5600,5600,buy,synthetic,future_scenario,true

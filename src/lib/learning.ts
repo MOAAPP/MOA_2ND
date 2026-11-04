@@ -18,7 +18,7 @@ export function startSession(s: AppState, lessonId: string): AppState {
 
 /** 실습 스텝 완료 여부: 레슨 시작 이후 앱에서 실제로 한 행동으로 판단 */
 export function practiceDone(s: AppState, check: PracticeCheck, since: number): boolean {
-  const fills = s.portfolio.fills.filter((f) => f.time >= since);
+  const fills = s.investJournal.fills.filter((f) => f.time >= since);
   switch (check) {
     case 'openStock':
       return (s.learning.seen.stockAt ?? 0) >= since;
@@ -31,7 +31,7 @@ export function practiceDone(s: AppState, check: PracticeCheck, since: number): 
     case 'buyEtf':
       return fills.some((f) => f.side === 'buy' && INSTRUMENT_BY_CODE[f.code]?.type === 'etf');
     case 'limitOrder':
-      return s.portfolio.orders.some((o) => o.type === 'limit' && o.createdAt >= since);
+      return s.investJournal.orders.some((o) => o.type === 'limit' && o.createdAt >= since);
     case 'decide':
       return s.records.some((r) => r.source === 'decide' && r.createdAt >= since);
   }

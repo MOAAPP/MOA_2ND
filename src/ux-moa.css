@@ -274,3 +274,23 @@
 .c-sec .t-btn { margin-top: 4px; }
 .c-fork .h-tag-row { margin-bottom: 6px; }
 .ih-intro { margin: 0 4px 12px; }
+
+
+/* 카드뉴스 미리보기 v21: 기존 78% 가로 카드 레이아웃을 유지하면서 탐색만 보강 */
+.cn-gallery-heading { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:16px 4px 10px; }
+.cn-gallery-heading strong { color:var(--ink); font-size:15px; font-weight:750; letter-spacing:-.02em; }
+.cn-gallery-heading > span { flex:none; color:var(--ink-3); font-size:12px; font-weight:650; font-variant-numeric:tabular-nums; }
+.cn-gallery { scroll-snap-type:x mandatory; scroll-padding-inline:20px; -webkit-overflow-scrolling:touch; }
+.cn-gallery > a { scroll-snap-align:center; }
+.cn-gallery-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:12px 4px 0; min-height:35px; }
+.cn-gallery-caption { color:var(--ink-2); font-size:13px; line-height:1.4; font-weight:600; min-width:0; flex:1; word-break:keep-all; }
+.cn-gallery-pages { display:flex; gap:6px; flex:none; }
+.cn-gallery-pages button { display:flex; align-items:center; justify-content:center; width:32px; height:32px; border:1px solid var(--line); border-radius:50%; background:#fff; color:var(--ink-2); font-size:12px; font-weight:700; cursor:pointer; }
+.cn-gallery-pages button[aria-current="step"] { color:#fff; background:var(--moa); border-color:var(--moa); }
+.cn-gallery-pages button:focus-visible { outline:3px solid var(--moa); outline-offset:2px; }
+.cn-gallery-hint { margin:8px 4px 0; line-height:1.5; }
+@media (max-width:355px) {
+  .cn-gallery-pages { gap:4px; }
+  .cn-gallery-pages button { width:28px; height:28px; }
+  .cn-gallery-footer { gap:8px; }
+}

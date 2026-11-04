@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { formatKDate, formatKDateTime } from '../../shared/dates';
 import { signedPct, signedWon, won, shares } from '../../shared/format';
 import { ConfirmSheet, Empty, Seg, TopBar, useToast, WorldTag } from '../components/ui';
-import { cancelOrder, fillWorlds } from '../lib/trading';
+import { fillWorlds } from '../lib/trading';
+import { cancelFundedOrder, fundedPortfolio } from '../lib/fundedInvest';
 import { useMarket } from '../state/market';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
@@ -22,7 +23,8 @@ export function Portfolio() {
   const toast = useToast();
   const [tab, setTab] = useState<'hold' | 'orders' | 'fills'>('hold');
   const [cancelId, setCancelId] = useState<string | null>(null);
-  const p = state.portfolio;
+  const p = fundedPortfolio(state.worldWallet, state.investJournal);
+  const legacyCount = state.portfolio.fills.length;
   const positions = Object.values(p.positions);
 
   useEffect(() => {
@@ -34,7 +36,8 @@ export function Portfolio() {
 
   return (
     <div className="page no-nav">
-      <TopBar onBack={nav.pop} title="모의투자 내역" center />
+      <TopBar onBack={nav.pop} title="가상 지갑 투자 내역" center />
+      {legacyCount > 0 && <p className="small muted" style={{ margin: "0 4px 12px" }}>과거 별도 1,000만 원 모의투자 기록 {legacyCount}건은 합산하지 않고 보존 중이에요. 지금은 평행세계 지갑으로 투자한 기록만 보여줘요.</p>}
       <Seg label="보기" value={tab} onChange={setTab} options={[{ value: 'hold', label: `보유 ${positions.length}` }, { value: 'orders', label: '주문' }, { value: 'fills', label: '거래 내역' }]} />
 
       {tab === 'hold' && (
@@ -119,7 +122,7 @@ export function Portfolio() {
           confirm="주문 취소"
           onClose={() => setCancelId(null)}
           onConfirm={() => {
-            update((s) => ({ ...s, portfolio: cancelOrder(s.portfolio, cancelId) }));
+            update((s) => ({ ...s, investJournal: cancelFundedOrder(s.investJournal, cancelId) }));
             setCancelId(null);
             toast('주문을 취소했어요');
           }}

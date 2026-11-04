@@ -1,0 +1,59 @@
+# MOA 공통 가상 데이터 — 92일 (2026-09-11 ~ 2026-12-11)
+
+DB 없이 프론트와 Python/FastAPI 팀이 **같은 합성 데이터를 사용**할 수 있도록 정리한 최종 버전입니다.
+
+## 남기는 파일 (총 11개)
+
+| 목적 | 파일 |
+|---|---|
+| **공통 JSON 원본 (20명, 92일)** | `public/data/moa-92days.json` |
+| **Python용 거래 데이터** | `public/data/moa-92days-transactions.csv` |
+| **Python용 일별 데이터** | `public/data/moa-92days-daily.csv` |
+| 가상 사용자 프로필 | `public/data/moa-92days-profiles.csv` |
+| 가상 선택 기록 | `public/data/moa-92days-choices.csv` |
+| 가상 투자 체결 | `public/data/moa-92days-investments.csv` |
+| 프론트 예시 1명(S01) | `src/data/moa-demo-s01.json` |
+| **재생성 스크립트** | `scripts/data/build-moa-dataset.mjs` |
+| 팀원 설명서 | `docs/data/MOA_92D_GUIDE.md` |
+| **S01 시연 대본/흐름/주의사항** | `docs/data/S01_SHOWCASE_DEMO.md` |
+| **20명 팀 공유 ZIP** | `public/data/moa-92days-20users-team.zip` |
+
+재생성은 프로젝트 최상위에서 `node scripts/data/build-moa-dataset.mjs` **한 번** 실행합니다. 공통 생성기는 `scripts/data/build-moa-dataset.mjs`, S01 전용 합성 시나리오는 `scripts/data/enrich-s01-showcase.mjs`로 분리되어 있습니다. API, DB, 인증 정보 또는 실제 사용자 금융정보가 필요하지 않습니다. 고정 난수 시드로 항상 동일한 결과를 생성합니다.
+
+배포된 웹의 `/data/moa-92days.json` 경로로 모든 20명의 데이터를 받을 수 있습니다. 앱 예시 체험은 S01의 **2026-11-04까지의 가상 과거 기록만** 사용하며, 미래 시나리오는 실제 가계부 내역으로 노출하지 않습니다.
+
+## 데이터 구성
+
+- 1차 46일: **9월 11일~10월 26일**
+- 2차 46일: **10월 27일~12월 11일**
+- 동일 사용자 ID: **S01~S20**
+- 날짜별 분석 단위: **user_id × date, 총 1,840행**
+- `daily`의 train: 9월 11일~10월 20일 (40일)
+- validation: 10월 21일~10월 27일 (7일)
+- test: 10월 28일~11월 4일 (8일)
+- future_scenario: 11월 5일~12월 11일 (37일)
+
+## AI 개발에서 반드시 지킬 것
+
+1. 전체 데이터가 **합성 데이터**입니다. 과거 구간이라고 해도 실제 은행 기록이 아닙니다. 실사용자 정확도로 주장하지 않습니다.
+2. `future_scenario=true`인 날은 관측되지 않은 가상 미래입니다. `model_label=null`, 거래의 `logged=false`이며 학습·테스트 정답에서 제외합니다.
+3. `model_label=null`인 누락 지출일도 0원으로 보정하지 않습니다. `true_variable_spend`는 생성기만 아는 잠재 정답이므로 **AI 입력 feature에 사용 금지**입니다.
+4. `kind=card_payment`는 이전 신용카드 소비의 **결제계좌 출금** 이벤트입니다. 신용 구매 시점과 청구 시점을 이중 차감하지 마세요.
+5. `kind=transfer_self`는 잔액 부족을 메운 비상 이체입니다. 부족 위험 판단은 `pre_rescue_balance`를 함께 확인해야 합니다.
+6. `choices`는 가상 구매·보류·대체 선택으로, 실거래 목록에 자동으로 중복 합산하지 않습니다.
+7. `investments`는 가상 주식·ETF 매수·매도입니다. 주식 평가액은 총자산에는 포함해도 **매도 체결 전까지 소비 가능한 현금이 아닙니다**.
+8. 시간순 분리(train → validation → test)와 기준시점 이전 거래만 사용해 정보 누수를 막습니다.
+
+## 시나리오
+
+**S01은 메인 시연 전용 복합 사용자**로 증강했습니다. 혼합 소득(알바비·과외비), 반복 고정결제, 신용카드 청구일, 돌발 지출, 비상자금 이체, 소비 선택 3종, 가상 ETF 2종을 하나의 연속된 사례로 보여줍니다. 자세한 진행 순서는 `S01_SHOWCASE_DEMO.md`를 참고하세요.
+
+**S02~S20 19명은 이전 20명 데이터셋과 모든 CSV 행 내용이 동일**하도록 유지했습니다. S01 외 사용자 유형은 기존 그대로(알바비 지연, 주말 지출 집중, 기록 누락, 고정비 부담, 신용카드 비중 높음, 시험기간 지출 급증, 절약형 등)입니다. 프론트 예시 체험은 S01만 사용합니다.
+
+데이터를 수정할 때는 **통합 생성 스크립트 하나만 변경**하고 재생성하세요. 1차·2차 중복 파일을 다시 만들지 않아도 됩니다.
+
+## 코드·배포 정리
+
+- 현재 Vite 빌드/서비스에서 사용하지 않던 구형 독립형 오프라인 HTML 미리보기 생성기(`build_preview.cjs`)와 전용 가상 상태(`preview-demo-state.json`), `public/vendor`의 React UMD 사본을 제거했습니다. 앱은 `package.json`의 React 패키지와 Vite 번들을 사용합니다.
+- 기존 앱 소스, 테스트 코드, AI 관련 모듈, 실제 사용자 로컬 기록 마이그레이션 로직은 삭제하지 않았습니다.
+- 생성 데이터는 같은 고정 시드로 재현할 수 있으며, 빌드 전에 전체 `npm test`와 `npm run build`로 검증합니다.

@@ -1,4 +1,5 @@
 import { todayKST } from '../../../shared/dates';
+import half from '../../data/moa-demo-s01.json';
 import type { SpendEntry } from '../ml/types';
 import type { Profile, ScheduleItem } from '../types';
 import { emptyMoa, type MoaSchedule, type MoaState, type Txn } from './types';
@@ -53,45 +54,44 @@ export function spendEntryOf(t: Txn): SpendEntry | null {
   return { date: t.date, amount: t.amount, category: t.category, name: t.name, from: 'record', txnId: t.id };
 }
 
-/**
- * 체험용 결제계좌 (시연 시나리오와 같은 모양).
- * 잔액 15만원, 26일 월세, 10일 알바비(예정), 신한 신용카드(말일 마감·14일 결제), 3주치 기록 완료 지출.
- */
+/** Same S01 fixture as the ledger and the team's ML data; no invented extra 21-day transactions. */
 export function demoMoa(nowMs: number): MoaState {
   const today = todayKST(new Date(nowMs));
-  const [y, mo, d] = today.split('-').map(Number);
-  const ms = (iso: string, h: number) => { const [a, b, c] = iso.split('-').map(Number); return Date.UTC(a, b - 1, c, h - 9); };
-  const day = (n: number) => { const t = new Date(Date.UTC(y, mo - 1, d + n)); return t.toISOString().slice(0, 10); };
-  const rentDay = Math.min(28, d + 6 > 28 ? 5 : d + 6);
+  const user = half.profiles.find((p) => p.user_id === 'S01')!;
+  const current = half.daily.filter((d) => d.user_id === user.user_id && d.date <= today).at(-1);
+  const txns: Txn[] = half.transactions
+    .filter((t) => t.user_id === user.user_id && t.date <= today && t.logged)
+    .map((t) => ({
+      id: t.id, occurredAt: t.occurred_at, date: t.date,
+      amount: t.amount, kind: t.kind as Txn['kind'], method: t.method as Txn['method'],
+      account: t.account as Txn['account'], name: t.name, category: t.category,
+      essential: t.essential, source: 'demo' as const, createdAt: t.occurred_at,
+      ...(('direction' in t) ? { direction: t.direction as 'in' | 'out' } : {}),
+      ...(('schedule_ref' in t) ? { scheduleRef: t.schedule_ref as string } : {}),
+      ...(t.method === 'credit' ? { cardId: 'demo_credit' } : {}),
+      ...(t.method === 'debit' ? { cardId: 'demo_debit' } : {}),
+    }));
   const m = emptyMoa();
-  const txns: Txn[] = [];
-  const dayStatus: MoaState['dayStatus'] = {};
-  const menu: [string, string, number][] = [['메가커피', '카페', 2500], ['학식', '식비', 5500], ['배달의민족', '식비', 16800], ['지하철', '교통', 1450], ['편의점', '식비', 4200], ['올리브영', '쇼핑', 13900]];
-  let k = 0;
-  for (let i = 21; i >= 1; i--) {
-    const date = day(-i);
-    dayStatus[date] = i % 6 === 0 ? 'reconciled' : 'self';
-    const n = (i * 7) % 3; // 0~2건
-    for (let j = 0; j < n; j++) {
-      const [name, category, amount] = menu[(k++) % menu.length];
-      const credit = k % 4 === 0;
-      txns.push({ id: `demo_${i}_${j}`, occurredAt: ms(date, 12 + j * 3), date, amount: amount + (i % 3) * 500, kind: 'spend', method: credit ? 'credit' : 'debit', account: credit ? 'other' : 'pay', cardId: credit ? 'demo_card' : 'demo_check', name, category, essential: false, source: 'demo', createdAt: nowMs });
-    }
-  }
   return {
     ...m,
-    anchor: { balance: 150_000, at: nowMs - 3600_000, source: 'manual', reflected: [] },
+    payAccountName: '가상 결제계좌 · S01',
+    anchor: { balance: current?.account_balance_eod ?? user.opening_balance, at: nowMs, source: 'manual', reflected: [] },
     cards: [
-      { id: 'demo_card', name: '신한', kind: 'credit', linked: false, cutoffDay: 31, payDay: 14 },
-      { id: 'demo_check', name: '국민체크', kind: 'debit', linked: true },
+      { id: 'demo_credit', name: '가상 신용카드', kind: 'credit', linked: false, cutoffDay: 31, payDay: 14 },
+      { id: 'demo_debit', name: '가상 체크카드', kind: 'debit', linked: true },
     ],
-    schedule: [
-      { id: 'demo_rent', name: '월세', amount: 350_000, direction: 'out', recurrence: 'monthly', day: rentDay, essential: true },
-      { id: 'demo_pay', name: '알바비', amount: 280_000, direction: 'in', recurrence: 'monthly', day: Math.max(1, rentDay - 2), essential: false, status: 'scheduled' },
-      { id: 'demo_phone', name: '통신비', amount: 55_000, direction: 'out', recurrence: 'monthly', day: 25, essential: true },
-    ],
+    schedule: user.schedule.map((x) => ({
+      id: x.id, name: x.name, direction: x.direction as 'in' | 'out',
+      amount: x.amount, recurrence: 'monthly' as const, day: x.day,
+      essential: x.essential, ...(x.direction === 'in' ? { status: x.status === 'uncertain' ? 'uncertain' as const : 'scheduled' as const } : {}),
+    })),
     txns,
-    dayStatus,
+    // Simulated persona: the generator has verified complete synthetic days.
+    // Automatically seed only those historical labels, never missing/future
+    // days. Real users are not asked to confirm every day.
+    dayStatus: Object.fromEntries(half.daily
+      .filter((d) => d.user_id === user.user_id && d.date < today && d.observation_complete)
+      .map((d) => [d.date, 'self' as const])),
     mainMethod: 'debit',
     aiNoticeSeen: false,
   };

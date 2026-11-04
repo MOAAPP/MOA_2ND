@@ -13,7 +13,7 @@ import { AmountText, Button, Chip, Chips, NumberPad, Won } from '../components/d
 import { IconGear } from '../components/Icons';
 import { Sheet, useToast } from '../components/ui';
 import { useAi, exampleNow } from '../lib/ai';
-import { METHOD_LABEL, setDayStatus, type PayMethod } from '../lib/moa';
+import { METHOD_LABEL, type PayMethod } from '../lib/moa';
 import { useMoa } from '../state/moa';
 import { PasteFlow } from './moa/PasteFlow';
 import { ledgerSummaryInput, monthSlice } from '../lib/ai/context';
@@ -56,8 +56,14 @@ export function Row({ e, showDate = false }: { e: SpendEntry; showDate?: boolean
 export function Ledger() {
   const nav = useNav();
   const { all, today } = useSpending();
-  const [month, setMonth] = useState<ISODate>(startOfMonth(today));
-  const [view, setView] = useState<View>('list');
+  const { state } = useStore();
+  // The demo fixture intentionally ends 2026-10-26 in part 1. Open the
+  // latest available month rather than displaying an empty November calendar.
+  const [month, setMonth] = useState<ISODate>(() => state.demo && all.length &&
+    !all.some((e) => startOfMonth(e.date) === startOfMonth(today))
+    ? startOfMonth(all[0].date) : startOfMonth(today));
+  const [view, setView] = useState<View>('calendar');
+  const [showAi, setShowAi] = useState(false);
   const [cat, setCat] = useState<string | null>(null);
   const [day, setDay] = useState<ISODate | null>(null);
   const [pages, setPages] = useState(1);
@@ -70,65 +76,75 @@ export function Ledger() {
   const go = (n: number) => { setMonth(addMonths(month, n)); setDay(null); setPages(1); setCat(null); };
   const byCat = useMemo(() => Object.entries(inMonth.reduce<Record<string, number>>((acc, e) => ((acc[e.category] = (acc[e.category] ?? 0) + e.amount), acc), {})).sort((a, b) => b[1] - a[1]), [inMonth]);
 
-  const aiIn = useMemo(() => ledgerSummaryInput(all, month, today), [all, month, today]);
-  const ai = useAi('ledgerSummary', aiIn, JSON.stringify(aiIn));
   const diff = prevTotal === null ? null : total - prevTotal;
 
   return (
     <div className="page t-page lg-page">
-      <header className="t-head">
-        <div><h1>가계부</h1><p className="t-head-sub">쓴 돈을 적을수록 결제일 예측이 정확해져요</p></div>
+      <header className="t-head lg-first-head">
+        <div><h1>가계부</h1><p className="t-head-sub">{state.demo ? "가상 기록 · 9월 11일~10월 26일 (1차)" : "날짜를 누르면 그날 쓴 돈을 볼 수 있어요"}</p></div>
         <button className="t-head-icon" aria-label="설정" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
       </header>
 
-      <section className="t-card lg-hero">
+      <section className="t-card lg-compact-summary" aria-label="월별 지출 합계">
         <div className="lg-month">
           <button aria-label="이전 달" disabled={!canPrev} onClick={() => go(-1)}>‹</button>
           <span>{m}월 지출</span>
           <button aria-label="다음 달" disabled={!canNext} onClick={() => go(1)}>›</button>
         </div>
-        <strong className="lg-total"><Won n={total} /></strong>
-        <p className="lg-compare">
-          {diff === null ? `하루 평균 ${fmt(Math.round(total / elapsed))}` : diff === 0 ? '지난달 이맘때와 같아요' : <>지난달 이맘때보다 <b className={diff > 0 ? 'more' : 'less'}>{fmt(Math.abs(diff))} {diff > 0 ? '더' : '덜'}</b> 썼어요</>}
-        </p>
-        <div className="lg-actions">
-          <button type="button" className="lg-act primary" onClick={() => setSheet('add')}><span aria-hidden="true">＋</span>지출 쓰기</button>
-          <button type="button" className="lg-act" onClick={() => setSheet('paste')}><AiMark label="" />문자로 한 번에</button>
+        <div className="lg-compact-total">
+          <strong className="lg-total"><Won n={total} /></strong>
+          <p className="lg-compare">
+            {diff === null ? `하루 평균 ${fmt(Math.round(total / elapsed))}` : diff === 0 ? '지난달 이맘때와 같아요' : <>지난달 이맘때보다 <b className={diff > 0 ? 'more' : 'less'}>{fmt(Math.abs(diff))} {diff > 0 ? '더' : '덜'}</b> 썼어요</>}
+          </p>
         </div>
       </section>
 
-      <DayDone today={today} />
-
-      {inMonth.length > 0 && (
-        <AiCard title={ai.data?.title ?? '이번 달 정리'} loading={ai.loading} source={ai.source}>
-          <ul className="ai-points">{ai.data?.points.map((p) => <li key={p}>{p}</li>)}</ul>
-        </AiCard>
-      )}
-
-      <div className="t-seg lg-seg" role="tablist" aria-label="보기">
-        {([['list', '내역'], ['calendar', '달력'], ['report', '분석']] as const).map(([k, l]) => (
+      <div className="t-seg lg-seg lg-first-tabs" role="tablist" aria-label="가계부 보기">
+        {([['calendar', '달력'], ['list', '내역'], ['report', '분석']] as const).map(([k, l]) => (
           <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)}>{l}</button>
         ))}
       </div>
 
-      {inMonth.length === 0 ? (
-        <section className="t-card lg-empty">
-          <CategoryIcon category="기타" size={52} />
-          <h2>{m}월 기록이 아직 없어요</h2>
-          <p>쓴 돈을 적거나, 카드 승인 문자를 붙여넣으면 AI가 정리해 줘요.</p>
-          <div className="lg-actions"><button className="lg-act primary" onClick={() => setSheet('add')}>지출 쓰기</button><button className="lg-act" onClick={() => setSheet('paste')}>문자로 한 번에</button></div>
-        </section>
-      ) : (
-        <>
-          {view === 'list' && <ListView items={inMonth} byCat={byCat} cat={cat} setCat={(c) => { setCat(c); setPages(1); }} pages={pages} more={() => setPages(pages + 1)} today={today} />}
-          {view === 'calendar' && <CalendarView month={month} items={inMonth} today={today} day={day ?? (month === startOfMonth(today) ? today : inMonth[0]?.date ?? month)} setDay={setDay} />}
-          {view === 'report' && <ReportView items={inMonth} byCat={byCat} total={total} openCat={(c) => { setCat(c); setView('list'); }} />}
-        </>
+      {view === 'calendar' && (
+        <CalendarView month={month} items={inMonth} today={today} day={day ?? (month === startOfMonth(today) ? today : inMonth[0]?.date ?? month)} setDay={setDay} />
       )}
+      {view === 'list' && (inMonth.length > 0
+        ? <ListView items={inMonth} byCat={byCat} cat={cat} setCat={(c) => { setCat(c); setPages(1); }} pages={pages} more={() => setPages(pages + 1)} today={today} />
+        : <section className="t-card lg-empty"><p>이 달에는 아직 작성한 내역이 없어요</p></section>)}
+      {view === 'report' && (inMonth.length > 0
+        ? <ReportView items={inMonth} byCat={byCat} total={total} openCat={(c) => { setCat(c); setView('list'); }} />
+        : <section className="t-card lg-empty"><p>지출을 추가하면 분석이 나타나요</p></section>)}
+
+      <div className="lg-first-actions">
+        <button type="button" className="lg-act primary" onClick={() => setSheet('add')}><span aria-hidden="true">＋</span> 지출 쓰기</button>
+        <button type="button" className="lg-act" onClick={() => setSheet('paste')}><AiMark label="" /> 문자로 가져오기</button>
+      </div>
+
+      <section className="lg-first-secondary" aria-label="추가 분석">
+        <button type="button" className="lg-ai-disclosure" aria-expanded={showAi} onClick={() => setShowAi((v) => !v)}>
+          <span className="lg-ai-mark"><AiMark label="AI" /></span>
+          <span className="lg-ai-disclosure-label"><b>AI로 소비 패턴 분석하기</b><small>이번 달 지출 특징과 개선할 점을 확인해요</small></span>
+          <span className="lg-disclosure-arrow" aria-hidden="true">{showAi ? '−' : '+'}</span>
+        </button>
+        {showAi && (inMonth.length > 0
+          ? <LedgerAiSummary all={all} month={month} today={today} />
+          : <p className="small muted">지출 내역을 입력하면 AI 분석을 볼 수 있어요.</p>)}
+      </section>
 
       {sheet === 'add' && <AddSheet today={today} onClose={() => setSheet(null)} />}
       {sheet === 'paste' && <PasteFlow onClose={() => setSheet(null)} />}
     </div>
+  );
+}
+
+/** AI is mounted only when requested; entering the ledger does not call the model. */
+function LedgerAiSummary({ all, month, today }: { all: SpendEntry[]; month: ISODate; today: ISODate }) {
+  const input = useMemo(() => ledgerSummaryInput(all, month, today), [all, month, today]);
+  const ai = useAi('ledgerSummary', input, JSON.stringify(input));
+  return (
+    <AiCard title={ai.data?.title ?? '이번 달 AI 소비 분석'} loading={ai.loading} source={ai.source}>
+      <ul className="ai-points">{ai.data?.points.map((point) => <li key={point}>{point}</li>)}</ul>
+    </AiCard>
   );
 }
 
@@ -279,34 +295,5 @@ function AddSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
       </Chips>
       <div className="lg-pad"><NumberPad value={amount} onChange={setAmount} max={10_000_000} /></div>
     </Sheet>
-  );
-}
-
-/* ───────── 오늘 기록 완료 ───────── */
-/** '0원인 날'과 '기록 안 한 날', '일부만 적은 날'을 가르는 버튼. 지출 예측의 정답은 완료한 날만 쓴다. */
-function DayDone({ today }: { today: ISODate }) {
-  const { moa, set } = useMoa();
-  const yesterday = addDays(today, -1);
-  const st = moa.dayStatus[today];
-  const yst = moa.dayStatus[yesterday];
-  const labeled = Object.keys(moa.dayStatus).length;
-  return (
-    <section className="t-card lg-done">
-      <div>
-        <b>{st ? (st === 'reconciled' ? '오늘 은행 앱과 대조 완료' : '오늘 기록 완료') : '오늘 쓴 돈을 다 적었나요?'}</b>
-        <small>지출이 없었던 날도 눌러 주세요. 다 적은 날만 예측 학습에 써요 · 완료한 날 {labeled}일</small>
-      </div>
-      <div className="lg-done-btns">
-        {!st ? (
-          <>
-            <button className="lg-act primary" onClick={() => set((m) => setDayStatus(m, today, 'self'))}>오늘 기록 완료</button>
-            <button className="lg-act" onClick={() => set((m) => setDayStatus(m, today, 'reconciled'))}>은행 앱과 대조함</button>
-          </>
-        ) : (
-          <button className="lg-act" onClick={() => set((m) => setDayStatus(m, today, null))}>완료 취소</button>
-        )}
-        {!yst && <button className="lg-act" onClick={() => set((m) => setDayStatus(m, yesterday, 'self'))}>어제도 완료</button>}
-      </div>
-    </section>
   );
 }
