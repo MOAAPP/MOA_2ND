@@ -49,7 +49,16 @@ vi.mock('../src/state/wallet', () => ({
   }),
 }));
 vi.mock('../src/state/moa', () => ({
-  useMoa: () => ({ report:{ worst:{shortBy:8200} } }),
+  useMoa: () => ({ report:{
+    worst:{
+      date:'2026-11-08',name:'보험료',amount:19000,
+      grade:'high',shortBy:8200,balances:{base:-8200,delay:-8200},
+    },
+    anchorBalance:27800,
+    forecast:{ready:{ready:true,message:'기록 기반 예측'},meta:{source:'baseline'}},
+    reliability:{level:'enough'},
+    evidence:{scheduledIn:[],uncertainIn:[]},
+  } }),
 }));
 vi.mock('../src/screens/moa/parts', () => ({
   ShortfallCard: () => createElement('section', {'data-testid':'payment-risk'}, 'PAYMENT_RISK'),
@@ -75,6 +84,7 @@ describe('active V8Home design hierarchy', () => {
     const html = renderToStaticMarkup(createElement(V8Home));
     const sections = [
       'PAYMENT_RISK',
+      '모아의 현금흐름 분석',
       '오늘의 가계부',
       '소비 선택 비교하기',
       '나의 평행세계',
@@ -94,6 +104,9 @@ describe('active V8Home design hierarchy', () => {
     expect(html).not.toContain('자유 저축</');
     expect(html).not.toContain('사고 싶은 게 있어요');
     expect(html).not.toContain('사기 전에 비교하기');
-    expect(html).toContain('11월 4일까지 관측된 합성 기록');
+    expect(html).toContain('결제 문자를 AI로 자동 기록하기');
+    expect(html).toContain('요일별 평균 기준선');
+    expect(html).not.toContain('가상 체험 · S01');
+    expect(html).not.toContain('11월 4일까지 관측된 합성 기록');
   });
 });
