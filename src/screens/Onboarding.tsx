@@ -45,16 +45,26 @@ function useDemo() {
 }
 type Demo = ReturnType<typeof useDemo>;
 
-export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: () => void; onDemo: (profileId: string) => void; existingData?: boolean }) {
+export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: () => void; onDemo: (profileId: string) => Promise<void>; existingData?: boolean }) {
   const [step, setStep] = useState(0);
   const [start, setStart] = useState<'demo' | 'mine'>('demo');
   const [scenario, setScenario] = useState('U03');
+  const [loadingDemo, setLoadingDemo] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const demo = useDemo();
   const [itemId, setItemId] = useState(ITEMS[2].id);
 
   const next = () => setStep((s) => Math.min(STEPS - 1, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
   const last = step === STEPS - 1;
+  const startDemo = async () => {
+    if (loadingDemo) return;
+    setLoadingDemo(true);
+    setDemoError(null);
+    try { await onDemo(scenario); }
+    catch (error) { setDemoError(error instanceof Error ? error.message : '예시 데이터를 불러오지 못했어요.'); }
+    finally { setLoadingDemo(false); }
+  };
 
   const screens: { kicker: string; title: ReactNode; sub: ReactNode; body: ReactNode; cta: string }[] = [
     {
@@ -107,8 +117,10 @@ export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: (
         <button
           type="button"
           className="ob-btn"
-          onClick={() => (!last ? next() : start === 'demo' ? onDemo(scenario) : onDone())}
-        >{s.cta}</button>
+          disabled={loadingDemo}
+          onClick={() => (!last ? next() : start === 'demo' ? void startDemo() : onDone())}
+        >{loadingDemo ? '예시 데이터를 여는 중…' : s.cta}</button>
+        {demoError && <p role="alert" className="ob-data-error">{demoError}</p>}
       </div>
     </div>
   );
