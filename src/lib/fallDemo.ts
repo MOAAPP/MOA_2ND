@@ -2,22 +2,65 @@
  * One shared set of synthetic observation records for demo / frontend.
  * Future truth lives in datasets/moa-fall-2026 and is NEVER imported here.
  */
-import data from '../data/moa-fall-observed.json';
+
 import { emptyMoa, type MoaCard, type MoaSchedule, type MoaState, type PayMethod, type Txn } from './moa/types';
 import { profileFromMoa } from './moa/bridge';
 import type { SpendEntry } from './ml/types';
 import type { WorldDecision, WorldMovement, WorldWallet } from './worldWallet';
 
-type ProfileRow = (typeof data.profiles)[number];
-type TransactionRow = (typeof data.transactions)[number];
+type TransactionRow = {
+  id: string; user_id: string; date: string; occurred_at: number; kind: string;
+  name: string; category: string; amount_krw: number; method: string;
+  essential: boolean; observed: number;
+};
+type ProfileRow = {
+  user_id: string; segment: string; scenario: string;
+  balance_as_of: number; daily_spend_prior: number; observed_count: number;
+  schedule: Array<{id: string; name: string; direction: string; amount: number; day: number; essential: boolean}>;
+};
+type Snapshot = {dataset_id: string; as_of: string; synthetic: true; profiles: ProfileRow[]; transactions: TransactionRow[]};
+
+/** These labels are deliberately tiny; all financial observations live in the compressed static fixture. */
+const SCENARIOS = [
+  ['U01','자취 대학생','월세 직전 부족'],['U02','통학 대학생','교통·카페 반복'],
+  ['U03','자취 대학생','급여 3일 지연'],['U04','취업 준비생','수입 없는 기간'],
+  ['U05','아르바이트 대학생','돌발 지출'],['U06','사회 초년생','신용카드 청구 변동'],
+  ['U07','사회 초년생','급여 후 적금'],['U08','프리랜서','불규칙 수입'],
+  ['U09','자취 대학생','식비 집중'],['U10','통학 대학생','낮은 부족 위험'],
+] as const;
+export const FALL_DATASET_ID = 'moa-synthetic-fall-2026-v1';
+export const FALL_DATASET_AS_OF = '2026-11-03';
+export const fallDemoProfiles = () => SCENARIOS.map(([id,title,scenario]) => ({id,title,scenario}));
+
+let cache: Promise<Snapshot> | null = null;
+/** Only observed history is delivered to the browser: never fetch future truth in production. */
+export function loadFallObserved(): Promise<Snapshot> {
+  if (!cache) {
+    cache = (async () => {
+      const url = import.meta.env.BASE_URL + 'data/moa-fall-observed.json.gz';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('가상 거래 데이터 파일을 불러오지 못했어요.');
+      if (typeof DecompressionStream === 'undefined') throw new Error('이 브라우저는 압축 데이터 읽기를 지원하지 않아요.');
+      const stream = response.body;
+      if (!stream) throw new Error('가상 거래 데이터를 읽지 못했어요.');
+      const decoded = stream.pipeThrough(new DecompressionStream('gzip'));
+      const parsed = JSON.parse(await new Response(decoded).text()) as Snapshot;
+      if (parsed.dataset_id !== FALL_DATASET_ID || parsed.as_of !== FALL_DATASET_AS_OF || !parsed.synthetic) {
+        throw new Error('가상 거래 데이터 버전이 맞지 않아요.');
+      }
+      if (parsed.transactions.some((r) => r.date > parsed.as_of || !r.observed)) {
+        throw new Error('미래 거래가 체험 데이터에 섞여 있어요.');
+      }
+      return parsed;
+    })().catch((error: unknown) => { cache = null; throw error; });
+  }
+  return cache;
+}
 
 const at = (date: string, hour = 12) => Date.parse(date + 'T' + String(hour).padStart(2, '0') + ':00:00+09:00');
-const cutoffAt = () => Date.parse(data.as_of + 'T23:59:59+09:00');
-export const FALL_DATASET_ID = data.dataset_id;
-export const FALL_DATASET_AS_OF = data.as_of;
-export const fallDemoProfiles = () => data.profiles.map((p) => ({ id: p.user_id, title: p.segment, scenario: p.scenario }));
+const cutoffAt = () => Date.parse(FALL_DATASET_AS_OF + 'T23:59:59+09:00');
 
-function transaction(row: TransactionRow): Txn {
+function transaction(row: TransactionRow, data: Snapshot): Txn {
   const method: PayMethod = row.method === 'credit' || row.method === 'cash' || row.method === 'debit' ? row.method : 'transfer';
   const kind: Txn['kind'] = row.kind === 'income' ? 'income' : row.kind === 'card_payment' ? 'card_payment' : row.kind === 'fixed' && row.category === '저축' ? 'saving' : 'spend';
   return {
@@ -52,7 +95,8 @@ function makeWorldWallet(person: ProfileRow, rows: TransactionRow[]): WorldWalle
   return { cash: person.balance_as_of, savings: 0, deposit: 0, installment: 0, etfs: {}, decisions, movements };
 }
 
-export function makeFallDemo(profileId = 'U03') {
+export async function makeFallDemo(profileId = 'U03') {
+  const data = await loadFallObserved();
   const person = data.profiles.find((p) => p.user_id === profileId) ?? data.profiles.find((p) => p.user_id === 'U03')!;
   const rows = data.transactions.filter((r) => r.user_id === person.user_id && r.date <= data.as_of && r.observed === 1)
     .sort((a, b) => a.occurred_at - b.occurred_at);
@@ -71,7 +115,7 @@ export function makeFallDemo(profileId = 'U03') {
     ...emptyMoa(),
     anchor: { balance: person.balance_as_of, at: cutoffAt(), source: 'manual', reflected: [] },
     payAccountName: '가상 결제계좌',
-    cards, schedule, txns: rows.map(transaction), dayStatus: {},
+    cards, schedule, txns: rows.map((r) => transaction(r, data)), dayStatus: {},
     mainMethod: 'debit',
   };
   const profile = { ...profileFromMoa(moa, null), dailySpend: person.daily_spend_prior, minBalance: 100_000 };
