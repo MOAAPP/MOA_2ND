@@ -84,10 +84,10 @@ export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: (
     },
     {
       kicker: '이제 시작해요',
-      title: <>내 돈으로 시작할까요?</>,
-      sub: '로그인이나 은행 연결은 필요 없어요. 직접 입력하거나 예시로 둘러볼 수 있어요.',
+      title: <>{existingData ? '기존 기록을 이어서 볼까요?' : '일단 예시로 체험해 볼까요?'}</>,
+      sub: existingData ? '저장된 기록은 그대로 두고 이어서 볼 수 있어요.' : '가입이나 계좌 연결 없이 예시 데이터를 불러와 먼저 써 볼 수 있어요. 직접 입력은 나중에 해도 돼요.',
       body: <StartPick start={start} setStart={setStart} existingData={existingData} />,
-      cta: start === 'demo' ? (existingData ? '기존 기록으로 돌아가기' : '예시로 바로 둘러보기') : '내 결제계좌 입력하기',
+      cta: start === 'demo' ? (existingData ? '기존 기록으로 돌아가기' : '일단 예시 데이터로 시작하기') : existingData ? '현재 결제계좌 설정 확인하기' : '내 정보 직접 입력하기',
     },
   ];
   const s = screens[step];
@@ -108,11 +108,20 @@ export function Onboarding({ onDone, onDemo, existingData = false }: { onDone: (
       </main>
 
       <div className="ob-cta">
-        <button
-          type="button"
-          className="ob-btn"
-          onClick={() => (!last ? next() : start === 'demo' ? onDemo() : onDone())}
-        >{s.cta}</button>
+        {step === 0 ? (
+          <>
+            <button type="button" className="ob-btn" onClick={onDemo}>
+              {existingData ? '기존 기록으로 돌아가기' : '일단 예시 데이터로 시작하기'}
+            </button>
+            <button type="button" className="ob-secondary" onClick={next}>기능 설명 먼저 보기</button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="ob-btn"
+            onClick={() => (!last ? next() : start === 'demo' ? onDemo() : onDone())}
+          >{s.cta}</button>
+        )}
       </div>
     </div>
   );
@@ -248,12 +257,12 @@ function StartPick({ start, setStart, existingData }: { start: 'demo' | 'mine'; 
       <div className="ob-start" role="radiogroup" aria-label="시작 방법">
         <button type="button" role="radio" aria-checked={start === 'demo'} className={start === 'demo' ? 'on' : ''} onClick={() => setStart('demo')}>
           <span className="tag">추천</span>
-          <b>{existingData ? '지금 내 기록으로 돌아가기' : '예시로 먼저 둘러보기'}</b>
+          <b>{existingData ? '기존 기록으로 돌아가기' : '일단 예시 데이터로 시작하기'}</b>
           <small>{existingData ? '이미 저장한 기록과 평행세계 가상 자산은 그대로 유지해요.' : '가상의 생활비와 결제 일정이 채워진 상태로 앱을 체험해요.'}</small>
         </button>
         <button type="button" role="radio" aria-checked={start === 'mine'} className={start === 'mine' ? 'on' : ''} onClick={() => setStart('mine')}>
-          <b>{existingData ? '내 결제계좌 설정 다시 보기' : '내 결제계좌로 시작하기'}</b>
-          <small>{existingData ? '기존 기록을 지우지 않고 결제계좌 잔액과 예정 결제를 확인해요.' : '잔액과 가장 가까운 필수결제 한 건만 입력하면 바로 시작해요.'}</small>
+          <b>{existingData ? '현재 결제계좌 설정 확인하기' : '내 정보 직접 입력하기'}</b>
+          <small>{existingData ? '기존 기록은 지우지 않고 잔액과 예정 결제만 확인해요.' : '예시 데이터 없이 내 잔액과 결제일을 직접 입력해요.'}</small>
         </button>
       </div>
       <p className="ob-note">{existingData ? '소개를 다시 보는 동안 기존 데이터는 지우지 않아요.' : '예시는 가상 돈으로 시작해요. 내 정보를 처음 입력하면 그 잔액을 평행세계 투자 지갑에도 반영해요.'}</p>
