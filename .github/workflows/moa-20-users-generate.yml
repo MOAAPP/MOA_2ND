@@ -10,6 +10,7 @@ on:
       - fix/demo-filled-from-first-setup
       - fix/onboarding-example-first-entry
       - feat/home-ux-flow-unified-demo-clock
+      - feat/plan-first-ai-cashflow-ux
     paths:
       - .github/workflows/moa-20-users-generate.yml
       - scripts/data/build-moa-dataset.mjs
@@ -61,6 +62,16 @@ on:
       - src/lib/demoWorld.ts
       - docs/data/S01_SHOWCASE_DEMO.md
       - docs/data/MOA_92D_GUIDE.md
+      - src/lib/ai/cashflow.ts
+      - src/screens/moa/CashflowCoach.tsx
+      - shared/aiPrompts.ts
+      - shared/aiSchemas.ts
+      - src/lib/ai/example.ts
+      - src/lib/ai/index.ts
+      - src/screens/moa/PasteFlow.tsx
+      - src/ux-v23-cashflow.css
+      - tests/aiCashflowPlan.test.ts
+      - docs/PLAN_29P_TRACEABILITY.md
 
 permissions:
   contents: write
