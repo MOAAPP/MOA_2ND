@@ -23,6 +23,7 @@ on:
       - src/screens/moa/MoaSetup.tsx
       - src/ux-moa.css
       - tests/demoFirstSetup.test.ts
+      - tests/demoSetupMarkup.test.ts
       - src/state/store.tsx
       - src/App.tsx
       - src/screens/Onboarding.tsx
