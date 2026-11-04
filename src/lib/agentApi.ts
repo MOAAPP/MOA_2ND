@@ -12,6 +12,8 @@ export interface Conditions {
   purchase_amount?: number | null;
   preferred_purchase_date?: string | null;
   latest_purchase_date?: string | null;
+  credit_debit_date?: string | null;
+  acceptable_purchase_delay_days?: number | null;
   minimum_balance?: number | null;
   savings_goal_id?: string | null;
   required_savings_amount?: number | null;
