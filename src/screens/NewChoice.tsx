@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { addDays, formatKDate, todayKST, type ISODate } from '../../shared/dates';
+import { addDays, formatKDate, type ISODate } from '../../shared/dates';
+import { appDay, appNow } from '../lib/appClock';
+import { saveChoice } from '../lib/decisionSave';
 import { won } from '../../shared/format';
 import { BetterPrice } from '../components/BetterPrice';
 import { CategoryIcon } from '../components/CategoryIcon';
@@ -7,7 +9,7 @@ import { usePhotoReader } from '../components/PhotoReader';
 import { TopBar } from '../components/ui';
 import { CATEGORIES } from '../lib/categories';
 import { ruleClassify } from '../lib/ml/classify';
-import { transactWorldWallet, type WorldDecision } from '../lib/worldWallet';
+import { type WorldDecision } from '../lib/worldWallet';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
 import { useWallet } from '../state/wallet';
@@ -30,7 +32,8 @@ export function NewChoice() {
   const [alt, setAlt] = useState('');
   const [altNote, setAltNote] = useState('');
   const [choice, setChoice] = useState<Choice>('wait');
-  const today = todayKST();
+  const [method, setMethod] = useState<'debit' | 'credit'>(state.moa.mainMethod === 'credit' ? 'credit' : 'debit');
+  const today = appDay(state);
   const [date, setDate] = useState<ISODate>(today);
   const [category, setCategory] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -64,19 +67,32 @@ export function NewChoice() {
   const guessed = name.trim() ? ruleClassify(name.trim(), state.categoryMemory)?.category ?? '기타' : '기타';
   const cat = category ?? guessed;
   const after = summary.monthlyUsable - paid;
-  const valid = name.trim().length > 0 && p > 0 && (choice !== 'alternative' || (a > 0 && a <= p)) && paid <= state.worldWallet.cash;
+  const valid = name.trim().length > 0 && p > 0 && (choice !== 'alternative' || (a > 0 && a <= p)) && (state.demo || paid <= state.worldWallet.cash);
 
   const save = () => {
-    if (!valid) { setError(choice === 'alternative' && a > p ? '대안 가격은 원래 가격보다 낮아야 해요.' : '상품 이름과 가격을 확인해 주세요.'); return; }
+    if (!valid) { setError('상품 이름과 가격, 대안 금액을 확인해 주세요.'); return; }
     const title = name.trim();
-    const decision: WorldDecision = { id: `choice-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, title, price: p, paid, choice, at: date === today ? Date.now() : Date.parse(`${date}T12:00:00+09:00`), note: choice === 'alternative' && altNote ? altNote : '새로운 선택에서 기록' };
-    if (!transactWorldWallet(state.worldWallet, { type: 'spend', decision })) { setError('이번 달 가상 현금이 부족해서 기록하지 못했어요.'); return; }
-    update((s) => ({
-      ...s,
-      worldWallet: transactWorldWallet(s.worldWallet, { type: 'spend', decision }) ?? s.worldWallet,
-      spendLog: paid > 0 ? [...s.spendLog, { date, amount: paid, category: cat, name: choice === 'alternative' && altNote ? `${title} (${altNote})` : title, from: 'record' as const }] : s.spendLog,
-      categoryMemory: category ? { ...s.categoryMemory, [title.toLowerCase().replace(/\s+/g, '')]: category } : s.categoryMemory,
-    }));
+    const decision: WorldDecision = {
+      id: 'choice-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      title, price: p, paid, choice,
+      at: date === today ? appNow(state) - 2000 : Date.parse(date + 'T12:00:00+09:00'),
+      note: choice === 'alternative' && altNote ? altNote : '새로운 선택에서 기록',
+      simulatedOnly: state.demo,
+    };
+    const input = {
+      decision, paid, date,
+      name: choice === 'alternative' && altNote ? title + ' (' + altNote + ')' : title,
+      category: cat, method,
+    };
+    if (!saveChoice(state, input)) { setError('기록을 저장하지 못했어요. 거래 내역을 확인해 주세요.'); return; }
+    update(s => {
+      const recorded = saveChoice(s, input);
+      if (!recorded) return s;
+      return {
+        ...recorded,
+        categoryMemory: category ? { ...recorded.categoryMemory, [title.toLowerCase().replace(/\s+/g, '')]: category } : recorded.categoryMemory,
+      };
+    });
     nav.pop();
   };
 
@@ -123,6 +139,13 @@ export function NewChoice() {
             <span>가격</span>
             <div className="nc-money"><input value={price ? Number(price).toLocaleString('ko-KR') : ''} onChange={(e) => setPrice(digits(e.target.value))} inputMode="numeric" placeholder="0" /><em>원</em></div>
           </label>
+          {paid > 0 && <div className="nc-field">
+            <span>결제 수단 · 청구일 계산에 반영</span>
+            <div className="nc-dates" role="group" aria-label="결제 수단">
+              <button type="button" aria-pressed={method === 'debit'} className={method === 'debit' ? 'on' : ''} onClick={() => setMethod('debit')}>체크카드</button>
+              <button type="button" aria-pressed={method === 'credit'} className={method === 'credit' ? 'on' : ''} onClick={() => setMethod('credit')}>신용카드</button>
+            </div>
+          </div>}
           <div className="nc-field">
             <span>언제였나요?</span>
             <div className="nc-dates" role="group" aria-label="날짜">
