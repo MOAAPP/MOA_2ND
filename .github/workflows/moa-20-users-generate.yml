@@ -3,6 +3,7 @@ name: Generate MOA 20-user synthetic dataset
 on:
   push:
     branches:
+      - main
       - feat/shared-92-day-dataset-20-users
       - feat/s01-complex-showcase
       - fix/daily-five-spends-unified-s01-ledger
@@ -19,6 +20,11 @@ on:
       - src/lib/worldHistory.ts
       - src/state/store.tsx
       - src/App.tsx
+      - src/screens/Onboarding.tsx
+      - src/screens/Settings.tsx
+      - src/lib/ai/context.ts
+      - src/lib/demo.ts
+      - src/lib/worldHistory.ts
       - src/lib/moa/bridge.ts
       - src/lib/demoWorld.ts
       - docs/data/S01_SHOWCASE_DEMO.md
