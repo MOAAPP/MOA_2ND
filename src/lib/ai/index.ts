@@ -7,7 +7,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { AiInput, AiOutput, AiTask } from '../../../shared/aiPrompts';
-import { exampleAsk, exampleBrief, exampleCategorize, exampleCoach, exampleLedgerSummary, exampleParseSchedule, exampleParseSpend } from './example';
+import { exampleCashflow, exampleAsk, exampleBrief, exampleCategorize, exampleCoach, exampleLedgerSummary, exampleParseSchedule, exampleParseSpend } from './example';
 
 export type AiSource = 'example' | 'live';
 export interface AiResult<T extends AiTask> {
@@ -21,6 +21,7 @@ export interface AiResult<T extends AiTask> {
 }
 
 const EXAMPLE: { [T in AiTask]: (i: AiInput<T>) => AiOutput<T> } = {
+  cashflow: exampleCashflow,
   brief: exampleBrief,
   coach: exampleCoach,
   ledgerSummary: exampleLedgerSummary,
