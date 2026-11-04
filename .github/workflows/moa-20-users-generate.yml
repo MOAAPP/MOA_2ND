@@ -126,16 +126,23 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          from zipfile import ZipFile, ZIP_DEFLATED
+          from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
           root = Path('public/data')
           paths = [root / 'moa-92days.json', *sorted(root.glob('moa-92days-*.csv'))]
           paths.append(Path('docs/data/MOA_92D_GUIDE.md'))
           paths.append(Path('docs/data/S01_SHOWCASE_DEMO.md'))
           with ZipFile(root / 'moa-92days-20users-team.zip', 'w', compression=ZIP_DEFLATED, compresslevel=9) as archive:
               for path in paths:
-                  archive.write(path, arcname=path.name)
+                  # Git checkout timestamps vary per run. A fixed archive timestamp
+                  # prevents unrelated UI changes from creating a new ZIP checksum.
+                  info = ZipInfo(path.name, date_time=(2026, 1, 1, 0, 0, 0))
+                  info.compress_type = ZIP_DEFLATED
+                  archive.writestr(info, path.read_bytes(), compress_type=ZIP_DEFLATED, compresslevel=9)
           PY
       - name: Commit generated fixtures
+        # UI/API changes validate the dataset but must not mutate it or race GitHub.
+        # Only main and dedicated data-generation branches update checked-in fixtures.
+        if: ${{ github.ref_name == 'main' || github.ref_name == 'feat/shared-92-day-dataset-20-users' || github.ref_name == 'feat/s01-complex-showcase' || github.ref_name == 'fix/daily-five-spends-unified-s01-ledger' || github.ref_name == 'fix/demo-filled-from-first-setup' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
