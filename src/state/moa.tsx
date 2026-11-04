@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { todayKST } from '../../shared/dates';
+import { appDay, appNow } from '../lib/appClock';
 import { addTxns, addTxnsChecked, assessRisk, decideAlerts, pushAlerts, type MoaState, type NewTxn, type RiskOptions } from '../lib/moa';
 import { profileFromMoa, spendEntryOf } from '../lib/moa/bridge';
 import { useStore } from './store';
@@ -16,8 +16,9 @@ function useNow(stepMs = 60_000): number {
 
 export function useMoa(opts: RiskOptions = {}) {
   const { state, update } = useStore();
-  const now = useNow();
-  const today = todayKST(new Date(now));
+  const wallNow = useNow();
+  const now = appNow(state, wallNow);
+  const today = appDay(state, new Date(wallNow));
   const optKey = JSON.stringify(opts);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const report = useMemo(() => assessRisk(state.moa, now, today, opts), [state.moa, now, today, optKey]);
