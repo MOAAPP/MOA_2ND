@@ -4,6 +4,7 @@ import { useNav } from '../state/nav';
 import { Logo } from './Glyph';
 import { Stage3AiAgent, Stage3DailyQuiz } from './Stage3Ai';
 import { AiMark } from './Ai';
+import { HomeWorldPreview } from './HomeWorldPreview';
 import { Stage2Vision } from './Stage2Vision';
 import {
   compareScenarios, getDemoDefault, getDemoHome, getDemoUsers, getInstruments, getTransactions, saveScenario,
@@ -551,65 +552,82 @@ function HomeAiSpotlight() {
   const [agentOpen, setAgentOpen] = useState(false);
   useEffect(() => setAgentOpen(false), [user, day]);
 
-  const live = briefing?.llm_used === true;
-  const machineForecast = home?.variable_forecast.model_type === 'lightgbm';
-  const sourceLabel = live
-    ? '실제 LLM 설명 · Python 금융 계산'
-    : machineForecast
-      ? 'LightGBM 지출 예측 · 브리핑은 규칙 기반'
-      : 'Python 금융 계산 · LLM 설명 미사용';
-  const showDate = briefing?.as_of_date ?? day;
-  const additionalCash = briefing?.spending_capacity.estimated_additional_spend;
-  const nextBill = briefing?.nearest_essential_payment;
-
+  const capacity = briefing?.spending_capacity.estimated_additional_spend;
+  const bill = briefing?.nearest_essential_payment;
+  const warning = Boolean((bill && !bill.covered) || (home && home.minimum_balance < 0));
+  const todayTitle = warning
+    ? '다가오는 결제일에 잔액을 확인해요'
+    : bill && capacity != null && capacity <= 0
+      ? '이번에는 결제일을 먼저 챙겨볼까요?'
+      : capacity != null && capacity > 0
+        ? '예정된 지출까지 함께 살펴봤어요'
+        : '오늘 내 돈의 흐름을 확인해요';
+  const grounded = warning
+    ? '예상 잔액이 부족해지는 날이 있을 수 있어요. 다가오는 결제부터 확인해 보세요.'
+    : bill && capacity != null && capacity <= 0
+      ? '예정된 결제에 필요한 돈을 고려하면 지금은 추가 지출에 신중할 때예요.'
+      : capacity != null && capacity > 0
+        ? '예정된 결제와 변동 지출을 고려한 예상 여유가 남아 있어요. 실제 결제는 달라질 수 있어요.'
+        : '입력된 지출과 예정된 결제를 함께 살펴보고 있어요.';
+  const aiExplanation = briefing?.llm_used
+    ? briefing.summary.replace(/^이전 분석 이후 새로 감지된 주요 변화가 없어요\.\s*/, '').trim()
+    : '';
   const applyAmount = (amount: number) => {
-    const bounded = Math.max(0, Math.round(amount));
+    const value = Math.max(0, Math.round(amount));
     updateParams({
-      purchase_amount: bounded,
-      savings_amount: bounded,
-      investment_amount: bounded,
-      allocation: splitBudget(Math.min(bounded, Math.max(0, home?.available_cash ?? 0))),
+      purchase_amount: value,
+      savings_amount: value,
+      investment_amount: value,
+      allocation: splitBudget(Math.min(value, Math.max(0, home?.available_cash ?? 0))),
     });
     setAgentOpen(false);
     nav.setTab('forks');
   };
-  return <section className="ux-ai-spotlight" aria-labelledby="ux-ai-home-title">
+  return <section className={`ux-ai-spotlight${warning ? ' is-caution' : ''}`} aria-labelledby="ux-ai-home-title">
     <div className="ux-ai-spotlight-top">
-      <div className="ux-ai-identity"><AiMark label="" /><span>모아 AI</span></div>
-      <span className="ux-ai-provenance" title={sourceLabel}>{live ? 'AI 분석 완료' : '데이터 분석'} · {md(showDate)}</span>
+      <div className="ux-ai-identity"><AiMark label="" /><span>MOA AI</span><span className="ux-ai-tag">내 금융 브리핑</span></div>
+      <time className="ux-ai-provenance" dateTime={day}>{md(day)} 기준</time>
     </div>
-    <h2 id="ux-ai-home-title">오늘 내 금융 상태, 이렇게 읽었어요</h2>
-    {briefing
-      ? <p className="ux-ai-spotlight-summary">{briefing.summary}</p>
-      : <p className="ux-ai-spotlight-summary" role="status">{briefingError || '결제일과 예상 지출을 분석하고 있어요…'}</p>}
-    {briefing && <div className="ux-ai-snapshot" aria-label="브리핑 계산 근거">
+    <div className="ux-ai-lead">
+      <div className="ux-ai-lead-copy">
+        <h2 id="ux-ai-home-title">{briefing ? todayTitle : '오늘 내 금융 상태를 살펴볼게요'}</h2>
+        <p className="ux-ai-spotlight-summary" aria-live="polite">
+          {briefing ? (aiExplanation || grounded) : (briefingError ? '지금은 분석 정보를 불러오지 못했어요. 금융 내역은 계속 볼 수 있어요.' : '결제일과 앞으로의 지출을 확인하고 있어요…')}
+        </p>
+      </div>
+      <svg className="ux-ai-orbit" viewBox="0 0 110 92" aria-hidden="true">
+        <circle cx="49" cy="45" r="27" className="ux-ai-orbit-ring" />
+        <path className="ux-ai-orbit-path" d="M5 70 C20 70 26 42 49 42 S80 18 105 18" />
+        <path className="ux-ai-orbit-path alt" d="M5 70 C22 70 28 50 49 50 S85 71 105 75" />
+        <circle cx="49" cy="46" r="5" className="ux-ai-orbit-core" />
+        <circle cx="105" cy="18" r="3" className="ux-ai-orbit-end" />
+        <circle cx="105" cy="75" r="3" className="ux-ai-orbit-end alt" />
+      </svg>
+    </div>
+    {briefing && <div className="ux-ai-facts" aria-label="금융 분석에 사용된 주요 정보">
       <div>
-        <span>예상 추가 소비 여유</span>
-        <strong>{additionalCash == null ? '—' : balanceText(additionalCash)}</strong>
+        <span>다음 결제</span>
+        <strong>{bill ? `${md(bill.date)} · ${bill.name}` : '등록된 일정 없음'}</strong>
       </div>
       <div>
-        <span>다음 필수 결제</span>
-        <strong>{nextBill ? md(nextBill.date) : '등록된 일정 없음'}</strong>
+        <span>예상 추가 여유</span>
+        <strong>{capacity == null ? '확인 중' : balanceText(capacity)}</strong>
       </div>
     </div>}
-    <div className="ux-ai-home-actions">
-      <button className="ux-ai-home-ask" type="button" aria-expanded={agentOpen}
-        aria-controls="ux-ai-home-agent" onClick={() => setAgentOpen(open => !open)}>
-        <AiMark label="" />내 소비 목표 AI로 분석하기 <span aria-hidden="true">{agentOpen ? '−' : '→'}</span>
-      </button>
-      <button className="ux-ai-home-world-link" type="button" onClick={() => nav.setTab('forks')}>
-        평행세계 비교
-      </button>
-    </div>
-    <small className="ux-ai-home-source">
-      {sourceLabel}. 예측은 확정 거래가 아니며, 소비 가능 금액을 보장하지 않아요.
-    </small>
+    <button type="button" className="ux-ai-home-ask" aria-expanded={agentOpen}
+      aria-controls="ux-ai-home-agent" onClick={() => setAgentOpen(v => !v)}>
+      <span className="ux-ai-ask-icon"><AiMark label="" /></span>
+      <span>모아에게 내 소비를 물어보기</span>
+      <span aria-hidden="true">{agentOpen ? '−' : '↗'}</span>
+    </button>
     {agentOpen && <div id="ux-ai-home-agent" className="ux-ai-home-planner">
       <Stage3AiAgent user={user} day={day} onApplyAmount={applyAmount} />
     </div>}
+    <p className="ux-ai-home-source">
+      예상 현금흐름을 바탕으로 안내해요. 실제 거래나 소비 가능 금액을 보장하지 않아요.
+    </p>
   </section>;
 }
-
 
 function firstShortfall(days: { date: string; closing_balance: number; lowest_balance: number }[]) {
   return days.find(d => Math.min(d.closing_balance, d.lowest_balance) < 0) ?? null;
@@ -1226,7 +1244,7 @@ export function Stage3Ledger() {
  */
 export function Stage3ClassicHome() {
   const nav = useNav();
-  const { user, day, viewDay, dateEnd, home, comparison, loading, error, retry } = useTwin();
+  const { user, day, viewDay, home, comparison, params, updateParams, loading, error, retry } = useTwin();
   const [expandedAssets, setExpandedAssets] = useState(false);
   const [chartSelected, setChartSelected] = useState<number | null>(null);
   useEffect(() => setChartSelected(null), [user, viewDay]);
@@ -1253,8 +1271,6 @@ export function Stage3ClassicHome() {
   const defaultIndex = forecastDay ? Math.max(0, points.findIndex(p => p.date === viewDay)) : 0;
   const selected = chartSelected == null ? defaultIndex : Math.min(chartSelected, points.length - 1);
   const shortfall = firstShortfall(home.daily_cashflow);
-  const buy = comparison?.paths.find(p => p.scenario_id === 'purchase_now');
-  const keep = comparison?.paths.find(p => p.scenario_id === 'no_purchase');
   const recent = home.recent_transactions.slice(0, 3);
   const investmentCount = Object.keys(home.virtual_investments.positions ?? {}).length;
 
@@ -1265,13 +1281,8 @@ export function Stage3ClassicHome() {
     </header>
 
     <div className="ux-home-demo-clock" aria-label="가상 시연 기준일">
-      <div><span>가상 체험 · {user}</span><b>{mdw(viewDay)} {forecastDay ? '예상' : '관측'} 기준</b></div>
-      <span className="ux-home-date">총 20명 중 {user}</span>
-      <p>{forecastDay
-        ? (forecastOnly
-          ? `${mdw(dateEnd)}까지 관측된 금융 기록을 토대로 계산한 미래 예상이에요. 이 날짜의 실제 지출 기록은 없어요.`
-          : `${mdw(dateEnd)}까지의 기록과 직접 확인한 새 거래만 합산했어요. 미기록 거래가 있을 수 있는 부분 잔액이에요.`)
-        : `${mdw(dateEnd)}까지 기록된 합성 데이터를 보여줘요. 오른쪽 체험 설정에서 사용자·날짜를 바꿀 수 있어요.`}</p>
+      <div><span>체험 데이터 · {user}</span><b>{mdw(viewDay)} {forecastDay ? '예상' : '기준'}</b></div>
+      <span className="ux-home-date">{forecastDay ? '예상 수치 · 실제 거래 아님' : '실제 계좌가 아닌 예시 기록'}</span>
     </div>
 
     <HomeAiSpotlight />
@@ -1295,14 +1306,14 @@ export function Stage3ClassicHome() {
             : '관측된 합성 금융 기록 기준 · 실제 은행 잔액 아님'}</span>
         </div>
         <div className="ux-python-audit">
-          <div className="ux-python-audit-head"><strong>앞으로 14일 <span>· Python 금융 계산</span></strong>
+          <div className="ux-python-audit-head"><strong>앞으로 14일 <span>· 예상 잔액</span></strong>
             <small>{mdw(home.as_of_date)} 관측 기준</small></div>
           <div className="ux-python-audit-values">
             {horizon.map(days => <div key={days}><span>{days}일 뒤</span>
               <strong className="num">{balanceText(home.future_balances[String(days)])}</strong></div>)}
           </div>
           <div className="st3 ux-canonical-chart">
-            <FlowChart label="FastAPI 기반 14일 예상 결제계좌 잔액" series={[{id:'canonical',label:'예상 잔액',tone:'single',points}]}
+            <FlowChart label="앞으로 14일 예상 결제계좌 잔액" series={[{id:'canonical',label:'예상 잔액',tone:'single',points}]}
               selected={selected} onSelect={setChartSelected} height={150} />
             <p className="ux-canonical-chart-caption">{mdw(points[selected].date)} {selected === 0 ? '관측 잔액' : '예상 마감 잔액'} · <b>{balanceText(points[selected].value)}</b></p>
           </div>
@@ -1337,24 +1348,17 @@ export function Stage3ClassicHome() {
       <button type="button" className="ux-home-primary" onClick={() => nav.setTab('forks')}>소비 선택 비교하기 <span aria-hidden="true">→</span></button>
     </section>
 
-    <section className="ux-home-world" aria-label="평행세계 비교 결과">
-      <div className="ux-home-section-heading">
-        <div><small className="ux-home-overline">WHAT IF · 가상 비교</small><h2>나의 평행세계</h2></div>
-        <span className="ux-home-virtual">가상 선택 기록</span>
-      </div>
-      {buy && keep ? <div className="ux-home-world-comparison">
-        <div><span>14일 뒤 · 지금 구매 vs 보류</span>
-          <strong className="num">{buy.status === 'calculated' && keep.status === 'calculated' ? signedText(buy.future_balances['14'] - keep.future_balances['14']) : '확인 필요'}</strong>
-          <small>구매와 보류의 차이 · 실제 결제계좌 잔액 아님</small>
-        </div>
-        <svg viewBox="0 0 112 70" role="img" aria-label="같은 지점에서 갈라지는 가상 세계">
-          <path d="M8 35 C39 35 58 19 105 14" fill="none" stroke="#545DE8" strokeWidth="3.5" strokeLinecap="round" />
-          <path d="M8 35 C39 35 58 48 105 58" fill="none" stroke="#8993A8" strokeDasharray="5 5" strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="8" cy="35" r="4" fill="#545DE8"/><circle cx="105" cy="14" r="4" fill="#545DE8"/><circle cx="105" cy="58" r="3.5" fill="#8993A8"/>
-        </svg>
-      </div> : <p className="ux-home-muted">비교 조건을 계산하고 있어요. 아래에서 여섯 가지 선택을 살펴볼 수 있어요.</p>}
-      <button type="button" className="ux-home-textlink" onClick={() => nav.setTab('forks')}>선택 비교 결과 보기 ›</button>
-    </section>
+    <HomeWorldPreview
+      comparison={comparison}
+      amount={params.purchase_amount}
+      onAmount={price => updateParams({
+        purchase_amount: price,
+        savings_amount: price,
+        investment_amount: price,
+        allocation: splitBudget(Math.min(price, Math.max(0, home.available_cash))),
+      })}
+      onExpand={() => nav.setTab('forks')}
+    />
 
     <section className="ux-home-extras" aria-label="가상 자산">
       <div className="ux-home-section-heading">
