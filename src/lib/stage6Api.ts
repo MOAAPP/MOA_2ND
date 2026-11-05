@@ -51,7 +51,6 @@ async function read<T>(path: string, signal: AbortSignal | undefined, validate: 
   if (!validate(result)) throw new Error('분석 데이터의 응답 형식이 올바르지 않아요.');
   return result;
 }
-const pathFor = (user: string, day: string) => `/users/${encodeURIComponent(user)}?as_of=${encodeURIComponent(day)}`;
 export function getMorningBriefing(user: string, day: string, signal?: AbortSignal) {
   return read(`/users/${encodeURIComponent(user)}/briefing?as_of=${encodeURIComponent(day)}`, signal,
     (x): x is MorningBriefing => isObject(x) && x.user_id === user && x.as_of_date === day &&
