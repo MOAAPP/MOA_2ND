@@ -203,8 +203,8 @@ try {
       records: [], spendLog: [], moa: { anchor: null },
     })));
     await stale.reload();
-    await stale.locator('.st3-hero > strong').waitFor({ timeout: 25000 });
-    assert.equal(await stale.locator('.st3-hero > strong').innerText(), won(s01.available_cash));
+    await stale.locator('.ux-canonical-risk-value > strong').waitFor({ timeout: 25000 });
+    assert.equal(await stale.locator('.ux-canonical-risk-value > strong').innerText(), won(s01.available_cash));
   } finally { await stale.close(); }
 
   // An invalid backend response must never silently display the previous user's money.
