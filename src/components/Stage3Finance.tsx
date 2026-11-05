@@ -36,6 +36,13 @@ function dateParts(iso: string) {
 const md = (iso: string) => { const p = dateParts(iso); return `${p.m}월 ${p.d}일`; };
 const mdw = (iso: string) => { const p = dateParts(iso); return `${p.m}월 ${p.d}일 (${p.wd})`; };
 const mdShort = (iso: string) => { const p = dateParts(iso); return `${p.m}.${p.d}`; };
+function kstToday(): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const value = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}
 function shiftDate(iso: string, days: number) {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
@@ -89,7 +96,7 @@ const emptyReq: CompareRequest = {
 };
 
 type ContextState = {
-  user: string; day: string; users: string[]; dateStart: string; dateEnd: string;
+  user: string; day: string; viewDay: string; previewEnd: string; users: string[]; dateStart: string; dateEnd: string;
   home: HomeState | null; instruments: Instrument[]; comparison: CompareResult | null;
   params: CompareRequest; loading: boolean; comparing: boolean; error: string;
   compareError: string; retry: () => void; selectUser: (v: string) => void;
@@ -107,6 +114,7 @@ function useTwin() {
 export function Stage3Provider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState('');
   const [day, setDay] = useState('');
+  const [previewDay, setPreviewDay] = useState<string | null>(null);
   const [users, setUsers] = useState<string[]>([]);
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
@@ -237,11 +245,27 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
   const visibleInstruments = instrumentsKey === `${user}:${day}` ? instruments : [];
   const visibleSavedPlans = savedPlansKey === `${user}:${day}` ? savedPlans : [];
   const visibleBriefing = briefingKey === `${user}:${day}` ? briefing : null;
+  const previewEnd = dateEnd && kstToday() > dateEnd
+    ? (kstToday() <= shiftDate(dateEnd, 14) ? kstToday() : shiftDate(dateEnd, 14))
+    : dateEnd;
+  const viewDay = previewDay ?? day;
+  const selectDay = (selected: string) => {
+    if (!selected || selected < dateStart || selected > previewEnd) return;
+    if (selected > dateEnd) {
+      // UI-only expected date. Never request an unobserved day as an actual
+      // dataset snapshot or mix future synthetic oracle entries into history.
+      setPreviewDay(selected);
+      setDay(dateEnd);
+    } else {
+      setPreviewDay(null);
+      setDay(selected);
+    }
+  };
   const updateParams = (value: Partial<CompareRequest>) => setParams(old => ({ ...old, ...value }));
   return <Context.Provider value={{
-    user, day, users, dateStart, dateEnd, home: visibleHome,
+    user, day, viewDay, previewEnd, users, dateStart, dateEnd, home: visibleHome,
     instruments: visibleInstruments, comparison: visibleComparison, params, loading, comparing, error, compareError, retry,
-    selectUser: setUser, selectDay: setDay, updateParams,
+    selectUser: setUser, selectDay, updateParams,
     briefing: visibleBriefing, briefingError, savedPlans: visibleSavedPlans,
     planTracking: savedPlansKey === `${user}:${day}` ? planTracking : null, newsStatus,
     refreshSummary: () => setSummaryVersion(v => v + 1),
@@ -331,7 +355,7 @@ function WorldDevControls() {
  */
 export function Stage3DevPanel() {
   const nav = useNav();
-  const { user, day, users, dateStart, dateEnd, selectUser, selectDay, comparison } = useTwin();
+  const { user, day, viewDay, previewEnd, users, dateStart, dateEnd, selectUser, selectDay, comparison } = useTwin();
   const wide = useMedia('(min-width: 960px)');
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -352,13 +376,14 @@ export function Stage3DevPanel() {
       </select>
     </fieldset>
     <fieldset className="st3-dev-group">
-      <legend>기준일 ({dateStart && md(dateStart)}~{dateEnd && md(dateEnd)} 기록)</legend>
+      <legend>날짜 선택 · {dateEnd && md(dateEnd)}까지 관측 기록</legend>
       <div className="st3-date">
-        <button type="button" aria-label="하루 전" disabled={!day || day <= dateStart} onClick={() => selectDay(shiftDate(day, -1))}>‹</button>
-        <input type="date" value={day} min={dateStart} max={dateEnd} onChange={e => e.target.value && selectDay(e.target.value)} aria-label="금융 관측 기준일" />
-        <button type="button" aria-label="하루 뒤" disabled={!day || day >= dateEnd} onClick={() => selectDay(shiftDate(day, 1))}>›</button>
+        <button type="button" aria-label="하루 전" disabled={!viewDay || viewDay <= dateStart} onClick={() => selectDay(shiftDate(viewDay, -1))}>‹</button>
+        <input type="date" value={viewDay} min={dateStart} max={previewEnd} onChange={e => e.target.value && selectDay(e.target.value)} aria-label="금융 관측 기준일" />
+        <button type="button" aria-label="하루 뒤" disabled={!viewDay || viewDay >= previewEnd} onClick={() => selectDay(shiftDate(viewDay, 1))}>›</button>
       </div>
     </fieldset>
+    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}은 미래 예상일이에요. 금융 원본 관측은 {mdw(dateEnd)}까지이며, 예상 잔액만 표시해요.</p>}
     {nav.tab === 'forks' && <WorldDevControls />}
     <dl className="st3-dev-meta">
       <div><dt>데이터</dt><dd>합성 데이터셋 · 실제 계좌 아님</dd></div>
@@ -497,7 +522,7 @@ function firstShortfall(days: { date: string; closing_balance: number; lowest_ba
 
 export function Stage3Home() {
   const nav = useNav();
-  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans } = useTwin();
+  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans, viewDay } = useTwin();
   const [sel, setSel] = useState<number | null>(null);
 
   const points = useMemo<ChartPoint[]>(() => home ? [
@@ -525,6 +550,7 @@ export function Stage3Home() {
 
   return <div className="page st3 st3-home">
     <PageHead title="모아" logo sub="결제일에 돈이 모자라지 않는지 확인하고, 사기 전에 미래를 비교해요" />
+    {viewDay > home.observation_end && <p className="st3-note warn" role="note">{mdw(viewDay)}은 아직 관측된 거래가 없는 미래 예상일이에요. {mdw(home.observation_end)}의 확정 잔액에서 출발한 예측을 확인해 주세요. 예상 마감 잔액: <Money as="span" value={home.daily_cashflow.find(d => d.date === viewDay)?.closing_balance} /></p>}
     <section className="st6-morning" aria-label="오늘의 금융 변화" aria-live="polite">
       <div className="st6-morning-heading"><span>오늘의 금융 변화</span><time dateTime={home.as_of_date}>{mdw(home.as_of_date)} 기준</time></div>
       {briefing ? <>
