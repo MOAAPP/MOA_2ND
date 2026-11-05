@@ -63,23 +63,41 @@ try {
     const aiHome = desktop.locator('.ux-ai-spotlight');
     await aiHome.waitFor({ timeout: 25000 });
     const s01Briefing = await fetchJSON('/api/v4/users/S01/briefing?as_of=2026-11-04');
-    await desktop.waitForFunction(summary =>
-      document.querySelector('.ux-ai-spotlight-summary')?.textContent?.includes(summary),
-      s01Briefing.summary, { timeout: 25000 });
-    assert.equal(await aiHome.getByText('모아 AI', {exact: true}).isVisible(), true);
-    assert.equal(s01Briefing.llm_used, false);
-    assert.match(await aiHome.innerText(), /LLM 설명 미사용|브리핑은 규칙 기반/);
+    await desktop.waitForFunction(expected =>
+      document.querySelector('.ux-ai-facts')?.textContent?.includes(expected),
+      won(s01Briefing.spending_capacity.estimated_additional_spend), { timeout: 25000 });
+    assert.equal(await aiHome.getByText('MOA AI', {exact: true}).isVisible(), true);
+    assert.ok((await aiHome.locator('.ux-ai-spotlight-summary').innerText()).length >= 10);
+    assert.doesNotMatch(await aiHome.innerText(), /Python|LLM|FastAPI|token|API 키|Tool Calling/);
     assert.equal(await desktop.locator('.ux-ai-home-planner').count(), 0);
-    const originalBranch = desktop.locator('.ux-home-world-comparison svg');
-    await originalBranch.waitFor({ timeout: 25000 });
-    assert.equal(await originalBranch.locator('path').count(), 2, 'preserve original two-branch vector');
+    const world = desktop.locator('.ux-world-kinetic');
+    await world.waitFor({ timeout: 25000 });
+    const originalSwipe = world.locator('.ps-svg');
+    await originalSwipe.waitFor({ timeout: 25000 });
+    assert.ok(await originalSwipe.locator('path').count() >= 4, 'original kinetic two-path graph must be mounted');
     assert.equal(await desktop.locator('.ux-canonical-chart .st3-chart').count(), 1, 'preserve original animated cashflow chart');
-    await desktop.getByRole('button', { name: '내 소비 목표 AI로 분석하기' }).click();
+    const originalAmount = await world.locator('.ps-num').innerText();
+    assert.ok(originalAmount.length > 2);
+    await originalSwipe.scrollIntoViewIfNeeded();
+    const area = await originalSwipe.boundingBox();
+    assert.ok(area && area.width > 200, 'kinetic graph should have a full swipe surface');
+    await desktop.mouse.move(area.x + area.width * .10, area.y + area.height * .5);
+    await desktop.waitForTimeout(450);
+    const early = await world.locator('.ps-date').innerText();
+    await desktop.mouse.move(area.x + area.width * .90, area.y + area.height * .5);
+    await desktop.waitForTimeout(450);
+    const later = await world.locator('.ps-date').innerText();
+    assert.notEqual(early, later, 'mouse hover must scrub both worlds by date');
+    await world.getByRole('button', { name: '10,000원' }).click();
+    await desktop.waitForFunction(previous => document.querySelector('.ux-world-kinetic .ps-num')?.textContent?.trim() !== previous,
+      originalAmount, {timeout:25000});
+    assert.equal(await desktop.locator('.ux-canonical-risk-value > strong').innerText(), won(s01.available_cash), 'what-if world must not debit confirmed cash');
+    await desktop.getByRole('button', { name: '모아에게 내 소비를 물어보기' }).click();
     await desktop.locator('#ux-ai-home-agent textarea').waitFor();
-    assert.equal(await desktop.locator('#ux-ai-home-agent .st3-ai-agent').count(), 1, 'open a real finance agent from home');
-    await desktop.getByRole('button', { name: '내 소비 목표 AI로 분석하기' }).click();
+    assert.equal(await desktop.locator('#ux-ai-home-agent .st3-ai-agent').count(), 1, 'real finance AI available from the first screen');
+    assert.doesNotMatch(await desktop.locator('#ux-ai-home-agent').innerText(), /Python|LLM|토큰|API 요금/);
+    await desktop.getByRole('button', { name: '모아에게 내 소비를 물어보기' }).click();
     assert.equal(await desktop.locator('#ux-ai-home-agent').count(), 0);
-    assert.equal(await desktop.locator('.ux-canonical-risk-value > strong').innerText(), won(s01.available_cash));
 
 
     const panel = desktop.locator('aside.st3-dev-panel[aria-label="체험 설정"]');
@@ -142,8 +160,8 @@ try {
   await page.waitForFunction(expected =>
     document.querySelector('.st6-spend-capacity')?.textContent?.includes(expected),
     won(stage6.spending_capacity.estimated_additional_spend));
-  assert.match(await page.locator('.ux-ai-spotlight').innerText(), /모아 AI|오늘 내 금융 상태/);
-  assert.match(await page.locator('.ux-ai-home-source').innerText(), /LLM 설명 미사용|브리핑은 규칙 기반/);
+  assert.match(await page.locator('.ux-ai-spotlight').innerText(), /MOA AI|금융/);
+  assert.doesNotMatch(await page.locator('.ux-ai-home-source').innerText(), /LLM|Python|FastAPI|토큰/);
   assert.ok((await page.locator('.ux-ai-spotlight').innerText()).length > 30);
   assert.equal(stage6.spending_capacity.current_cash, s01.available_cash);
   await page.getByText('앞으로 7일 변동 지출 전망').waitFor();
@@ -208,9 +226,11 @@ try {
   const aiSettings = await fetchJSON('/api/v4/ai/status');
   assert.equal(aiSettings.keys_exposed, false);
   assert.equal(aiSettings.llm_configured, false);
+  assert.equal(await page.locator('.st3-world-ai-tools').getAttribute('open'), null, 'AI tools must not bury the world graphic');
+  await page.locator('.st3-world-ai-tools > summary').click();
   await page.locator('.st3-ai-agent').waitFor();
-  assert.equal(await page.getByRole('button',{name:'AI 경로 분석'}).isDisabled(),true);
-  assert.match(await page.locator('.st3-ai-agent').innerText(),/AI 키가 설정되지 않았어요/);
+  assert.equal(await page.getByRole('button',{name:'모아 AI에게 물어보기'}).isDisabled(),true);
+  assert.match(await page.locator('.st3-ai-agent').innerText(),/지금은 AI 상담을 사용할 수 없어요/);
   const consent = page.locator('.st3-ai-vision-upload input[type="file"]');
   assert.equal(await consent.count(),1);
 
