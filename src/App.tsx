@@ -112,7 +112,9 @@ let sessionLogged = false;
 function Shell() {
   const { state, update } = useStore();
   const nav = useNav();
-  const explicitDemo = new URLSearchParams(window.location.search).get('demo') === '1';
+  const query = new URLSearchParams(window.location.search);
+  const originalStage3Test = query.get('classic') === '1';
+  const explicitDemo = query.get('demo') === '1' || originalStage3Test;
   const [replayIntro, setReplayIntro] = useState(() => new URLSearchParams(window.location.search).has('intro') || Boolean((window as Window & { __PB_FORCE_INTRO?: boolean }).__PB_FORCE_INTRO));
   const finishIntroPreview = () => {
     if (new URLSearchParams(window.location.search).has('intro')) {
@@ -144,12 +146,32 @@ function Shell() {
     document.documentElement.classList.toggle('reduce-motion', state.settings.reduceMotion);
   }, [state.settings.reduceMotion]);
 
-  // An isolated synthetic session uses ONLY the FastAPI canonical 20-user ledger.
-  // Preserve existing screens and flows for real manually entered data.
-  if (state.demo && !replayIntro) {
+  // Restore the exact original PR #37 V8 and animated WorldTimeline UI on
+  // the regular app URL. Do not reimplement or restyle their components.
+  // The newer FastAPI 20-user / AI workbench remains available via ?demo=1,
+  // and its financial backend, API contracts and local overlays are untouched.
+  if (state.demo && !replayIntro && !explicitDemo) {
+    const top = nav.stack[nav.stack.length - 1];
+    if (top) return <><BankClock /><MoaAlertsDaemon /><ScreenView screen={top} onReplayIntro={() => setReplayIntro(true)} /></>;
+    return <>
+      <BankClock /><MoaAlertsDaemon />
+      <main>
+        {nav.tab === 'home' && <V8Home />}
+        {nav.tab === 'ledger' && <Ledger />}
+        {nav.tab === 'forks' && <WorldTimeline />}
+        {nav.tab === 'save' && <SaveHome />}
+        {nav.tab === 'invest' && <Practice />}
+        {nav.tab === 'learn' && <Learn />}
+      </main>
+      <BottomNav />
+    </>;
+  }
+
+  // Developer-only canonical FastAPI 20-persona test surface.
+  if (state.demo && !replayIntro && explicitDemo) {
     return <Stage3Provider><main className="st3-shell">
       {nav.stack.at(-1)?.name === 'insights' ? <Stage3Insights/> : <>
-      {nav.tab === 'home' && (explicitDemo ? <Stage3Home /> : <Stage3ClassicHome />)}
+      {nav.tab === 'home' && (originalStage3Test ? <Stage3ClassicHome /> : <Stage3Home />)}
       {nav.tab === 'ledger' && <Stage3Ledger />}
       {nav.tab === 'forks' && <Stage3Worlds />}
       {nav.tab === 'save' && <Stage3Assets focus="save" />}

@@ -4,6 +4,8 @@ on:
     paths:
       - 'src/**'
       - 'scripts/validate-stage3-browser.mjs'
+      - 'scripts/validate-pr37-restoration.mjs'
+      - 'scripts/check-preserved-v4-lab.mjs'
       - '.github/workflows/validate-stage3-browser.yml'
       - 'vite.config.ts'
   workflow_dispatch:
@@ -95,14 +97,19 @@ jobs:
             sleep 1
           done
           grep '<div id="root"' /tmp/stage3-index.html
-      - name: Verify classic root and clean URL, demo side panel, 20 users, Nov 5 projection and six worlds
-        run: node scripts/validate-stage3-browser.mjs
+      - name: Verify exact original PR37 home and animated world swipe (20-user backend health checked above)
+        run: node scripts/validate-pr37-restoration.mjs
+      - name: Verify the 20-user FastAPI AI lab remains available at demo URL
+        run: node scripts/check-preserved-v4-lab.mjs
       - name: Upload UI evidence and server logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: stage3-browser-evidence
           path: |
+            /tmp/pr37-original-home.png
+            /tmp/pr37-original-world.png
+            /tmp/modern-20-user-lab.png
             /tmp/stage3-classic-root.png
             /tmp/stage3-s01-home.png
             /tmp/stage3-six-worlds.png
