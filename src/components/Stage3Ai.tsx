@@ -17,63 +17,71 @@ export function Stage3AiAgent({ user, day, onApplyAmount }: {
   const [error, setError] = useState('');
   useEffect(() => {
     const controller = new AbortController();
-    setData(null); setError(''); setGoal('');
+    setStatus(null); setData(null); setError(''); setGoal('');
     void getAiStatus(controller.signal).then(v => {
       if (!controller.signal.aborted) setStatus(v);
-    }).catch(() => { if (!controller.signal.aborted) setStatus(null); });
+    }).catch(() => {
+      if (!controller.signal.aborted) setError('모아 AI에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.');
+    });
     return () => controller.abort();
   }, [user, day]);
 
   async function analyze() {
     const text = goal.trim();
-    if (text.length < 3 || busy) return;
+    if (text.length < 3 || busy || !status?.agent_configured) return;
     setBusy(true); setError(''); setData(null);
     try {
-      const result = await askFinanceAgent(user, day, text);
-      setData(result);
+      setData(await askFinanceAgent(user, day, text));
     } catch (exc) { setError(errorMessage(exc)); }
     finally { setBusy(false); }
   }
+  const suggestions = [
+    '지금 3만 원을 써도 다음 결제일에 괜찮을까?',
+    '월세를 먼저 내고 안전하게 저축하고 싶어',
+  ];
+  const validRoutes = data?.search.routes.filter(route => route.hard_constraints_met).slice(0, 3) ?? [];
 
   return <section className="st3-card st3-ai-agent" aria-labelledby="st3-agent-title">
-    <header className="st3-card-head"><div>
-      <h2 id="st3-agent-title">내 조건으로 AI 경로 찾기</h2>
-      <p className="st3-card-desc">목표를 설명하면 LLM이 조건을 정리하고 Python이 가능한 금융 경로를 검증해요.</p>
-    </div></header>
-    <label className="st3-ai-label" htmlFor="st3-ai-goal">목표와 지킬 조건</label>
+    <div className="st3-card-head">
+      <div>
+        <h2 id="st3-agent-title">모아에게 물어보세요</h2>
+        <p className="st3-card-desc">내가 원하는 것과 꼭 지켜야 할 돈을 함께 알려주세요.</p>
+      </div>
+    </div>
+    <div className="st3-ai-prompts" role="group" aria-label="질문 예시">
+      {suggestions.map(suggestion =>
+        <button type="button" key={suggestion} onClick={() => setGoal(suggestion)}>{suggestion}</button>)}
+    </div>
+    <label className="st3-ai-label" htmlFor="st3-ai-goal">궁금한 점</label>
     <textarea id="st3-ai-goal" className="st3-ai-input" value={goal} maxLength={1200}
       onChange={e => setGoal(e.target.value)}
-      placeholder="예: 7만 원짜리 상품을 사고 싶지만 월세 결제 전에는 잔액 3만 원을 지키고 싶어" />
+      placeholder="예: 7만 원짜리 운동화를 사고 싶은데 다음 월세는 꼭 내야 해" />
     <div className="st3-ai-actions">
-      <span>{status?.agent_configured ? '실제 LLM 호출 가능 · 호출 시 API 요금 발생' :
-        'AI 키가 설정되지 않았어요 · 백엔드 .env에서 설정해 주세요'}</span>
       <button type="button" className="st3-btn primary" disabled={busy || goal.trim().length < 3 ||
-        status?.agent_configured === false} onClick={() => void analyze()}>
-        {busy ? 'Python 경로 검증 중…' : 'AI 경로 분석'}
+        status?.agent_configured !== true} onClick={() => void analyze()}>
+        {busy ? '내 돈의 흐름을 살펴보는 중…' : '모아 AI에게 물어보기'}
       </button>
     </div>
+    {status?.agent_configured === false && <p className="st3-ai-error" role="status">지금은 AI 상담을 사용할 수 없어요. 연결 설정을 확인해 주세요.</p>}
     {error && <p className="st3-ai-error" role="alert">{error}</p>}
     {data && <div className="st3-ai-results" aria-live="polite">
-      <p className="st3-ai-source">실제 AI 모델 {data.llm_model} · 검토한 경로 {data.search.evaluated_count}개
-        · 입력/출력 토큰 {data.tokens.input_tokens}/{data.tokens.output_tokens}
-        {data.estimated_cost_usd != null ? ` · 추정 비용 $${data.estimated_cost_usd}` : ' · 비용 미설정'}
-      </p>
-      {data.search.routes.length > 0 ? <ol className="st3-ai-routes">
-        {data.search.routes.map(route => <li key={route.id}>
-          <div><b>{route.label}</b><small>{route.kind} · 예상 최저 잔액 {money(route.minimum_balance)}</small></div>
-          <div><span>구매액 {money(route.purchase_amount)}</span>
-            <span>기간 종료 예상 {money(route.ending_balance)}</span></div>
-          <button type="button" className="st3-link"
-            onClick={() => onApplyAmount(route.purchase_amount)}>
-            결제 금액만 비교 조건에 적용
+      <h3>이 조건이라면 이렇게 선택할 수 있어요</h3>
+      {validRoutes.length ? <ol className="st3-ai-routes">
+        {validRoutes.map(route => <li key={route.id}>
+          <div><b>{route.label}</b>
+            <small>예상 최저 잔액 {money(route.minimum_balance)}</small></div>
+          <div><span>구매 금액 {money(route.purchase_amount)}</span>
+            <span>기간 후 예상 잔액 {money(route.ending_balance)}</span></div>
+          <button type="button" className="st3-link" onClick={() => onApplyAmount(route.purchase_amount)}>
+            이 선택을 평행세계에서 보기 ↗
           </button>
         </li>)}
-      </ol> : <p>조건을 충족하는 검증된 경로가 없어요. 희망 금액·날짜·보호 잔액을 조정해 보세요.</p>}
+      </ol> : <p>지킬 조건에 맞는 경로를 찾지 못했어요. 금액이나 날짜를 바꿔 다시 물어보세요.</p>}
       {data.search.confirmations_required.length > 0 &&
-        <p className="st3-ai-warning">확인 필요: {data.search.confirmations_required.join(' · ')}</p>}
+        <p className="st3-ai-warning">한 번 더 확인해 주세요: {data.search.confirmations_required.join(' · ')}</p>}
       {data.search.conflict_explanations.length > 0 &&
         <p className="st3-ai-warning">{data.search.conflict_explanations.slice(0, 2).join(' · ')}</p>}
-      <small>추천 숫자는 LLM이 만든 값이 아니라 Python 금융 계산·제약 검증 결과예요. 시뮬레이션이지 금융 조언이 아니에요.</small>
+      <small>이 결과는 예측을 이용한 가상 비교이며 실제 금융 거래나 투자 조언이 아니에요.</small>
     </div>}
   </section>;
 }
