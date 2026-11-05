@@ -51,7 +51,7 @@ export function HomeWorldPreview({ comparison, amount, onAmount, onExpand }: {
       <button className="ux-world-expand" onClick={onExpand} type="button" aria-label="평행세계 전체 비교 보기">전체 비교 ↗</button>
     </div>
     <div className="ux-world-amount" role="group" aria-label="가상 구매 금액 선택">
-      <span>비교할 가상 소비</span>
+      <span>비교할 가상 소비 · 예시 금액</span>
       <div>
         {choices.map(price => <button type="button" key={price}
           aria-pressed={amount === price}
@@ -74,8 +74,8 @@ export function HomeWorldPreview({ comparison, amount, onAmount, onExpand }: {
         }}
       /> : <div className="ux-world-loading" role="status">
         <svg viewBox="0 0 340 124" aria-hidden="true">
-          <path d="M8 70 C90 70 135 35 330 28" />
-          <path d="M8 70 C90 70 145 91 330 104" />
+          <path pathLength={1} d="M8 70 C90 70 135 35 330 28" />
+          <path pathLength={1} d="M8 70 C90 70 145 91 330 104" />
         </svg>
         <span>선택의 미래를 계산하고 있어요</span>
       </div>}
