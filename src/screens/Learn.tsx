@@ -1,5 +1,5 @@
 import { InvestHead } from '../components/InvestHead';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { UNITS, dailyQuizFor, type DailyQuiz } from '../../shared/curriculum';
 import { formatKDateTime, todayKST } from '../../shared/dates';
 import { signedPct, signedWon, won } from '../../shared/format';
@@ -161,7 +161,7 @@ function StockRow({ code, name, sub, watched, onWatch }: { code: string; name: s
 
 
 /** 학습 본래 기능(개념→중간 퀴즈→피드백→실습)을 살린 짧은 주제 탐색 화면. */
-export function Learn() {
+export function Learn({ quizSlot }: { quizSlot?: ReactNode } = {}) {
   const { state } = useStore();
   const nav = useNav();
   const [unitId, setUnitId] = useState(1);
@@ -205,10 +205,10 @@ export function Learn() {
       </div>
     </section>
 
-    <section className="t-card t-quiz">
+    {quizSlot ?? <section className="t-card t-quiz">
       <div className="t-card-head"><h2>오늘의 퀴즈</h2><span className="t-badge">1문제</span></div>
       <DailyQuizCard quiz={quiz}/>
-    </section>
+    </section>}
 
     <button className="t-cta-card" onClick={()=>nav.setTab('invest')}>
       <span className="t-cta-icon violet"><IconChartBars/></span>
