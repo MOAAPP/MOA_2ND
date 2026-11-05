@@ -191,7 +191,8 @@ try {
 
   // Personalized daily quiz must render the API question and persist the
   // selection per user, without showing the answer before submission.
-  await page.getByRole('button',{name:'학습',exact:true}).click();
+  await page.getByRole('button',{name:'투자',exact:true}).click();
+  await page.getByRole('button',{name:'오늘의 맞춤 금융 퀴즈 풀기'}).click();
   const quizCard = page.locator('.st6-learning');
   await quizCard.waitFor({timeout:25000});
   await page.locator('.st6-learning-question').waitFor({timeout:25000});
