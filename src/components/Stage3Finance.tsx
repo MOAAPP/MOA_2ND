@@ -1369,7 +1369,6 @@ export function Stage3ClassicHome() {
         <div className="ux-home-asset-detail"><span>보유 종목</span><b>{investmentCount}개</b></div>
         <button type="button" onClick={() => nav.setTab('invest')}>가상 투자 상세로 이동 ›</button>
       </div>}
-}
     </section>
     <p className="ux-home-legal">공통 20명 합성 금융 데이터셋과 Python 예측·시뮬레이션을 사용해요. 은행과 자동 연결되지 않으며, 가상 자산은 실제 잔액과 합산하지 않아요.</p>
   </div>;
