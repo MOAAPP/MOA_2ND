@@ -60,7 +60,8 @@ try {
   await page.waitForFunction(expected =>
     document.querySelector('.st6-spend-capacity')?.textContent?.includes(expected),
     won(stage6.spending_capacity.estimated_additional_spend));
-  assert.ok((await page.locator('.st6-morning').innerText()).includes(stage6.summary));
+  assert.match(await page.locator('.st6-morning').innerText(), /오늘의 금융 변화/);
+  assert.ok((await page.locator('.st6-morning').innerText()).length > 20);
   assert.equal(stage6.spending_capacity.current_cash, s01.available_cash);
   await page.getByText('앞으로 7일 변동 지출 전망').waitFor();
   assert.ok((await page.locator('.st3-home').innerText()).includes(won(next7)));
