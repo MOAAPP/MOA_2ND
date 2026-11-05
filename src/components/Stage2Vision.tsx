@@ -38,8 +38,12 @@ export function Stage2Vision({ file, onClose, onApply, userId = 'S01' }: Props) 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview] = useState(() => URL.createObjectURL(file));
+  const [privacyAllowed, setPrivacyAllowed] = useState(false);
 
+  // No image bytes reach the third-party vision provider without explicit approval.
+  useEffect(() => () => URL.revokeObjectURL(preview), [preview]);
   useEffect(() => {
+    if (!privacyAllowed) return;
     let cancelled = false;
     setBusy(true);
     setError(null);
@@ -54,8 +58,8 @@ export function Stage2Vision({ file, onClose, onApply, userId = 'S01' }: Props) 
     }).catch(e => {
       if (!cancelled) setError(e instanceof Error ? e.message : '이미지 분석 실패');
     }).finally(() => { if (!cancelled) setBusy(false); });
-    return () => { cancelled = true; URL.revokeObjectURL(preview); };
-  }, [file, preview, userId]);
+    return () => { cancelled = true; };
+  }, [file, userId, privacyAllowed]);
 
   const patch = <K extends keyof VisionProduct>(key: K, value: VisionProduct[K]) => {
     setProduct(p => p ? { ...p, [key]: value } : p);
@@ -107,6 +111,13 @@ export function Stage2Vision({ file, onClose, onApply, userId = 'S01' }: Props) 
     <div className="s2-preview">
       <img src={preview} alt="업로드한 쇼핑몰 화면" style={{ width: '100%', maxHeight: 200, objectFit: 'contain' }} />
     </div>
+    {!privacyAllowed && <div className="s2-privacy-consent">
+      <p className="sheet-note">사진 속 이름·주소·전화번호·계좌·주문번호 등 개인정보를 가린 뒤 분석해 주세요. 확인 시 사진이 설정한 외부 비전 AI 제공업체로 전송돼요.</p>
+      <label className="s2-check"><input type="checkbox" checked={privacyAllowed}
+        onChange={e => setPrivacyAllowed(e.target.checked)} />
+        개인정보를 가렸으며 외부 비전 AI 전송에 동의해요
+      </label>
+    </div>}
     {busy && <Spinner label={analysis ? '저장 또는 비교 중…' : '레이아웃과 상품 가격을 분석하고 있어요'} />}
     {error && <p role="alert" className="sheet-note" style={{ color: 'var(--danger)' }}>{error}</p>}
     {analysis && <p className="sheet-note">실제 비전 AI: {analysis.model} · {analysis.latency_ms}ms
