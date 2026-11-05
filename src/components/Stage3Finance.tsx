@@ -714,7 +714,7 @@ export function Stage3Worlds() {
   async function save() {
     if (!comparison || capExceeded) return;
     setSaving(true); setSaveMessage('');
-    try { await saveScenario(params); setSaveMessage('이 조건과 당시 예상 결과를 가상 기록에 보존했어요.'); refreshSummary(); }
+    try { await saveScenario(params, picked); setSaveMessage('이 조건과 당시 예상 결과를 가상 기록에 보존했어요.'); refreshSummary(); }
     catch (e) { setSaveMessage(e instanceof Error ? e.message : '저장하지 못했어요. 다시 시도해 주세요.'); }
     finally { setSaving(false); }
   }
