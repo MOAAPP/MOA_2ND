@@ -909,15 +909,20 @@ export function Stage3Worlds() {
   return <div className="page st3 st3-worlds-page">
     <PageHead title="평행세계" sub="같은 시작 잔액에서 선택만 바꿔 계산한 가상의 미래예요. 실제 계좌의 돈은 움직이지 않아요." />
     {savedPlans.length > 0 && <p className="st6-saved-summary">저장한 경로 {savedPlans.length}개 · 저장 당시 예상 결과를 보존하고 있어요.</p>}
-    <Stage3AiAgent user={user} day={day} onApplyAmount={amount => updateAmount(amount)} />
-    <div className="st3-ai-vision-line">
-      <label className="st3-ai-vision-upload">
-        <span>쇼핑몰 화면을 AI로 분석해 결제 금액 가져오기</span>
-        <input type="file" accept="image/png,image/jpeg,image/webp"
-          onChange={e => { const file = e.currentTarget.files?.[0]; if (file) setVisionFile(file); e.currentTarget.value = ''; }} />
-      </label>
-      <small>이미지 지원 API 키가 있어야 호출돼요 · 인식한 가격은 확인 후 가상 비교에만 반영해요</small>
-    </div>
+    <details className="st3-world-ai-tools">
+      <summary><AiMark label="" />모아 AI로 더 알아보기<span>소비 상담 · 상품 사진</span></summary>
+      <div className="st3-world-ai-tools-body">
+        <Stage3AiAgent user={user} day={day} onApplyAmount={amount => updateAmount(amount)} />
+        <div className="st3-ai-vision-line">
+          <label className="st3-ai-vision-upload">
+            <span>쇼핑몰 상품 화면으로 가격 비교하기</span>
+            <input type="file" accept="image/png,image/jpeg,image/webp"
+              onChange={e => { const file = e.currentTarget.files?.[0]; if (file) setVisionFile(file); e.currentTarget.value = ''; }} />
+          </label>
+          <small>상품 정보와 최종 결제 금액을 확인한 다음 가상 비교에 반영해요.</small>
+        </div>
+      </div>
+    </details>
     {visionFile && <Stage2Vision key={user + visionFile.name + visionFile.lastModified}
       userId={user} file={visionFile} onClose={() => setVisionFile(null)}
       onApply={({ amount }) => updateAmount(amount)} />}
