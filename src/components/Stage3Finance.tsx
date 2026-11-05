@@ -114,6 +114,9 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
   const [homeKey, setHomeKey] = useState('');
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [comparison, setComparison] = useState<CompareResult | null>(null);
+  const [comparisonParamsKey, setComparisonParamsKey] = useState('');
+  const [instrumentsKey, setInstrumentsKey] = useState('');
+  const [savedPlansKey, setSavedPlansKey] = useState('');
   const [params, setParams] = useState<CompareRequest>(emptyReq);
   const [error, setError] = useState('');
   const [compareError, setCompareError] = useState('');
@@ -146,12 +149,17 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || !day) return;
     const controller = new AbortController();
-    setLoading(true); setHome(null); setHomeKey(''); setComparison(null);
-    setError(''); setCompareError(''); setInstruments([]);
-    Promise.all([getDemoHome(user, day, controller.signal), getInstruments(user, day, controller.signal)])
+    setLoading(true); setHome(null); setHomeKey(''); setComparison(null); setComparisonParamsKey('');
+    setError(''); setCompareError(''); setInstruments([]); setInstrumentsKey('');
+    // Investment reference quotes are optional. A quote failure must NEVER hide a
+    // verified account balance, transactions or the canonical cashflow chart.
+    const homePromise = getDemoHome(user, day, controller.signal);
+    const instrumentsPromise = getInstruments(user, day, controller.signal).catch(() => ({ prices: [] as Instrument[] }));
+    Promise.all([homePromise, instrumentsPromise])
       .then(([current, assets]) => {
         if (controller.signal.aborted) return;
-        setHome(current); setHomeKey(`${user}:${day}`); setInstruments(assets.prices);
+        setHome(current); setHomeKey(`${user}:${day}`);
+        setInstruments(assets.prices); setInstrumentsKey(`${user}:${day}`);
         const candidate = current.purchase_candidates.at(-1);
         const total = candidate?.main_product?.final_estimated_payment ?? 0;
         const amount = Number.isSafeInteger(total) && total > 0 ? total : 0;
@@ -177,7 +185,7 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
     if (!user || !day) return;
     const controller = new AbortController();
     setBriefing(null); setBriefingKey(''); setBriefingError('');
-    setSavedPlans([]); setPlanTracking(null); setNewsStatus('');
+    setSavedPlans([]); setSavedPlansKey(''); setPlanTracking(null); setNewsStatus('');
     Promise.allSettled([
       getMorningBriefing(user, day, controller.signal),
       getSavedPlans(user, controller.signal),
@@ -188,7 +196,7 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
         setBriefing(b.value); setBriefingKey(`${user}:${day}`);
       } else setBriefingError(b.reason instanceof Error ? b.reason.message : '금융 변화를 불러오지 못했어요.');
       if (p.status === 'fulfilled') {
-        setSavedPlans(p.value.plans);
+        setSavedPlans(p.value.plans); setSavedPlansKey(`${user}:${day}`);
         const latest = p.value.plans.find(plan => plan.has_immutable_snapshot && plan.analysis_as_of <= day);
         if (latest) getSavedPlanTracking(user, latest.id, day, controller.signal)
           .then(value => { if (!controller.signal.aborted) setPlanTracking(value); })
@@ -199,30 +207,35 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [user, day, retryCount, summaryVersion]);
 
+  const paramsKey = JSON.stringify(params);
   useEffect(() => {
     if (!home || homeKey !== `${user}:${day}` || params.user_id !== user || params.as_of !== day) return;
     const controller = new AbortController();
+    setComparison(null); setComparisonParamsKey('');
     const timer = window.setTimeout(() => {
       setComparing(true); setCompareError('');
       compareScenarios(params, controller.signal).then(data => {
-        if (!controller.signal.aborted) setComparison(data);
+        if (!controller.signal.aborted) { setComparison(data); setComparisonParamsKey(paramsKey); }
       }).catch(e => {
         if (!controller.signal.aborted) { setComparison(null); setCompareError(e instanceof Error ? e.message : '비교 결과를 계산하지 못했어요.'); }
       }).finally(() => { if (!controller.signal.aborted) setComparing(false); });
     }, 180);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [home, homeKey, user, day, params]);
+  }, [home, homeKey, user, day, params, paramsKey]);
 
   // 사용자·날짜가 바뀌면 이전 사람의 비교 결과를 즉시 지운다.
   const visibleHome = homeKey === `${user}:${day}` ? home : null;
-  const visibleComparison = comparison && comparison.user_id === user && comparison.as_of === day ? comparison : null;
+  const visibleComparison = comparison && comparison.user_id === user && comparison.as_of === day && comparisonParamsKey === paramsKey ? comparison : null;
+  const visibleInstruments = instrumentsKey === `${user}:${day}` ? instruments : [];
+  const visibleSavedPlans = savedPlansKey === `${user}:${day}` ? savedPlans : [];
   const visibleBriefing = briefingKey === `${user}:${day}` ? briefing : null;
   const updateParams = (value: Partial<CompareRequest>) => setParams(old => ({ ...old, ...value }));
   return <Context.Provider value={{
     user, day, users, dateStart, dateEnd, home: visibleHome,
-    instruments, comparison: visibleComparison, params, loading, comparing, error, compareError, retry,
+    instruments: visibleInstruments, comparison: visibleComparison, params, loading, comparing, error, compareError, retry,
     selectUser: setUser, selectDay: setDay, updateParams,
-    briefing: visibleBriefing, briefingError, savedPlans, planTracking, newsStatus,
+    briefing: visibleBriefing, briefingError, savedPlans: visibleSavedPlans,
+    planTracking: savedPlansKey === `${user}:${day}` ? planTracking : null, newsStatus,
     refreshSummary: () => setSummaryVersion(v => v + 1),
   }}>{children}</Context.Provider>;
 }
