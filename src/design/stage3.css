@@ -432,13 +432,21 @@
   .st3-readout.pair > div > strong { font-size: 15px; }
 }
 
-/* ═════════════ 컴퓨터에서 볼 때 ═════════════
- * 가운데에는 폰 화면만, 체험 설정은 폰 밖 오른쪽에 고정한다. */
-@media (min-width: 1120px) {
+/* ═════════════ 데스크톱 체험 설정 ═════════════
+ * 480px 앱 + 16px 간격 + 300px 패널을 하나의 그룹으로 중앙 정렬한다.
+ * 기존 '50% + 240px' 고정 좌표는 일부 화면에서 패널을 잘랐다. */
+@media (min-width: 960px) {
+  .app:has(.st3-shell) {
+    margin-left: max(16px, calc((100vw - 824px) / 2));
+    margin-right: 0;
+  }
   .st3-dev-panel:not(.sheet) {
-    position: fixed; z-index: 50; top: 24px; left: calc(50% + 240px + 24px);
-    width: 300px; max-height: calc(100dvh - 48px); overflow-y: auto; padding: var(--space-5);
-    border-radius: var(--radius-lg); border: 1px dashed var(--border-strong);
+    position: fixed; z-index: 50; top: 24px;
+    left: calc(max(16px, (100vw - 824px) / 2) + 496px);
+    width: 300px; max-height: calc(100dvh - 48px); overflow-y: auto;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg); border: 1px solid var(--border-default);
+    box-shadow: 0 8px 32px rgba(26, 34, 45, .08);
     scrollbar-width: thin;
   }
   .st3-head h1 { padding-right: 0; }
