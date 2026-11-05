@@ -41,7 +41,7 @@ import { Shortfall } from './screens/moa/Shortfall';
 import { MoaSetup, QuickStart } from './screens/moa/MoaSetup';
 import { MoaAlertsDaemon } from './state/moa';
 import { profileFromMoa } from './lib/moa/bridge';
-import { Stage3Provider, Stage3Home, Stage3Worlds, Stage3Assets, Stage3Ledger, Stage3DevPanel, Stage3Insights } from './components/Stage3Finance';
+import { Stage3Provider, Stage3Home, Stage3ClassicHome, Stage3Worlds, Stage3Assets, Stage3Ledger, Stage3DevPanel, Stage3Insights } from './components/Stage3Finance';
 
 /**
  * 하단 메뉴 = 모아의 두 축.
@@ -111,6 +111,7 @@ let sessionLogged = false;
 function Shell() {
   const { state, update } = useStore();
   const nav = useNav();
+  const explicitDemo = new URLSearchParams(window.location.search).get('demo') === '1';
   const [replayIntro, setReplayIntro] = useState(() => new URLSearchParams(window.location.search).has('intro') || Boolean((window as Window & { __PB_FORCE_INTRO?: boolean }).__PB_FORCE_INTRO));
   const finishIntroPreview = () => {
     if (new URLSearchParams(window.location.search).has('intro')) {
@@ -120,6 +121,16 @@ function Shell() {
     setReplayIntro(false);
   };
   useKeyboardInset();
+
+  // Tracking parameters from external links are not part of app routing.
+  // Show the canonical, clean URL without reloading or changing session mode.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const tracking = Array.from(url.searchParams.keys()).filter(k => k.startsWith('utm_'));
+    if (!tracking.length) return;
+    for (const key of tracking) url.searchParams.delete(key);
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  }, []);
 
   // 연구 참여자: 앱을 열 때마다 접속 1회 기록
   useEffect(() => {
@@ -137,7 +148,7 @@ function Shell() {
   if (state.demo && !replayIntro) {
     return <Stage3Provider><main className="st3-shell">
       {nav.stack.at(-1)?.name === 'insights' ? <Stage3Insights/> : <>
-      {nav.tab === 'home' && <Stage3Home />}
+      {nav.tab === 'home' && (explicitDemo ? <Stage3Home /> : <Stage3ClassicHome />)}
       {nav.tab === 'ledger' && <Stage3Ledger />}
       {nav.tab === 'forks' && <Stage3Worlds />}
       {nav.tab === 'save' && <Stage3Assets focus="save" />}
