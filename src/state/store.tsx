@@ -102,7 +102,7 @@ export interface AppState {
 }
 
 const KEY = 'pb.state.v3';
-// Query ?demo=1 creates an independent in-memory S01 session without overwriting personal records.
+// Root (including tracking queries) and ?demo=1 show canonical S01 in memory.\n// Previously saved personal finance is not read or overwritten in demo mode; ?personal=1 restores it.
 const ISOLATED_DEMO = typeof window !== 'undefined' && isSandboxDemo(window.location.search);
 
 /** 모아 상태 불러오기. 예전 사용자는 기존 프로필(기준 잔고·일정)로 결제계좌를 채운다. */
