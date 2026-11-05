@@ -477,8 +477,7 @@ function firstShortfall(days: { date: string; closing_balance: number; lowest_ba
 export function Stage3Home() {
   const { update } = useStore();
   const nav = useNav();
-  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans, planTracking } = useTwin();
-  const [showInsights, setShowInsights] = useState(false);
+  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans } = useTwin();
   const [sel, setSel] = useState<number | null>(null);
 
   const points = useMemo<ChartPoint[]>(() => home ? [
@@ -614,22 +613,9 @@ export function Stage3Home() {
     <section className="st6-insights" aria-labelledby="st6-insights-title">
       <div className="st6-insights-head">
         <h2 id="st6-insights-title">내 금융 변화 살펴보기</h2>
-        <button type="button" className="st3-link" aria-expanded={showInsights} onClick={() => setShowInsights(v => !v)}>
-          {showInsights ? '접기' : '자세히'}
-        </button>
+        <button type="button" className="st3-link" onClick={() => nav.push({name:'insights'})}>자세히 보기</button>
       </div>
       <p>저장한 경로 {savedPlans.length}개 · {briefing?.change_detection.events.length ?? '—'}건의 주요 변화</p>
-      {showInsights && <div className="st6-insights-detail">
-        {briefing?.change_detection.events.length ? <ul className="st3-list">{briefing.change_detection.events.map((e,i)=>
-          <li key={e.code + i}><span>{e.title}</span><small>{e.importance === 'high' ? '주의' : '참고'}</small></li>)}</ul> :
-          <p className="st3-muted">이전 분석과 비교할 변화가 없거나 아직 첫 분석이에요.</p>}
-        {savedPlans.length ? <ul className="st3-list">{savedPlans.slice(0, 3).map(p =>
-          <li key={p.id}><span>{p.label}<small>{p.analysis_as_of} 저장</small></span>
-            <span>{p.has_immutable_snapshot ? '당시 결과 보존' : '이전 형식 기록'}</span></li>)}</ul> :
-          <p className="st3-muted">저장한 구매·저축 경로가 아직 없어요.</p>}
-        {planTracking && <p className="st3-note">최근 저장 경로: {planTracking.daily_spend_comparison?.length ?? 0}일의 예측·관측 비교 · {planTracking.message || planTracking.note || '기준일 기록 확인'}</p>}
-        <p className="st3-note">관측 기록이 없는 날은 예측 오차로 판단하지 않아요.</p>
-      </div>}
     </section>
     <footer className="st3-foot">
       <p>체험용 합성 데이터와 예측 결과이며 실제 은행 잔액·시세·소비 허가액이 아니에요.</p>
@@ -933,6 +919,69 @@ export function Stage3Assets({ focus = 'save' }: { focus?: 'save' | 'invest' }) 
         </div>
         <aside className="st3-col-side">{focus === 'invest' ? prices : invest}{focus === 'invest' && savings}</aside>
       </div>}
+  </div>;
+}
+
+/* ─────────────── Stage 6: personal Insights (same FastAPI data) ─────────────── */
+
+export function Stage3Insights() {
+  const nav = useNav();
+  const { home, briefing, briefingError, savedPlans, planTracking, error, loading, retry } = useTwin();
+  const week = home?.daily_cashflow.slice(0, 7) ?? [];
+  const changes = briefing?.change_detection.events ?? [];
+  const observed = planTracking?.daily_spend_comparison ?? [];
+  return <div className="page st3 st3-insights">
+    <header className="st6-insights-title">
+      <button type="button" className="st3-link" onClick={() => nav.pop()}>‹ 홈으로</button>
+      <h1>내 금융 변화</h1>
+      <p>금융 선택 이후의 계획과 관측 기록을 비교해요.</p>
+    </header>
+    {error ? <ErrorNotice message={error} retry={retry}/> : loading || !home ? <Loading label="금융 기록을 불러오는 중이에요"/> : <>
+      <p className="st6-insights-asof">{mdw(home.as_of_date)} 기준 · 가상 체험 데이터</p>
+      <section className="st6-insights-section" aria-labelledby="st6-week">
+        <h2 id="st6-week">앞으로 7일 결제계좌 현금흐름</h2>
+        <ul className="st3-list">
+          {week.map(d => <li key={d.date}><time dateTime={d.date}>{mdw(d.date)}</time>
+            <span><Money as="span" value={d.closing_balance} className={d.closing_balance < 0 ? 'neg' : ''} /></span></li>)}
+        </ul>
+        <small className="st3-muted">확정된 금융 일정과 변동 지출 전망 기준이며 미래 관측 잔액이 아니에요.</small>
+      </section>
+      <section className="st6-insights-section" aria-labelledby="st6-differences">
+        <h2 id="st6-differences">이번에 달라진 점</h2>
+        {changes.length ? <ul className="st3-list">{changes.map((e,i) =>
+          <li key={e.code+i}><span>{e.title}</span><small>{e.importance === 'high' ? '확인 필요' : '변화 감지'}</small></li>)}</ul> :
+          <p>{briefing?.change_detection.status === 'first_analysis'
+            ? '첫 분석이라 지난 결과와 비교할 수 없어요.'
+            : briefingError || '지난 분석 이후 새로 확인된 주요 변화가 없어요.'}</p>}
+      </section>
+      <section className="st6-insights-section" aria-labelledby="st6-plans">
+        <h2 id="st6-plans">저장한 평행세계</h2>
+        {savedPlans.length ? <ul className="st3-list">{savedPlans.map(p => <li key={p.id}>
+          <span>{p.label}<small>{p.analysis_as_of} 기준 · {p.kind === 'agent' ? '추천 경로' : '직접 비교'}</small></span>
+          <span>{p.has_immutable_snapshot ? '당시 결과 보존' : '기존 기록'}</span>
+        </li>)}</ul> : <p>저장한 계획이 없어요. 평행세계에서 경로를 저장하면 이후 기록과 비교할 수 있어요.</p>}
+      </section>
+      <section className="st6-insights-section" aria-labelledby="st6-plan-actual">
+        <h2 id="st6-plan-actual">예상 지출과 이후 관측 지출</h2>
+        {observed.length ? <table className="st3-table">
+          <thead><tr><th scope="col">날짜</th><th scope="col">당시 예상</th><th scope="col">이후 관측</th></tr></thead>
+          <tbody>{observed.map(row => <tr key={row.date}>
+            <th scope="row">{md(row.date)}</th>
+            <td><Money as="span" value={row.predicted}/></td>
+            <td>{row.observed == null ? '기록 없음' : <Money as="span" value={row.observed}/>}</td>
+          </tr>)}</tbody></table> :
+          <p>{planTracking?.message || '저장 시점 이후 관측 기록이 있어야 차이를 계산할 수 있어요.'}</p>}
+        <small className="st3-muted">누락된 관측 기록이나 결제일 변경을 무조건 AI 예측 오류로 판단하지 않아요.</small>
+      </section>
+      <section className="st6-insights-section" aria-labelledby="st6-goal">
+        <h2 id="st6-goal">가상 저축·투자</h2>
+        <p>{home.savings_goals.length ? '설정한 가상 저축 목표가 있어요.' :
+          '원본 기록에는 저축 목표가 없어요. 평행세계에서 금액과 목표를 설정해 비교할 수 있어요.'}</p>
+        <p>모의투자 현금 <Money as="span" value={home.virtual_investments.virtual_cash}/> ·
+          보유 종목 {Object.keys(home.virtual_investments.positions ?? {}).length}개</p>
+      </section>
+      <p className="st3-note">실제 은행 거래와 연결하지 않은 합성 관측 데이터입니다. 미래 날짜의 기록을 과거 거래로 표시하지 않아요.</p>
+    </>}
   </div>;
 }
 
