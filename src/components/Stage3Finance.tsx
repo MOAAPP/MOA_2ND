@@ -251,12 +251,32 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
     ? (kstToday() <= shiftDate(dateEnd, 14) ? kstToday() : shiftDate(dateEnd, 14))
     : dateEnd;
   const viewDay = previewDay ?? day;
+  const selectionRef = useRef(0);
+  useEffect(() => {
+    // Never apply another persona's delayed post-snapshot lookup.
+    selectionRef.current += 1;
+    setPreviewDay(null);
+  }, [user]);
   const selectDay = (selected: string) => {
     if (!selected || selected < dateStart || selected > previewEnd) return;
-    // Confirmed post-snapshot transactions are now loaded by the same backend
-    // date for Home, forecast, worlds, ledger and briefing.
-    setPreviewDay(null);
-    setDay(selected);
+    const seq = ++selectionRef.current;
+    if (selected <= dateEnd) {
+      setPreviewDay(null);
+      setDay(selected);
+      return;
+    }
+    // No confirmed post-snapshot transactions? Keep the 11/04 anchor and show
+    // the requested forecast day without pretending it was observed.
+    setPreviewDay(selected);
+    setDay(dateEnd);
+    void getDemoHome(user, selected).then(actual => {
+      if (seq !== selectionRef.current || actual.user_id !== user) return;
+      setPreviewDay(null);
+      setDay(selected); // Confirmed local transactions: all APIs share this day.
+    }).catch(() => {
+      // A 422 is an expected forecast-only date, not a blank financial home.
+      // Other API errors are left to the canonical home fetch/retry UX.
+    });
   };
   const updateParams = (value: Partial<CompareRequest>) => setParams(old => ({ ...old, ...value }));
   return <Context.Provider value={{
@@ -385,7 +405,7 @@ export function Stage3DevPanel() {
         <button type="button" aria-label="하루 뒤" disabled={!viewDay || viewDay >= previewEnd} onClick={() => selectDay(shiftDate(viewDay, 1))}>›</button>
       </div>
     </fieldset>
-    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}은 원본 관측 종료일 이후예요. {mdw(dateEnd)}의 잔액과 사용자가 직접 확인한 거래만 반영하며, 미입력 거래는 포함되지 않을 수 있어요.</p>}
+    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}은 원본 관측 종료일 이후예요. 확인된 새 거래가 있으면 부분 잔액을, 없으면 마지막 관측일을 기준으로 한 예측을 보여줘요.</p>}
     {nav.tab === 'forks' && <WorldDevControls />}
     <dl className="st3-dev-meta">
       <div><dt>데이터</dt><dd>합성 데이터셋 · 실제 계좌 아님</dd></div>
