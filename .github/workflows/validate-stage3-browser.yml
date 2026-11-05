@@ -18,11 +18,11 @@ jobs:
     steps:
       - name: Checkout React PR branch
         uses: actions/checkout@v4
-      - name: Checkout matching FastAPI Stage 7 regression branch
+      - name: Checkout current FastAPI main
         uses: actions/checkout@v4
         with:
           repository: MOAAPP/MOA_2ND_BE
-          ref: fix/v4-stage7-integration-audit-20261105
+          ref: main
           path: _stage3_backend
       - uses: actions/setup-python@v5
         with:
