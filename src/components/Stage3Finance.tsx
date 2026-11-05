@@ -355,7 +355,7 @@ function WorldDevControls() {
  */
 export function Stage3DevPanel() {
   const nav = useNav();
-  const { user, day, viewDay, previewEnd, users, dateStart, dateEnd, selectUser, selectDay, comparison } = useTwin();
+  const { user, viewDay, previewEnd, users, dateStart, dateEnd, selectUser, selectDay, comparison } = useTwin();
   const wide = useMedia('(min-width: 960px)');
   const [open, setOpen] = useState(false);
   useEffect(() => {
