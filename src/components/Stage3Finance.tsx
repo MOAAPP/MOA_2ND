@@ -151,23 +151,19 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     setLoading(true); setHome(null); setHomeKey(''); setComparison(null); setComparisonParamsKey('');
     setError(''); setCompareError(''); setInstruments([]); setInstrumentsKey('');
-    // Investment reference quotes are optional. A quote failure must NEVER hide a
-    // verified account balance, transactions or the canonical cashflow chart.
-    const homePromise = getDemoHome(user, day, controller.signal);
-    const instrumentsPromise = getInstruments(user, day, controller.signal).catch(() => ({ prices: [] as Instrument[] }));
-    Promise.all([homePromise, instrumentsPromise])
-      .then(([current, assets]) => {
+    // The canonical home must render as soon as its own endpoint responds:
+    // instrument quotes can be absent, slow or unavailable without hiding money.
+    getDemoHome(user, day, controller.signal)
+      .then(current => {
         if (controller.signal.aborted) return;
         setHome(current); setHomeKey(`${user}:${day}`);
-        setInstruments(assets.prices); setInstrumentsKey(`${user}:${day}`);
         const candidate = current.purchase_candidates.at(-1);
         const total = candidate?.main_product?.final_estimated_payment ?? 0;
         const amount = Number.isSafeInteger(total) && total > 0 ? total : 0;
-        const firstInstrument = assets.prices[0];
         setParams({
           ...emptyReq, user_id: user, as_of: day, purchase_date: shiftDate(day, 1),
           purchase_amount: amount, savings_amount: amount, investment_amount: amount,
-          investment_code: firstInstrument?.code, allocation: splitBudget(Math.min(amount, Math.max(0, current.available_cash))),
+          allocation: splitBudget(Math.min(amount, Math.max(0, current.available_cash))),
         });
         setLoading(false);
       })
@@ -175,6 +171,18 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
         if (!controller.signal.aborted) {
           setError(e instanceof Error ? e.message : '금융 데이터를 불러오지 못했어요.'); setLoading(false);
         }
+      });
+    getInstruments(user, day, controller.signal)
+      .then(assets => {
+        if (controller.signal.aborted) return;
+        setInstruments(assets.prices); setInstrumentsKey(`${user}:${day}`);
+        setParams(previous => previous.user_id === user && previous.as_of === day
+          && !previous.investment_code && assets.prices[0]
+          ? { ...previous, investment_code: assets.prices[0].code } : previous);
+      })
+      .catch(() => {
+        // A missing market reference must not be represented as a verified quote.
+        if (!controller.signal.aborted) { setInstruments([]); setInstrumentsKey(`${user}:${day}`); }
       });
     return () => controller.abort();
   }, [user, day, retryCount]);
