@@ -35,13 +35,13 @@ const closeDev = async () => {
   if (await close.count()) await close.click();
 };
 try {
-  // The regular landing URL must render the same canonical S01 dataset as
-  // ?demo=1, even with unrelated tracking parameters and stale personal data.
+  // The regular landing URL preserves v22 visual styling but shares the
+  // exact canonical FastAPI balances with ?demo=1 and ignores tracking params.
   const desktop = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   try {
     await desktop.goto(base + '/');
     await desktop.waitForFunction(expected =>
-      document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
+      document.querySelector('.ux-canonical-risk-value > strong')?.textContent?.trim() === expected,
       won(s01.available_cash), { timeout: 25000 });
 
     const personalFixture = JSON.stringify({
@@ -52,9 +52,11 @@ try {
     await desktop.evaluate(raw => localStorage.setItem('pb.state.v3', raw), personalFixture);
     await desktop.goto(base + '/?utm_source=chatgpt.com');
     await desktop.waitForFunction(expected =>
-      document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
+      document.querySelector('.ux-canonical-risk-value > strong')?.textContent?.trim() === expected,
       won(s01.available_cash), { timeout: 25000 });
     assert.equal(await desktop.evaluate(() => localStorage.getItem('pb.state.v3')), personalFixture);
+    assert.equal(new URL(desktop.url()).search, '', 'UTM query should be removed from the browser address bar');
+    assert.equal(await desktop.locator('.ux-canonical-home').count(), 1, 'root should preserve the classic v22 home design');
 
     const panel = desktop.locator('aside.st3-dev-panel[aria-label="체험 설정"]');
     await panel.waitFor({ timeout: 10000 });
@@ -67,8 +69,23 @@ try {
     assert.ok(panelBox.x + panelBox.width <= 1280, 'demo panel must not be clipped off-screen');
     await desktop.locator('select[aria-label="가상 사용자 선택"]').selectOption('S02');
     await desktop.waitForFunction(expected =>
-      document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
+      document.querySelector('.ux-canonical-risk-value > strong')?.textContent?.trim() === expected,
       won(s02.available_cash), { timeout: 25000 });
+
+    // Nov 5 is not an observed dataset snapshot, but must be selectable as
+    // a projected day without leaking synthetic future-oracle transactions.
+    const dateInput = desktop.locator('input[aria-label="금융 관측 기준일"]');
+    assert.equal(await dateInput.inputValue(), '2026-11-04');
+    assert.ok((await dateInput.getAttribute('max')) >= '2026-11-05');
+    await desktop.getByRole('button', {name: '하루 뒤'}).click();
+    assert.equal(await dateInput.inputValue(), '2026-11-05');
+    assert.match(await desktop.locator('.ux-home-demo-clock').innerText(), /예상/);
+    const projectedS02 = s02.daily_cashflow.find(d => d.date === '2026-11-05').closing_balance;
+    assert.equal(await desktop.locator('.ux-canonical-risk-value > strong').innerText(), won(projectedS02));
+    await desktop.screenshot({ path: '/tmp/stage3-classic-root.png', fullPage: true });
+    await desktop.getByRole('button', {name: '하루 전'}).click();
+    assert.equal(await dateInput.inputValue(), '2026-11-04');
+    assert.equal(await desktop.locator('.ux-canonical-risk-value > strong').innerText(), won(s02.available_cash));
   } finally { await desktop.close(); }
 
   await page.goto(base + '/?demo=1');
@@ -79,6 +96,11 @@ try {
     won(s01.available_cash));
   await openDev();
   assert.equal((await page.locator('select[aria-label="가상 사용자 선택"] option').count()),20);
+  assert.equal(await page.locator('input[aria-label="금융 관측 기준일"]').inputValue(),'2026-11-04');
+  await page.getByRole('button', { name:'하루 뒤' }).click();
+  assert.equal(await page.locator('input[aria-label="금융 관측 기준일"]').inputValue(),'2026-11-05');
+  assert.match(await page.locator('.st3-note[role="note"]').innerText(),/아직 관측된 거래가 없는 미래 예상일/);
+  await page.getByRole('button', { name:'하루 전' }).click();
   assert.equal(await page.locator('input[aria-label="금융 관측 기준일"]').inputValue(),'2026-11-04');
   assert.equal(await hero.innerText(), won(s01.available_cash));
   // Assert a real Stage-4 model/baseline forecast is visible in PR37 design.
@@ -194,7 +216,7 @@ try {
   await page.locator('.st3-error').first().waitFor({timeout:25000});
   assert.equal(await page.locator('.st3-hero > strong').count(),0);
   assert.match(await page.locator('.st3-error').innerText(),/데이터 형식/);
-  console.log('STAGE6_BROWSER_PASS: root & utm tracking URL, preserved personal localStorage, visible desktop sidebar, 20 users, S01/S02 Home, personalized briefing, date movement, 6 worlds, schema-error state.');
+  console.log('STAGE6_BROWSER_PASS: classic v22 root design, clean URL, S01/S02 canonical data, preserved localStorage, 20-user desktop sidebar, observed Nov 4 and projected Nov 5 date, six worlds, briefing, schema validation.');
 } finally {
   await browser.close();
 }
