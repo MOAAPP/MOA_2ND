@@ -477,7 +477,8 @@ function firstShortfall(days: { date: string; closing_balance: number; lowest_ba
 export function Stage3Home() {
   const { update } = useStore();
   const nav = useNav();
-  const { home, comparison, loading, error, retry, params } = useTwin();
+  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans, planTracking } = useTwin();
+  const [showInsights, setShowInsights] = useState(false);
   const [sel, setSel] = useState<number | null>(null);
 
   const points = useMemo<ChartPoint[]>(() => home ? [
@@ -505,12 +506,24 @@ export function Stage3Home() {
 
   return <div className="page st3 st3-home">
     <PageHead title="모아" logo sub="결제일에 돈이 모자라지 않는지 확인하고, 사기 전에 미래를 비교해요" />
+    <section className="st6-morning" aria-label="오늘의 금융 변화" aria-live="polite">
+      <div className="st6-morning-heading"><span>오늘의 금융 변화</span><time dateTime={home.as_of_date}>{mdw(home.as_of_date)} 기준</time></div>
+      {briefing ? <>
+        <p>{briefing.summary}</p>
+        {briefing.change_detection.events.some(e => e.importance === 'high') &&
+          <p className="st6-attention">주의가 필요한 결제일 변화가 있어요. 아래 현금흐름을 확인해 주세요.</p>}
+      </> : <p className="st3-muted">{briefingError || '금융 변화를 분석하고 있어요…'}</p>}
+    </section>
     
     <div className="st3-layout">
       <div className="st3-col-main">
         <section className="st3-card st3-hero" aria-labelledby="st3-hero-label">
-          <p id="st3-hero-label" className="st3-hero-label">지금 쓸 수 있는 돈<span>결제계좌 · {mdw(home.as_of_date)} 기준</span></p>
+          <p id="st3-hero-label" className="st3-hero-label">현재 결제계좌 현금<span>결제계좌 · {mdw(home.as_of_date)} 기준</span></p>
           <Money value={home.available_cash} />
+          {briefing && <div className="st6-spend-capacity">
+            <div><span>오늘의 예상 추가 소비 여유</span><Money value={briefing.spending_capacity.estimated_additional_spend}/></div>
+            <small>{briefing.spending_capacity.message}</small>
+          </div>}
           {shortfall
             ? <div className="st3-status danger" role="note">
                 <span aria-hidden className="st3-status-icon">!</span>
@@ -598,8 +611,28 @@ export function Stage3Home() {
       </aside>
     </div>
 
+    <section className="st6-insights" aria-labelledby="st6-insights-title">
+      <div className="st6-insights-head">
+        <h2 id="st6-insights-title">내 금융 변화 살펴보기</h2>
+        <button type="button" className="st3-link" aria-expanded={showInsights} onClick={() => setShowInsights(v => !v)}>
+          {showInsights ? '접기' : '자세히'}
+        </button>
+      </div>
+      <p>저장한 경로 {savedPlans.length}개 · {briefing?.change_detection.events.length ?? '—'}건의 주요 변화</p>
+      {showInsights && <div className="st6-insights-detail">
+        {briefing?.change_detection.events.length ? <ul className="st3-list">{briefing.change_detection.events.map((e,i)=>
+          <li key={e.code + i}><span>{e.title}</span><small>{e.importance === 'high' ? '주의' : '참고'}</small></li>)}</ul> :
+          <p className="st3-muted">이전 분석과 비교할 변화가 없거나 아직 첫 분석이에요.</p>}
+        {savedPlans.length ? <ul className="st3-list">{savedPlans.slice(0, 3).map(p =>
+          <li key={p.id}><span>{p.label}<small>{p.analysis_as_of} 저장</small></span>
+            <span>{p.has_immutable_snapshot ? '당시 결과 보존' : '이전 형식 기록'}</span></li>)}</ul> :
+          <p className="st3-muted">저장한 구매·저축 경로가 아직 없어요.</p>}
+        {planTracking && <p className="st3-note">최근 저장 경로: {planTracking.daily_spend_comparison?.length ?? 0}일의 예측·관측 비교 · {planTracking.message || planTracking.note || '기준일 기록 확인'}</p>}
+        <p className="st3-note">관측 기록이 없는 날은 예측 오차로 판단하지 않아요.</p>
+      </div>}
+    </section>
     <footer className="st3-foot">
-      <p>AI 요약은 아직 연결되지 않아 보여드리지 않아요. 화면의 숫자는 체험용 예시 데이터로 계산한 결과이며, 실제 계좌·시세가 아니에요.</p>
+      <p>체험용 합성 데이터와 예측 결과이며 실제 은행 잔액·시세·소비 허가액이 아니에요.</p>
       <button type="button" className="st3-btn" onClick={() => update(s => ({ ...s, demo: false, profile: null, introSeen: false, setupDraft: null }))}>내 재무 정보로 시작하기</button>
     </footer>
   </div>;
