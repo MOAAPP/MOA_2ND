@@ -41,7 +41,7 @@ import { Shortfall } from './screens/moa/Shortfall';
 import { MoaSetup, QuickStart } from './screens/moa/MoaSetup';
 import { MoaAlertsDaemon } from './state/moa';
 import { profileFromMoa } from './lib/moa/bridge';
-import { Stage3Provider, Stage3Home, Stage3ClassicHome, Stage3Worlds, Stage3Assets, Stage3Ledger, Stage3DevPanel, Stage3Insights, Stage3CurrentQuiz } from './components/Stage3Finance';
+import { Stage3Provider, Stage3Home, Stage3Worlds, Stage3Assets, Stage3Ledger, Stage3DevPanel, Stage3Insights, Stage3CurrentQuiz } from './components/Stage3Finance';
 
 
 /**
@@ -144,12 +144,32 @@ function Shell() {
     document.documentElement.classList.toggle('reduce-motion', state.settings.reduceMotion);
   }, [state.settings.reduceMotion]);
 
-  // An isolated synthetic session uses ONLY the FastAPI canonical 20-user ledger.
-  // Preserve existing screens and flows for real manually entered data.
-  if (state.demo && !replayIntro) {
+  // Restore the exact original PR #37 V8 and animated WorldTimeline UI on
+  // the regular app URL. Do not reimplement or restyle their components.
+  // The newer FastAPI 20-user / AI workbench remains available via ?demo=1,
+  // and its financial backend, API contracts and local overlays are untouched.
+  if (state.demo && !replayIntro && !explicitDemo) {
+    const top = nav.stack[nav.stack.length - 1];
+    if (top) return <><BankClock /><MoaAlertsDaemon /><ScreenView screen={top} onReplayIntro={() => setReplayIntro(true)} /></>;
+    return <>
+      <BankClock /><MoaAlertsDaemon />
+      <main>
+        {nav.tab === 'home' && <V8Home />}
+        {nav.tab === 'ledger' && <Ledger />}
+        {nav.tab === 'forks' && <WorldTimeline />}
+        {nav.tab === 'save' && <SaveHome />}
+        {nav.tab === 'invest' && <Practice />}
+        {nav.tab === 'learn' && <Learn />}
+      </main>
+      <BottomNav />
+    </>;
+  }
+
+  // Developer-only canonical FastAPI 20-persona test surface.
+  if (state.demo && !replayIntro && explicitDemo) {
     return <Stage3Provider><main className="st3-shell">
       {nav.stack.at(-1)?.name === 'insights' ? <Stage3Insights/> : <>
-      {nav.tab === 'home' && (explicitDemo ? <Stage3Home /> : <Stage3ClassicHome />)}
+      {nav.tab === 'home' && <Stage3Home />}
       {nav.tab === 'ledger' && <Stage3Ledger />}
       {nav.tab === 'forks' && <Stage3Worlds />}
       {nav.tab === 'save' && <Stage3Assets focus="save" />}
