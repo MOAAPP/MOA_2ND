@@ -143,4 +143,18 @@
 .st3-ai-agent .st3-ai-results h3 { font-size:15px; line-height:1.5; letter-spacing:-.025em; font-weight:760; color:#232a44; margin:6px 0; }
 .st3-ai-agent .st3-ai-results li { background:transparent; border-bottom:1px solid #ecedf3; padding:11px 0; }
 .st3-ai-agent .st3-ai-results > small { display:block; font-size:10px; color:#9399a7; line-height:1.55; }
-.ux-world-loading path { path-length: 1; }
+
+/* The complete world comparison is a graph-first task. AI is still one tap
+   away, without burying interactive charts below debug-style forms. */
+.st3-world-ai-tools { margin:2px 0 17px; border:1px solid #e5e7f0; border-radius:12px; background:#fff; }
+.st3-world-ai-tools > summary { list-style:none; display:flex; align-items:center; gap:8px; padding:13px 14px; color:#343b62; font-size:13px; font-weight:760; cursor:pointer; }
+.st3-world-ai-tools > summary::-webkit-details-marker { display:none; }
+.st3-world-ai-tools > summary > .ai-mark { display:inline-flex; color:#5a54d8; }
+.st3-world-ai-tools > summary > span:last-child { margin-left:auto; font-size:11px; font-weight:500; color:#8a90a2; }
+.st3-world-ai-tools[open] > summary { border-bottom:1px solid #e9eaf1; }
+.st3-world-ai-tools-body { padding:15px 14px 10px; }
+.st3-world-ai-tools-body > .st3-ai-agent { box-shadow:none; background:transparent; padding:0; margin:0 0 14px; border:0; }
+.st3-world-ai-tools-body > .st3-ai-vision-line { border-top:1px solid #eceef3; padding-top:14px; }
+.st3-world-ai-tools:focus-within { border-color:#aca8ed; }
+@media (prefers-reduced-motion:reduce) { .ux-world-kinetic-stage .ps-draw, .ux-world-kinetic-stage .ps-ping { animation:none!important; stroke-dashoffset:0!important; opacity:1!important; } }
+.reduce-motion .ux-world-kinetic-stage .ps-draw, .reduce-motion .ux-world-kinetic-stage .ps-ping { animation:none!important; stroke-dashoffset:0!important; opacity:1!important; }
