@@ -198,7 +198,7 @@ try {
   const options = page.locator('.st6-learning-options [role="radio"]');
   assert.equal(await options.count(),4);
   assert.match(await quizCard.innerText(),/규칙 기반/);
-  assert.equal(await quizCard.getByText('정답', {exact:false}).count(),0);
+  assert.equal(await quizCard.locator('.st6-learning-feedback').count(),0, 'answer must not leak before submission');
   await options.first().click();
   await page.getByRole('button',{name:'정답 확인'}).click();
   await quizCard.locator('.st6-learning-feedback').waitFor({timeout:25000});
