@@ -8,6 +8,7 @@ import { Sheet, Spinner } from './ui';
 
 interface Props {
   file: File;
+  userId?: string;
   onClose: () => void;
   onApply: (item: { amount: number; name?: string }) => void;
 }
@@ -24,7 +25,7 @@ function MoneyField({ title, value, change, hint }: {
 }
 
 /** New purchase intent lives only in Python candidate overlay until user explicitly records a choice. */
-export function Stage2Vision({ file, onClose, onApply }: Props) {
+export function Stage2Vision({ file, onClose, onApply, userId = 'S01' }: Props) {
   const [analysis, setAnalysis] = useState<VisionAnalysis | null>(null);
   const [product, setProduct] = useState<VisionProduct | null>(null);
   const [candidate, setCandidate] = useState<PurchaseCandidate | null>(null);
@@ -42,7 +43,7 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     let cancelled = false;
     setBusy(true);
     setError(null);
-    void analyzeShopScreenshot('S01', file).then(result => {
+    void analyzeShopScreenshot(userId, file).then(result => {
       if (cancelled) return;
       if (result.source !== 'multimodal_llm' || result.analysis_status !== 'succeeded') {
         setError('실제 비전 AI 결과가 아닙니다.');
@@ -54,7 +55,7 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
       if (!cancelled) setError(e instanceof Error ? e.message : '이미지 분석 실패');
     }).finally(() => { if (!cancelled) setBusy(false); });
     return () => { cancelled = true; URL.revokeObjectURL(preview); };
-  }, [file, preview]);
+  }, [file, preview, userId]);
 
   const patch = <K extends keyof VisionProduct>(key: K, value: VisionProduct[K]) => {
     setProduct(p => p ? { ...p, [key]: value } : p);
@@ -73,7 +74,7 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     if (!analysis || !product || !verified) return;
     setBusy(true); setError(null);
     try {
-      const saved = await confirmProduct('S01', analysis.analysis_id, product, discount);
+      const saved = await confirmProduct(userId, analysis.analysis_id, product, discount);
       setCandidate(saved);
     } catch (e) {
       setError(e instanceof Error ? e.message : '구매 후보 저장에 실패했습니다.');
@@ -85,7 +86,7 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     try {
       // The exact next calendar day relative to the dataset snapshot; not a physical purchase.
       const when = new Date(simDate + 'T12:00:00+09:00').toISOString();
-      const result = await simulateCandidate('S01', candidate.id, when);
+      const result = await simulateCandidate(userId, candidate.id, when);
       setSimulation(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : '가상 구매 비교에 실패했습니다.');
