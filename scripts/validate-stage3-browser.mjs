@@ -58,6 +58,30 @@ try {
     assert.equal(new URL(desktop.url()).search, '', 'UTM query should be removed from the browser address bar');
     assert.equal(await desktop.locator('.ux-canonical-home').count(), 1, 'root should preserve the classic v22 home design');
 
+    // The canonical home must visibly show its real financial briefing on
+    // initial load: not hide AI several screens down in a collapsed accordion.
+    const aiHome = desktop.locator('.ux-ai-spotlight');
+    await aiHome.waitFor({ timeout: 25000 });
+    const s01Briefing = await fetchJSON('/api/v4/users/S01/briefing?as_of=2026-11-04');
+    await desktop.waitForFunction(summary =>
+      document.querySelector('.ux-ai-spotlight-summary')?.textContent?.includes(summary),
+      s01Briefing.summary, { timeout: 25000 });
+    assert.equal(await aiHome.getByText('모아 AI', {exact: true}).isVisible(), true);
+    assert.equal(s01Briefing.llm_used, false);
+    assert.match(await aiHome.innerText(), /LLM 설명 미사용|브리핑은 규칙 기반/);
+    assert.equal(await desktop.locator('.ux-ai-home-planner').count(), 0);
+    const originalBranch = desktop.locator('.ux-home-world-comparison svg');
+    await originalBranch.waitFor({ timeout: 25000 });
+    assert.equal(await originalBranch.locator('path').count(), 2, 'preserve original two-branch vector');
+    assert.equal(await desktop.locator('.ux-canonical-chart .st3-chart').count(), 1, 'preserve original animated cashflow chart');
+    await desktop.getByRole('button', { name: '내 소비 목표 AI로 분석하기' }).click();
+    await desktop.locator('#ux-ai-home-agent textarea').waitFor();
+    assert.equal(await desktop.locator('#ux-ai-home-agent .st3-ai-agent').count(), 1, 'open a real finance agent from home');
+    await desktop.getByRole('button', { name: '내 소비 목표 AI로 분석하기' }).click();
+    assert.equal(await desktop.locator('#ux-ai-home-agent').count(), 0);
+    assert.equal(await desktop.locator('.ux-canonical-risk-value > strong').innerText(), won(s01.available_cash));
+
+
     const panel = desktop.locator('aside.st3-dev-panel[aria-label="체험 설정"]');
     await panel.waitFor({ timeout: 10000 });
     assert.equal(await panel.isVisible(), true);
@@ -245,7 +269,7 @@ try {
   await page.locator('.st3-error').first().waitFor({timeout:25000});
   assert.equal(await page.locator('.st3-hero > strong').count(),0);
   assert.match(await page.locator('.st3-error').innerText(),/데이터 형식/);
-  console.log('STAGE8_BROWSER_PASS: AI provider status and per-persona quiz, classic v22 root design, clean URL, S01/S02 canonical data, preserved localStorage, 20-user desktop sidebar, observed Nov 4 and projected Nov 5 date, six worlds, briefing, schema validation.');
+  console.log('HOME_AI_MOTION_BROWSER_PASS: visible grounded main AI analysis, accessible real agent, original world branch animation, classic v22 root design, clean URL, S01/S02 canonical data, preserved localStorage, 20-user desktop sidebar, observed Nov 4 and projected Nov 5 date, six worlds, briefing, schema validation.');
 } finally {
   await browser.close();
 }
