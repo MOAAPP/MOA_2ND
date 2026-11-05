@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useId, useMemo, useRef, useState,
 
 import { useNav } from '../state/nav';
 import { Logo } from './Glyph';
-import { Stage3AiAgent } from './Stage3Ai';
+import { Stage3AiAgent, Stage3DailyQuiz } from './Stage3Ai';
 import { Stage2Vision } from './Stage2Vision';
 import {
   compareScenarios, getDemoDefault, getDemoHome, getDemoUsers, getInstruments, getTransactions, saveScenario,
@@ -355,6 +355,11 @@ function WorldDevControls() {
  * 개발·시연 패널. 사용자 화면(폰) 밖에 둔다.
  * 컴퓨터: 폰 화면 오른쪽에 고정 / 폰: '체험 설정' 버튼 → 아래에서 올라오는 시트.
  */
+export function Stage3CurrentQuiz() {
+  const { user } = useTwin();
+  return <Stage3DailyQuiz user={user} />;
+}
+
 export function Stage3DevPanel() {
   const nav = useNav();
   const { user, viewDay, previewEnd, users, dateStart, dateEnd, selectUser, selectDay, comparison } = useTwin();
