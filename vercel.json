@@ -5,6 +5,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/v4/:path*",
+      "destination": "https://moa-finance-api.vercel.app/api/v4/:path*"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api"
     }
