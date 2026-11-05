@@ -154,14 +154,14 @@ function load(): { state: AppState; error: string | null } {
   if (ISOLATED_DEMO) return { state: seedDemoState(initialState()), error: null };
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return { state: seedDemoState(initialState()), error: null };
+    if (!raw) return { state: initialState(), error: null };
     const parsed = JSON.parse(raw) as Partial<AppState>;
     const base = initialState();
     // Legacy empty installations, including old introSeen=true with no saved finance,
     // should open the canonical synthetic preview. Never overwrite manual financial records.
     if (!parsed.profile && !parsed.setupDraft &&
         !(parsed.moa?.anchor) && !(parsed.records?.length) && !(parsed.spendLog?.length)) {
-      return { state: seedDemoState(base), error: null };
+      return { state: base, error: null };
     }
     const world = migrateWorldWallet(parsed.worldWallet);
     // Previous demo fixtures were persisted in localStorage and hid the new
