@@ -3,6 +3,7 @@ import { AiLines, AiMark, AiSourceNote } from '../components/Ai';
 import { TopBar } from '../components/ui';
 import { runAi, type AiSource } from '../lib/ai';
 import { askContext } from '../lib/ai/context';
+import { getAiStatus, askFinanceAgent } from '../lib/v4AiApi';
 import { ASK_SUGGESTIONS } from '../lib/ai/example';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
@@ -31,9 +32,39 @@ export function AskAi({ initial }: { initial?: string }) {
     setMsgs((m) => [...m.map((x) => ({ ...x, followUps: undefined })), { id: seq.current++, who: 'me', text: question }]);
     setText('');
     setBusy(true);
-    const r = await runAi('ask', { question, context: ctx });
-    setMsgs((m) => [...m, { id: seq.current++, who: 'ai', text: r.data.answer, followUps: r.data.followUps, source: r.source }]);
-    setBusy(false);
+    try {
+      if (state.demo) {
+        // Only canonical synthetic S01 data can be sent to this public demo
+        // agent. Never send personal/private localStorage financial details.
+        const status = await getAiStatus();
+        if (!status.agent_configured) {
+          setMsgs(m => [...m, { id: seq.current++, who: 'ai',
+            text: '지금은 모아 AI 상담을 준비 중이에요. 홈의 결제일과 소비 여유 계산은 계속 확인할 수 있어요.' }]);
+        } else {
+          const answer = await askFinanceAgent('S01', '2026-11-04', question);
+          const options = answer.search.routes.filter(route => route.hard_constraints_met).slice(0, 3);
+          const explanation = options.length
+            ? '입력한 조건을 금융 기록과 비교했어요.\\n' + options.map((route, i) =>
+              `${i + 1}. ${route.label} — 구매액 ${route.purchase_amount.toLocaleString('ko-KR')}원, 예상 최저 잔액 ${route.minimum_balance.toLocaleString('ko-KR')}원`).join('\\n')
+            : '입력한 조건을 모두 지킬 수 있는 선택을 찾지 못했어요. 구매 금액이나 날짜를 조정해 보세요.';
+          const caveat = answer.search.confirmations_required.length
+            ? '\\n확인할 점: ' + answer.search.confirmations_required.join(' · ')
+            : '';
+          setMsgs(m => [...m, { id: seq.current++, who: 'ai',
+            text: explanation + caveat + '\\n가상 금융 분석이며 실제 거래나 투자 조언은 아니에요.',
+            source: 'live' }]);
+        }
+      } else {
+        const r = await runAi('ask', { question, context: ctx });
+        setMsgs((m) => [...m, { id: seq.current++, who: 'ai', text: r.data.answer,
+          followUps: r.data.followUps, source: r.source }]);
+      }
+    } catch {
+      setMsgs(m => [...m, { id: seq.current++, who: 'ai',
+        text: '지금은 금융 AI 상담에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.' }]);
+    } finally {
+      setBusy(false);
+    }
   };
 
   useEffect(() => { if (initial) void ask(initial); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
