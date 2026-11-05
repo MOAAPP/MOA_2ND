@@ -226,6 +226,8 @@ try {
   const aiSettings = await fetchJSON('/api/v4/ai/status');
   assert.equal(aiSettings.keys_exposed, false);
   assert.equal(aiSettings.llm_configured, false);
+  assert.equal(await page.locator('.st3-world-ai-tools').getAttribute('open'), null, 'AI tools must not bury the world graphic');
+  await page.locator('.st3-world-ai-tools > summary').click();
   await page.locator('.st3-ai-agent').waitFor();
   assert.equal(await page.getByRole('button',{name:'모아 AI에게 물어보기'}).isDisabled(),true);
   assert.match(await page.locator('.st3-ai-agent').innerText(),/지금은 AI 상담을 사용할 수 없어요/);
