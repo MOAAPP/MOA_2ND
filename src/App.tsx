@@ -41,7 +41,7 @@ import { Shortfall } from './screens/moa/Shortfall';
 import { MoaSetup, QuickStart } from './screens/moa/MoaSetup';
 import { MoaAlertsDaemon } from './state/moa';
 import { profileFromMoa } from './lib/moa/bridge';
-import { Stage3Provider, Stage3Home, Stage3Worlds, Stage3Assets, Stage3Ledger, Stage3DevPanel, Stage3Insights, Stage3CurrentQuiz } from './components/Stage3Finance';
+import { Stage3Provider, Stage3Home, Stage3ClassicHome, Stage3Worlds, Stage3Assets, Stage3Ledger, Stage3DevPanel, Stage3Insights, Stage3CurrentQuiz } from './components/Stage3Finance';
 
 
 /**
@@ -112,7 +112,9 @@ let sessionLogged = false;
 function Shell() {
   const { state, update } = useStore();
   const nav = useNav();
-  const explicitDemo = new URLSearchParams(window.location.search).get('demo') === '1';
+  const query = new URLSearchParams(window.location.search);
+  const originalStage3Test = query.get('classic') === '1';
+  const explicitDemo = query.get('demo') === '1' || originalStage3Test;
   const [replayIntro, setReplayIntro] = useState(() => new URLSearchParams(window.location.search).has('intro') || Boolean((window as Window & { __PB_FORCE_INTRO?: boolean }).__PB_FORCE_INTRO));
   const finishIntroPreview = () => {
     if (new URLSearchParams(window.location.search).has('intro')) {
@@ -169,7 +171,7 @@ function Shell() {
   if (state.demo && !replayIntro && explicitDemo) {
     return <Stage3Provider><main className="st3-shell">
       {nav.stack.at(-1)?.name === 'insights' ? <Stage3Insights/> : <>
-      {nav.tab === 'home' && <Stage3Home />}
+      {nav.tab === 'home' && (originalStage3Test ? <Stage3ClassicHome /> : <Stage3Home />)}
       {nav.tab === 'ledger' && <Stage3Ledger />}
       {nav.tab === 'forks' && <Stage3Worlds />}
       {nav.tab === 'save' && <Stage3Assets focus="save" />}
