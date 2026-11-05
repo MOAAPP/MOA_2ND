@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+const base = process.env.STAGE3_E2E_BASE || 'http://127.0.0.1:5173';
+const browser = await chromium.launch({headless:true});
+try {
+  const page = await browser.newPage({viewport:{width:390,height:844}});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base+'/');
+  await page.locator('.t-home.ux-home').waitFor({timeout:30000});
+  assert.equal(await page.locator('.ux-canonical-home').count(),0);
+  assert.equal(await page.locator('.ux-home-risk').count(),1);
+  assert.equal(await page.locator('.ux-home-ledger').count(),1);
+  assert.equal(await page.locator('.ux-home-decision').count(),1);
+  await page.locator('.ux-home-expand').filter({hasText:'AI 소비 분석'}).click();
+  await page.locator('.ux-home-brief').waitFor({timeout:10000});
+  await page.screenshot({path:'/tmp/pr37-original-home.png',fullPage:true});
+  await page.getByRole('button',{name:'평행세계',exact:true}).click();
+  const chart=page.locator('.t-world .ps-svg');await chart.waitFor({timeout:30000});
+  assert.ok(await chart.locator('path').count()>=4);
+  await chart.scrollIntoViewIfNeeded();
+  const r=await chart.boundingBox();assert.ok(r);
+  await page.mouse.move(r.x+r.width*.85,r.y+r.height*.4);
+  await page.mouse.down();
+  await page.mouse.move(r.x+r.width*.12,r.y+r.height*.4,{steps:12});
+  await page.mouse.up();await page.waitForTimeout(500);
+  const before=await page.locator('.ps-date').innerText();
+  await page.mouse.move(r.x+r.width*.12,r.y+r.height*.4);
+  await page.mouse.down();
+  await page.mouse.move(r.x+r.width*.88,r.y+r.height*.4,{steps:12});
+  await page.mouse.up();await page.waitForTimeout(500);
+  assert.notEqual(before,await page.locator('.ps-date').innerText());
+  await page.screenshot({path:'/tmp/pr37-original-world.png',fullPage:true});
+  assert.deepEqual(errors,[]);
+  console.log('ORIGINAL_PR37_UI_PASS');
+} finally {await browser.close();}
