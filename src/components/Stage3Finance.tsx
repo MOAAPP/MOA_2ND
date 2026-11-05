@@ -544,7 +544,7 @@ function firstShortfall(days: { date: string; closing_balance: number; lowest_ba
 
 export function Stage3Home() {
   const nav = useNav();
-  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans, viewDay } = useTwin();
+  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans, day, viewDay } = useTwin();
   const [sel, setSel] = useState<number | null>(null);
 
   const points = useMemo<ChartPoint[]>(() => home ? [
@@ -572,7 +572,11 @@ export function Stage3Home() {
 
   return <div className="page st3 st3-home">
     <PageHead title="모아" logo sub="결제일에 돈이 모자라지 않는지 확인하고, 사기 전에 미래를 비교해요" />
-    {viewDay > home.observation_end && <p className="st3-note warn" role="note">{mdw(viewDay)}은 원본 관측 종료일 이후예요. 사용자가 확인한 거래만 반영한 부분 잔액이며 미기록 소비가 있을 수 있어요. 확인된 항목 기준 잔액: <Money as="span" value={home.available_cash} /></p>}
+    {viewDay > home.observation_end && <p className="st3-note warn" role="note">
+      {viewDay !== day
+        ? <>{mdw(viewDay)}은 아직 관측된 거래가 없는 미래 예상일이에요. {mdw(home.observation_end)}의 관측 잔액과 예정된 현금흐름을 기준으로 추정한 예상 마감 잔액: <Money as="span" value={home.daily_cashflow.find(d => d.date === viewDay)?.closing_balance} /></>
+        : <>{mdw(viewDay)}은 원본 관측 종료일 이후예요. 직접 확인한 거래만 반영한 부분 잔액이며 미기록 소비가 있을 수 있어요. 확인된 항목 기준 잔액: <Money as="span" value={home.available_cash} /></>}
+    </p>}
     <section className="st6-morning" aria-label="오늘의 금융 변화" aria-live="polite">
       <div className="st6-morning-heading"><span>오늘의 금융 변화</span><time dateTime={home.as_of_date}>{mdw(home.as_of_date)} 기준</time></div>
       {briefing ? <>
