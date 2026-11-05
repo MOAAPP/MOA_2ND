@@ -20,3 +20,14 @@
 .st6-news{margin:1.1rem 0 0;padding:1rem 0 0;border-top:1px solid rgba(0,0,0,.12)}
 @media(max-width:640px){.st6-morning{margin-bottom:.9rem;padding:1rem 0}.st6-spend-capacity>div{align-items:flex-start}.st6-spend-capacity .money{font-size:1.25rem}.st6-insights{margin:1rem 0}}
 @media(prefers-reduced-motion:reduce){.st6-morning,.st6-insights,.st6-spend-capacity,.st6-news{scroll-behavior:auto;animation:none;transition:none}}
+
+.st6-insights-title{border-bottom:1px solid rgba(0,0,0,.12);padding:.85rem 0 1rem}
+.st6-insights-title h1{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:760;letter-spacing:-.035em;margin:.8rem 0 .35rem}
+.st6-insights-title p,.st6-insights-asof{font-size:.82rem;color:var(--muted,#65717e);line-height:1.55}
+.st6-insights-asof{margin:1.15rem 0}
+.st6-insights-section{padding:1.25rem 0;border-bottom:1px solid rgba(0,0,0,.12)}
+.st6-insights-section h2{font-size:1.05rem;letter-spacing:-.02em;font-weight:750;margin:0 0 .75rem}
+.st6-insights-section>p{font-size:.87rem;line-height:1.6;color:var(--muted,#626e79)}
+.st6-insights-section .st3-table{width:100%;font-variant-numeric:tabular-nums}
+.st6-insights-section .st3-list{font-variant-numeric:tabular-nums}
+.st6-insights-section small.st3-muted{display:block;margin:.6rem 0}
