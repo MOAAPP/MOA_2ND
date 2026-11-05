@@ -44,7 +44,7 @@
 .ux-ai-spotlight-summary { max-width:284px; min-height:39px; margin:0; color:#d3d7ed; font-size:13px; font-weight:430; line-height:1.6; letter-spacing:-.015em; word-break:keep-all; }
 .ux-ai-orbit { flex:0 0 92px; width:92px; height:80px; margin:-6px -6px 0 -22px; opacity:.9; overflow:visible; pointer-events:none; }
 .ux-ai-orbit-ring { fill:none; stroke:#9991ed; stroke-width:.8; opacity:.14; }
-.ux-ai-orbit-path { fill:none; stroke:#a29aff; stroke-width:2.4; stroke-linecap:round; pathLength:1; stroke-dasharray:1; stroke-dashoffset:1; animation:ux-orbit-draw 1.3s .3s cubic-bezier(.22,.75,.2,1) both; }
+.ux-ai-orbit-path { fill:none; stroke:#a29aff; stroke-width:2.4; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:1; animation:ux-orbit-draw 1.3s .3s cubic-bezier(.22,.75,.2,1) both; }
 .ux-ai-orbit-path.alt { stroke:#f0bbd6; stroke-width:1.7; opacity:.7; animation-delay:.58s; }
 .ux-ai-orbit-core { fill:#e9e5ff; transform-origin:49px 46px; animation:ux-ai-breathe 3s ease-in-out infinite; }
 .ux-ai-orbit-end { fill:#aaa2ff; opacity:0; animation:ux-dot-reveal .3s 1.42s forwards; }
