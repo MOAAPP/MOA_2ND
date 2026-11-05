@@ -68,26 +68,8 @@ function useRolling(target: number, ms = 320) {
 }
 
 export type SwipeHandle = { focusDay: (iso: string) => void };
-export interface SwipeLabels {
-  primary: string;
-  alternative: string;
-  gap: string;
-  end: string;
-  reset: string;
-}
-/** Custom labels keep the original moving visualization truthful for simulated futures. */
-export const ParallelSwipe = forwardRef<SwipeHandle, {
-  points: WorldHistoryPoint[];
-  labels?: Partial<SwipeLabels>;
-  hoverScrub?: boolean;
-}>(function ParallelSwipe({ points, labels, hoverScrub = false }, ref) {
-  const heading = {
-    primary: labels?.primary ?? '내 세계',
-    alternative: labels?.alternative ?? '정가로 다 샀다면',
-    gap: labels?.gap ?? '다르게 선택해서 지킨 돈',
-    end: labels?.end ?? '지금',
-    reset: labels?.reset ?? '오늘로',
-  };
+
+export const ParallelSwipe = forwardRef<SwipeHandle, { points: WorldHistoryPoint[] }>(function ParallelSwipe({ points }, ref) {
   const n = points.length;
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -160,12 +142,6 @@ export const ParallelSwipe = forwardRef<SwipeHandle, {
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
   };
   const onMove = (e: React.PointerEvent) => {
-    if (hoverScrub && e.pointerType === 'mouse' && !e.buttons) {
-      goal.current = toPos(e.clientX);
-      setActive(true);
-      run();
-      return;
-    }
     if (!e.buttons && e.pointerType === 'mouse') return;
     if (!dragging.current) {
       // 터치는 가로로 먼저 움직였을 때만 스크럽(세로 스크롤은 그대로)
@@ -184,7 +160,7 @@ export const ParallelSwipe = forwardRef<SwipeHandle, {
     dragging.current = false;
     setActive(false);
   };
-  const backToToday = () => { setFlash(null); goal.current = 1; setActive(false); run(); };
+  const backToToday = () => { setFlash(null); goal.current = 1; run(); };
 
   useImperativeHandle(ref, () => ({
     focusDay: (iso: string) => {
@@ -211,10 +187,10 @@ export const ParallelSwipe = forwardRef<SwipeHandle, {
   return (
     <div className={`ps ${active ? 'is-active' : ''}`}>
       <div className="ps-head">
-        <span className="ps-date">{isToday && !active ? heading.end : koreanDayLabel(p.date)}{flash && <em className="ps-flash" key={flash}>{flash}</em>}
-          {away && !active && <button type="button" className="ps-today" onClick={backToToday}>{heading.reset} ↺</button>}</span>
+        <span className="ps-date">{isToday && !active ? '지금' : koreanDayLabel(p.date)}{flash && <em className="ps-flash" key={flash}>{flash}</em>}
+          {away && !active && <button type="button" className="ps-today" onClick={backToToday}>오늘로 ↺</button>}</span>
         <strong className={`ps-num num ${gap < 0 ? 'neg' : ''}`}>{Math.round(gap) > 0 ? '+' : ''}{money(gap)}</strong>
-        <span className="ps-cap">{heading.gap}</span>
+        <span className="ps-cap">다르게 선택해서 지킨 돈</span>
       </div>
 
       <svg
@@ -222,22 +198,11 @@ export const ParallelSwipe = forwardRef<SwipeHandle, {
         className="ps-svg"
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label={`${koreanDayLabel(p.date)} ${heading.primary} ${money(p.actual)}, ${heading.alternative} ${money(p.alternative)}. 좌우로 밀거나 방향키로 날짜를 비교할 수 있어요.`}
-        tabIndex={0}
-        onKeyDown={e => {
-          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            goal.current = Math.max(0, Math.min(1, goal.current + (e.key === 'ArrowLeft' ? -1 : 1) / Math.max(1, n - 1)));
-            run();
-          }
-          if (e.key === 'Home') { e.preventDefault(); goal.current = 0; run(); }
-          if (e.key === 'End') { e.preventDefault(); backToToday(); }
-        }}
+        aria-label={`${koreanDayLabel(p.date)} 내 세계 ${money(p.actual)}, 정가로 다 산 세계 ${money(p.alternative)}. 좌우로 밀어 날짜를 바꿀 수 있어요.`}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={() => { dragging.current = false; setActive(false); }}
-        onPointerLeave={() => { if (hoverScrub) setActive(false); }}
         onDoubleClick={backToToday}
       >
         <defs>
@@ -268,12 +233,12 @@ export const ParallelSwipe = forwardRef<SwipeHandle, {
         {!active && isToday && <circle cx={dotX} cy={dotA} r="6.5" className="ps-ping" />}
 
         <text x="0" y={H - 4} className="ps-axis">{koreanDayLabel(points[0].date)}</text>
-        <text x={W} y={H - 4} textAnchor="end" className="ps-axis">{heading.end}</text>
+        <text x={W} y={H - 4} textAnchor="end" className="ps-axis">오늘</text>
       </svg>
 
       <div className="ps-legend">
-        <div><i className="l-act" /><span>{heading.primary}</span><b className="num">{money(vA)}</b></div>
-        <div><i className="l-alt" /><span>{heading.alternative}</span><b className="num">{money(vB)}</b></div>
+        <div><i className="l-act" /><span>내 세계</span><b className="num">{money(vA)}</b></div>
+        <div><i className="l-alt" /><span>정가로 다 샀다면</span><b className="num">{money(vB)}</b></div>
       </div>
     </div>
   );
