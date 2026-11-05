@@ -432,13 +432,21 @@
   .st3-readout.pair > div > strong { font-size: 15px; }
 }
 
-/* ═════════════ 컴퓨터에서 볼 때 ═════════════
- * 가운데에는 폰 화면만, 체험 설정은 폰 밖 오른쪽에 고정한다. */
-@media (min-width: 1120px) {
+/* ═════════════ 데스크톱 체험 설정 ═════════════
+ * 480px 앱 + 16px 간격 + 300px 패널을 하나의 그룹으로 중앙 정렬한다.
+ * 기존 '50% + 240px' 고정 좌표는 일부 화면에서 패널을 잘랐다. */
+@media (min-width: 960px) {
+  .app:has(.st3-shell) {
+    margin-left: max(16px, calc((100vw - 824px) / 2));
+    margin-right: 0;
+  }
   .st3-dev-panel:not(.sheet) {
-    position: fixed; z-index: 50; top: 24px; left: calc(50% + 240px + 24px);
-    width: 300px; max-height: calc(100dvh - 48px); overflow-y: auto; padding: var(--space-5);
-    border-radius: var(--radius-lg); border: 1px dashed var(--border-strong);
+    position: fixed; z-index: 50; top: 24px;
+    left: calc(max(16px, (100vw - 824px) / 2) + 496px);
+    width: 300px; max-height: calc(100dvh - 48px); overflow-y: auto;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg); border: 1px solid var(--border-default);
+    box-shadow: 0 8px 32px rgba(26, 34, 45, .08);
     scrollbar-width: thin;
   }
   .st3-head h1 { padding-right: 0; }
@@ -466,3 +474,38 @@
 .st3-forecast-meta > p > .money { font-size: var(--text-body); }
 .st3-forecast-meta > small { display: block; font-size: 11px; line-height: 1.5; color: var(--text-secondary); }
 .st3-forecast-meta > small .money { font-size: inherit; color: inherit; font-weight: 600; }
+
+
+/* ── v22 스타일의 기본 홈 + 공통 금융 데이터셋 ── */
+.app:has(.ux-canonical-home) { background: var(--bg, #f7f8fa); }
+.ux-canonical-home .t-head { margin-bottom: 12px; }
+.ux-canonical-home .ux-home-demo-clock { margin-bottom: 14px; }
+.ux-canonical-home .ux-home-risk > .mo-home { padding: 19px 18px 17px; background: #fff; box-shadow: 0 4px 22px rgba(27, 33, 62, .035); }
+.ux-canonical-home .mo-home-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ux-canonical-risk .mo-home-title { font-size: 21px; line-height: 1.37; margin: 12px 0 16px; }
+.ux-canonical-risk-flag { color: #16765a; background: #e7f6ee; padding: 4px 9px; border-radius: 8px; font-size: 11px; font-weight: 650; margin-left: auto; }
+.ux-canonical-risk-flag.warning { color: #995b00; background: #fff2db; }
+.ux-canonical-risk-value { display: grid; gap: 3px; }
+.ux-canonical-risk-value small { color: #65708a; font-size: 12px; }
+.ux-canonical-risk-value strong { font-size: clamp(30px, 7vw, 37px); font-weight: 800; letter-spacing: -.055em; color: #1a2140; line-height: 1.2; }
+.ux-canonical-risk-value span { color: #777f8f; font-size: 11px; line-height: 1.5; }
+.ux-canonical-home .ux-python-audit { margin-top: 14px; padding-top: 13px !important; border-top: 1px solid #eef0f4; }
+.ux-canonical-home .ux-canonical-chart { margin-top: 10px; padding: 2px 0 0; }
+.ux-canonical-chart .st3-chart { width: 100%; }
+.ux-canonical-chart .st3-chart svg { max-width: 100%; }
+.ux-canonical-chart-caption { color: #596176; font-size: 12px; margin: 4px 0 3px; }
+.ux-canonical-chart-caption b { color: #1b2342; font-weight: 750; }
+.ux-canonical-home .ux-home-finance-caution { margin-top: 10px; margin-bottom: 0; }
+.ux-canonical-tx-list { padding: 1px 0; }
+.ux-canonical-tx { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; }
+.ux-canonical-tx + .ux-canonical-tx { border-top: 1px solid #f1f2f5; }
+.ux-canonical-tx > span { display: grid; gap: 3px; min-width: 0; }
+.ux-canonical-tx b { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ux-canonical-tx small { color: #80889a; font-size: 11px; }
+.ux-canonical-tx strong { white-space: nowrap; font-size: 14px; font-weight: 750; }
+.ux-canonical-brief { padding: 15px 16px; margin: -1px 0 10px; border: 1px solid #e9eaf0; border-radius: 15px; background: #fff; font-size: 13px; line-height: 1.6; }
+.ux-canonical-brief > strong { display: block; line-height: 1.55; font-weight: 700; }
+.ux-canonical-brief > p { margin: 11px 0 5px; }
+.ux-canonical-brief > p > b { color: #353a84; }
+.ux-canonical-brief small { display: block; color: #727b90; line-height: 1.5; }
+.st3-dev-projection { font-size: 12px; line-height: 1.55; color: #7f5411; background: #fff7e8; padding: 9px 10px; border-radius: 8px; }

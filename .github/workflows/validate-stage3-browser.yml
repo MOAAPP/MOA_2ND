@@ -18,11 +18,11 @@ jobs:
     steps:
       - name: Checkout React PR branch
         uses: actions/checkout@v4
-      - name: Checkout matching FastAPI Stage 7 regression branch
+      - name: Checkout current FastAPI main
         uses: actions/checkout@v4
         with:
           repository: MOAAPP/MOA_2ND_BE
-          ref: fix/v4-stage7-integration-audit-20261105
+          ref: main
           path: _stage3_backend
       - uses: actions/setup-python@v5
         with:
@@ -95,7 +95,7 @@ jobs:
             sleep 1
           done
           grep '<div id="root"' /tmp/stage3-index.html
-      - name: Verify PR37 redesigned Home, 20-user switch, ML forecast and six worlds
+      - name: Verify classic root and clean URL, demo side panel, 20 users, Nov 5 projection and six worlds
         run: node scripts/validate-stage3-browser.mjs
       - name: Upload UI evidence and server logs
         if: always()
@@ -103,6 +103,7 @@ jobs:
         with:
           name: stage3-browser-evidence
           path: |
+            /tmp/stage3-classic-root.png
             /tmp/stage3-s01-home.png
             /tmp/stage3-six-worlds.png
             /tmp/stage3-fastapi.log
