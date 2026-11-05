@@ -957,6 +957,9 @@ export function Stage3Assets({ focus = 'save' }: { focus?: 'save' | 'invest' }) 
     <div className="st3-block-head"><h2 id="st3-portfolio">모의투자 계좌</h2>
       <p>{home.virtual_investments.snapshot_date ? `${md(home.virtual_investments.snapshot_date)} 기준` : ''} 체험용 포트폴리오</p></div>
     <div className="st3-kpi"><span>투자에 쓸 수 있는 가상 현금</span><Money value={home.virtual_investments.virtual_cash} /></div>
+    <button type="button" className="st3-btn ghost st3-learning-link" onClick={() => nav.setTab('learn')}>
+      오늘의 맞춤 금융 퀴즈 풀기
+    </button>
     {positions.length ? <table className="st3-table">
       <thead><tr><th scope="col">종목</th><th scope="col">수량</th><th scope="col">매수 금액</th><th scope="col">기준일 가격 환산</th></tr></thead>
       <tbody>{positions.map(([code, v]) => {
