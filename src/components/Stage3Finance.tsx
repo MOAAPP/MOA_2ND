@@ -617,7 +617,7 @@ function firstShortfall(days: { date: string; closing_balance: number; lowest_ba
 
 export function Stage3Home() {
   const nav = useNav();
-  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans, day, viewDay } = useTwin();
+  const { home, comparison, loading, error, retry, params, briefing, savedPlans, day, viewDay } = useTwin();
   const [sel, setSel] = useState<number | null>(null);
 
   const points = useMemo<ChartPoint[]>(() => home ? [
@@ -1226,7 +1226,7 @@ export function Stage3Ledger() {
  */
 export function Stage3ClassicHome() {
   const nav = useNav();
-  const { user, day, viewDay, dateEnd, home, comparison, loading, error, retry, briefing } = useTwin();
+  const { user, day, viewDay, dateEnd, home, comparison, loading, error, retry } = useTwin();
   const [expandedAssets, setExpandedAssets] = useState(false);
   const [chartSelected, setChartSelected] = useState<number | null>(null);
   useEffect(() => setChartSelected(null), [user, viewDay]);
