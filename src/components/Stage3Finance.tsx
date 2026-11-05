@@ -171,7 +171,9 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
         setHome(current); setHomeKey(`${user}:${day}`);
         const candidate = current.purchase_candidates.at(-1);
         const total = candidate?.main_product?.final_estimated_payment ?? 0;
-        const amount = Number.isSafeInteger(total) && total > 0 ? total : 0;
+        // Clearly labeled simulated 20,000-won example when no candidate exists:
+        // only changes the what-if comparison, never the confirmed ledger.
+        const amount = Number.isSafeInteger(total) && total > 0 ? total : 20000;
         setParams({
           ...emptyReq, user_id: user, as_of: day, purchase_date: shiftDate(day, 1),
           purchase_amount: amount, savings_amount: amount, investment_amount: amount,
