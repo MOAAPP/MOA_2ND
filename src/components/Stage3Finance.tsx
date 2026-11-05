@@ -1110,3 +1110,159 @@ export function Stage3Ledger() {
       </div>}
   </div>;
 }
+
+/* ───────────────────────── 기존 v22 홈 디자인 + 실제 FastAPI 데이터 ─────────────────────────
+ * 공개 기본 주소에서는 기존 홈의 정보 위계와 스타일을 보존한다.
+ * v22의 로컬 S01 숫자를 그대로 보여주지 않고 20명 각각의 API 값을 사용한다.
+ */
+export function Stage3ClassicHome() {
+  const nav = useNav();
+  const { user, viewDay, dateEnd, home, comparison, loading, error, retry, briefing } = useTwin();
+  const [expandedAssets, setExpandedAssets] = useState(false);
+  const [expandedBrief, setExpandedBrief] = useState(false);
+  const [chartSelected, setChartSelected] = useState<number | null>(null);
+  useEffect(() => setChartSelected(null), [user, viewDay]);
+
+  if (error) return <div className="page t-page ux-home ux-canonical-home">
+    <header className="t-head"><div><h1 className="with-logo"><Logo size={26} />모아</h1></div></header>
+    <ErrorNotice message={error} retry={retry} />
+  </div>;
+  if (loading || !home) return <div className="page t-page ux-home ux-canonical-home">
+    <header className="t-head"><div><h1 className="with-logo"><Logo size={26} />모아</h1></div></header>
+    <Loading label="공통 금융 데이터셋을 불러오는 중이에요" />
+  </div>;
+
+  const forecastDay = viewDay > home.observation_end;
+  const forecastRow = home.daily_cashflow.find(d => d.date === viewDay);
+  const shownBalance = forecastDay ? forecastRow?.closing_balance ?? null : home.available_cash;
+  const horizon = [3, 7, 14];
+  const points = [
+    { date: home.as_of_date, value: home.available_cash },
+    ...home.daily_cashflow.map(d => ({ date: d.date, value: d.closing_balance })),
+  ];
+  const defaultIndex = forecastDay ? Math.max(0, points.findIndex(p => p.date === viewDay)) : 0;
+  const selected = chartSelected == null ? defaultIndex : Math.min(chartSelected, points.length - 1);
+  const shortfall = firstShortfall(home.daily_cashflow);
+  const buy = comparison?.paths.find(p => p.scenario_id === 'purchase_now');
+  const keep = comparison?.paths.find(p => p.scenario_id === 'no_purchase');
+  const recent = home.recent_transactions.slice(0, 3);
+  const investmentCount = Object.keys(home.virtual_investments.positions ?? {}).length;
+
+  return <div className="page t-page t-home ux-home ux-canonical-home">
+    <header className="t-head">
+      <div><h1 className="with-logo"><Logo size={26} />모아</h1>
+        <p className="t-head-sub">결제일을 확인하고, 오늘의 소비를 관리해요</p></div>
+    </header>
+
+    <div className="ux-home-demo-clock" aria-label="가상 시연 기준일">
+      <div><span>가상 체험 · {user}</span><b>{mdw(viewDay)} {forecastDay ? '예상' : '관측'} 기준</b></div>
+      <span className="ux-home-date">총 20명 중 {user}</span>
+      <p>{forecastDay
+        ? `${mdw(dateEnd)}까지 관측된 금융 기록을 기준으로 계산한 미래 예상이에요. ${mdw(viewDay)}에 새 거래가 실제로 발생했다고 가정하지 않았어요.`
+        : `${mdw(dateEnd)}까지 기록된 합성 데이터를 보여줘요. 오른쪽 체험 설정에서 사용자·날짜를 바꿀 수 있어요.`}</p>
+    </div>
+
+    <div className="ux-home-risk">
+      <section className={`t-card mo-home ux-canonical-risk ${shortfall ? 'g-caution' : ''}`} aria-label="다가오는 결제일 상태">
+        <div className="mo-home-top">
+          <span className="h-tag real">내 결제계좌 · 가상 데이터</span>
+          <span className={`ux-canonical-risk-flag ${shortfall ? 'warning' : ''}`}>{shortfall ? '결제일 주의' : '결제 예정 확인'}</span>
+        </div>
+        <p className="mo-home-title">{shortfall
+          ? `${mdw(shortfall.date)}에 결제계좌 잔액이 부족해질 수 있어요`
+          : '예정된 결제일까지 잔액 흐름을 확인했어요'}</p>
+        <div className="ux-canonical-risk-value">
+          <small>{forecastDay ? `${mdw(viewDay)} 예상 결제계좌 잔액` : `${mdw(home.as_of_date)} 관측 결제계좌 잔액`}</small>
+          <strong className="num">{shownBalance == null ? '예측 범위를 벗어났어요' : balanceText(shownBalance)}</strong>
+          <span>{forecastDay ? '확정 잔액 아님 · 미래 지출 예측 포함' : '관측된 합성 금융 기록 기준 · 실제 은행 잔액 아님'}</span>
+        </div>
+        <div className="ux-python-audit">
+          <div className="ux-python-audit-head"><strong>앞으로 14일 <span>· Python 금융 계산</span></strong>
+            <small>{mdw(home.as_of_date)} 관측 기준</small></div>
+          <div className="ux-python-audit-values">
+            {horizon.map(days => <div key={days}><span>{days}일 뒤</span>
+              <strong className="num">{balanceText(home.future_balances[String(days)])}</strong></div>)}
+          </div>
+          <div className="st3 ux-canonical-chart">
+            <FlowChart label="FastAPI 기반 14일 예상 결제계좌 잔액" series={[{id:'canonical',label:'예상 잔액',tone:'single',points}]}
+              selected={selected} onSelect={setChartSelected} height={150} />
+            <p className="ux-canonical-chart-caption">{mdw(points[selected].date)} {selected === 0 ? '관측 잔액' : '예상 마감 잔액'} · <b>{balanceText(points[selected].value)}</b></p>
+          </div>
+          {shortfall && <p className="ux-home-finance-caution">{mdw(shortfall.date)}에 최소 잔액 {balanceText(Math.min(shortfall.lowest_balance, shortfall.closing_balance))}이 예상돼요. 필수 결제 일정을 확인해 주세요.</p>}
+        </div>
+      </section>
+    </div>
+
+    <section className="ux-home-ledger" aria-label="최근 거래 기록">
+      <header className="ux-home-section-heading">
+        <div><small className="ux-home-overline">RECENT · 결제계좌 거래</small><h2>최근 가계부</h2></div>
+        <span className="ux-home-date">{mdw(home.as_of_date)}까지</span>
+      </header>
+      {recent.length
+        ? <div className="ux-canonical-tx-list">{recent.map(tx => <div className="ux-canonical-tx" key={tx.id}>
+            <span><b>{tx.name}</b><small>{mdShort(tx.date)} · {tx.category || METHOD[tx.method] || '금융 거래'}</small></span>
+            <strong className="num">{signedText(txSign(tx) * Math.abs(tx.amount))}</strong>
+          </div>)}</div>
+        : <div className="ux-home-empty"><strong>표시할 관측 거래가 없어요</strong><p>기준일까지 기록된 거래를 확인해 주세요.</p></div>}
+      <div className="ux-home-ledger-bottom"><span>관측된 거래 <b className="num">{home.observed_transaction_count}건</b></span>
+        <small>미래 예상 거래는 실제 내역으로 표시하지 않아요</small></div>
+      <div className="ux-home-ledger-actions">
+        <button type="button" onClick={() => nav.setTab('ledger')}>전체 거래 보기 ›</button>
+        <button type="button" onClick={() => nav.setTab('forks')}>미래 지출 비교 ›</button>
+      </div>
+    </section>
+
+    <section className="ux-home-decision" aria-label="소비 선택 비교하기">
+      <small className="ux-home-overline">BEFORE YOU BUY · 소비 결정</small>
+      <h2>지금 사면, 다음 결제일은 괜찮을까요?</h2>
+      <p>현재 관측된 잔액에서 구매와 보류를 계산해요. 가상 선택만으로 실제 잔액은 움직이지 않아요.</p>
+      <button type="button" className="ux-home-primary" onClick={() => nav.setTab('forks')}>소비 선택 비교하기 <span aria-hidden="true">→</span></button>
+    </section>
+
+    <section className="ux-home-world" aria-label="평행세계 비교 결과">
+      <div className="ux-home-section-heading">
+        <div><small className="ux-home-overline">WHAT IF · 가상 비교</small><h2>나의 평행세계</h2></div>
+        <span className="ux-home-virtual">가상 선택 기록</span>
+      </div>
+      {buy && keep ? <div className="ux-home-world-comparison">
+        <div><span>14일 뒤 · 지금 구매 vs 보류</span>
+          <strong className="num">{buy.status === 'calculated' && keep.status === 'calculated' ? signedText(buy.future_balances['14'] - keep.future_balances['14']) : '확인 필요'}</strong>
+          <small>구매와 보류의 차이 · 실제 결제계좌 잔액 아님</small>
+        </div>
+        <svg viewBox="0 0 112 70" role="img" aria-label="같은 지점에서 갈라지는 가상 세계">
+          <path d="M8 35 C39 35 58 19 105 14" fill="none" stroke="#545DE8" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M8 35 C39 35 58 48 105 58" fill="none" stroke="#8993A8" strokeDasharray="5 5" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="8" cy="35" r="4" fill="#545DE8"/><circle cx="105" cy="14" r="4" fill="#545DE8"/><circle cx="105" cy="58" r="3.5" fill="#8993A8"/>
+        </svg>
+      </div> : <p className="ux-home-muted">비교 조건을 계산하고 있어요. 아래에서 여섯 가지 선택을 살펴볼 수 있어요.</p>}
+      <button type="button" className="ux-home-textlink" onClick={() => nav.setTab('forks')}>선택 비교 결과 보기 ›</button>
+    </section>
+
+    <section className="ux-home-extras" aria-label="가상 자산 및 금융 분석">
+      <div className="ux-home-section-heading">
+        <div><small className="ux-home-overline">SANDBOX · 가상 실험</small><h2>가상 자산 · 분석</h2></div>
+      </div>
+      <button type="button" className="ux-home-expand" aria-expanded={expandedAssets} onClick={() => setExpandedAssets(v => !v)}>
+        <span><b>가상 자산 구성</b><small>모의 계좌·ETF 평가액 · 실제 금융자산 아님</small></span>
+        <strong className="num">{investmentCount}개 종목</strong><span aria-hidden="true">{expandedAssets ? '−' : '+'}</span>
+      </button>
+      {expandedAssets && <div className="ux-home-assets">
+        <div className="ux-home-asset-detail"><span>모의투자 현금</span><b className="num">{balanceText(home.virtual_investments.virtual_cash ?? 0)}</b></div>
+        <div className="ux-home-asset-detail"><span>보유 종목</span><b>{investmentCount}개</b></div>
+        <button type="button" onClick={() => nav.setTab('invest')}>가상 투자 상세로 이동 ›</button>
+      </div>}
+      <button type="button" className="ux-home-expand" aria-expanded={expandedBrief} onClick={() => setExpandedBrief(v => !v)}>
+        <span><b>오늘의 금융 변화</b><small>개인별 결제일·소비 여유 분석 · 계산 근거 포함</small></span>
+        <span aria-hidden="true">{expandedBrief ? '−' : '+'}</span>
+      </button>
+      {expandedBrief && <div className="ux-canonical-brief" aria-label="오늘의 금융 변화">
+        {briefing ? <>
+          <strong>{briefing.summary}</strong>
+          <p>오늘의 예상 추가 소비 여유 <b className="num">{balanceText(briefing.spending_capacity.estimated_additional_spend)}</b></p>
+          <small>결제계좌 관측 잔액과 미래 예상 지출 기준이며 실제 소비 가능 금액을 보장하지 않아요.</small>
+        </> : <p>개인별 브리핑 정보를 불러오는 중이에요.</p>}
+      </div>}
+    </section>
+    <p className="ux-home-legal">공통 20명 합성 금융 데이터셋과 Python 예측·시뮬레이션을 사용해요. 은행과 자동 연결되지 않으며, 가상 자산은 실제 잔액과 합산하지 않아요.</p>
+  </div>;
+}
