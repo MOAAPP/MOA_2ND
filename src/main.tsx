@@ -25,6 +25,7 @@ import './ux-v22-home.css';
 import './design/tokens.css';
 import './design/stage3.css';
 import './design/stage6.css';
+import './design/stage3-ai.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
