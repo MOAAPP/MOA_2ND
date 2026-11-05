@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
-import { useStore } from '../state/store';
+
 import { useNav } from '../state/nav';
 import { Logo } from './Glyph';
 import {
@@ -255,7 +255,7 @@ function ErrorNotice({ message, retry }: { message: string; retry: () => void })
     <p className="st3-error-title">데이터를 표시하지 못했어요</p>
     <p>{message}</p>
     <button type="button" className="st3-btn" onClick={retry}>다시 불러오기</button>
-    {import.meta.env.DEV && <p className="st3-dev">개발 환경: MOA_2ND_BE에서 <code>uvicorn app.main:app --port 8000</code> 실행 후 다시 불러오세요.</p>}
+    {import.meta.env.DEV && <p className="st3-dev">로컬 실행에는 React와 FastAPI 서버가 모두 필요해요. 백엔드 터미널에서 <code>cd ~/Projects/MOA_2ND_BE && source .venv/bin/activate && python -m uvicorn app.main:app --reload --port 8000</code>을 실행하고 <a href="http://localhost:8000/api/v4/demo/default" target="_blank" rel="noreferrer">기본 데이터 API</a>가 열리는지 확인해 주세요. API 키는 금융 잔액 조회에 필요하지 않아요.</p>}
   </div>;
 }
 
@@ -332,7 +332,7 @@ function WorldDevControls() {
 export function Stage3DevPanel() {
   const nav = useNav();
   const { user, day, users, dateStart, dateEnd, selectUser, selectDay, comparison } = useTwin();
-  const wide = useMedia('(min-width: 1120px)');
+  const wide = useMedia('(min-width: 960px)');
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -496,7 +496,6 @@ function firstShortfall(days: { date: string; closing_balance: number; lowest_ba
 }
 
 export function Stage3Home() {
-  const { update } = useStore();
   const nav = useNav();
   const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans } = useTwin();
   const [sel, setSel] = useState<number | null>(null);
@@ -640,7 +639,7 @@ export function Stage3Home() {
     </section>
     <footer className="st3-foot">
       <p>체험용 합성 데이터와 예측 결과이며 실제 은행 잔액·시세·소비 허가액이 아니에요.</p>
-      <button type="button" className="st3-btn" onClick={() => update(s => ({ ...s, demo: false, profile: null, introSeen: false, setupDraft: null }))}>내 재무 정보로 시작하기</button>
+      <button type="button" className="st3-btn" onClick={() => window.location.assign("/?personal=1&intro=1")}>내 재무 정보로 시작하기</button>
     </footer>
   </div>;
 }
