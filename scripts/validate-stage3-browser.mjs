@@ -120,6 +120,22 @@ try {
   assert.equal(await page.locator('.st3-world-card strong.num').first().innerText(),won(buy.future_balances['14']));
   await page.screenshot({path:'/tmp/stage3-six-worlds.png',fullPage:true});
 
+  // Regression: an unavailable OPTIONAL investment price API must never hide
+  // canonical FastAPI cash balances, recent transactions or the main graph.
+  const noQuotes = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  try {
+    await noQuotes.route('**/api/v4/instruments**', route => route.fulfill({
+      status: 503, contentType: 'application/json',
+      body: JSON.stringify({ detail: { code: 'quotes_unavailable' } }),
+    }));
+    await noQuotes.goto(base + '/?demo=1');
+    await noQuotes.waitForFunction(expected =>
+      document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
+      won(s01.available_cash), { timeout: 25000 });
+    assert.equal(await noQuotes.locator('.st3-error').count(), 0);
+    assert.ok((await noQuotes.locator('.st3-home').innerText()).includes(won(s01.available_cash)));
+  } finally { await noQuotes.close(); }
+
   // Reproduce old persisted introSeen=true without any actual finance profile.
   const stale = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
