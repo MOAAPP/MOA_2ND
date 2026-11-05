@@ -7,6 +7,8 @@ import {
   type CompareRequest, type CompareResult, type HomeState, type Instrument,
   type LedgerTransaction, type ScenarioPath,
 } from '../lib/stage3Api';
+import { getMorningBriefing, getSavedPlans, getAssetNews, getSavedPlanTracking,
+  type MorningBriefing, type SavedPlan, type PlanTracking } from '../lib/stage6Api';
 
 /* ───────────────────────── 표시 형식 ───────────────────────── */
 
@@ -91,6 +93,8 @@ type ContextState = {
   home: HomeState | null; instruments: Instrument[]; comparison: CompareResult | null;
   params: CompareRequest; loading: boolean; comparing: boolean; error: string;
   compareError: string; retry: () => void; selectUser: (v: string) => void;
+  briefing: MorningBriefing | null; briefingError: string; savedPlans: SavedPlan[];
+  planTracking: PlanTracking | null; newsStatus: string; refreshSummary: () => void;
   selectDay: (v: string) => void; updateParams: (value: Partial<CompareRequest>) => void;
 };
 const Context = createContext<ContextState | null>(null);
@@ -116,6 +120,13 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [comparing, setComparing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [summaryVersion, setSummaryVersion] = useState(0);
+  const [briefing, setBriefing] = useState<MorningBriefing | null>(null);
+  const [briefingKey, setBriefingKey] = useState('');
+  const [briefingError, setBriefingError] = useState('');
+  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
+  const [planTracking, setPlanTracking] = useState<PlanTracking | null>(null);
+  const [newsStatus, setNewsStatus] = useState('');
   const retry = () => setRetryCount(n => n + 1);
 
   useEffect(() => {
@@ -160,6 +171,34 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [user, day, retryCount]);
 
+  // Independent stage-6 data. The core home balance must stay visible if briefing fails.
+  // Abort or discard every stale response whenever the persona or observation date changes.
+  useEffect(() => {
+    if (!user || !day) return;
+    const controller = new AbortController();
+    setBriefing(null); setBriefingKey(''); setBriefingError('');
+    setSavedPlans([]); setPlanTracking(null); setNewsStatus('');
+    Promise.allSettled([
+      getMorningBriefing(user, day, controller.signal),
+      getSavedPlans(user, controller.signal),
+      getAssetNews(user, controller.signal),
+    ]).then(([b, p, n]) => {
+      if (controller.signal.aborted) return;
+      if (b.status === 'fulfilled') {
+        setBriefing(b.value); setBriefingKey(`${user}:${day}`);
+      } else setBriefingError(b.reason instanceof Error ? b.reason.message : '금융 변화를 불러오지 못했어요.');
+      if (p.status === 'fulfilled') {
+        setSavedPlans(p.value.plans);
+        const latest = p.value.plans.find(plan => plan.has_immutable_snapshot && plan.analysis_as_of <= day);
+        if (latest) getSavedPlanTracking(user, latest.id, day, controller.signal)
+          .then(value => { if (!controller.signal.aborted) setPlanTracking(value); })
+          .catch(() => { if (!controller.signal.aborted) setPlanTracking(null); });
+      }
+      if (n.status === 'fulfilled') setNewsStatus(n.value.status);
+    });
+    return () => controller.abort();
+  }, [user, day, retryCount, summaryVersion]);
+
   useEffect(() => {
     if (!home || homeKey !== `${user}:${day}` || params.user_id !== user || params.as_of !== day) return;
     const controller = new AbortController();
@@ -177,11 +216,14 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
   // 사용자·날짜가 바뀌면 이전 사람의 비교 결과를 즉시 지운다.
   const visibleHome = homeKey === `${user}:${day}` ? home : null;
   const visibleComparison = comparison && comparison.user_id === user && comparison.as_of === day ? comparison : null;
+  const visibleBriefing = briefingKey === `${user}:${day}` ? briefing : null;
   const updateParams = (value: Partial<CompareRequest>) => setParams(old => ({ ...old, ...value }));
   return <Context.Provider value={{
     user, day, users, dateStart, dateEnd, home: visibleHome,
     instruments, comparison: visibleComparison, params, loading, comparing, error, compareError, retry,
     selectUser: setUser, selectDay: setDay, updateParams,
+    briefing: visibleBriefing, briefingError, savedPlans, planTracking, newsStatus,
+    refreshSummary: () => setSummaryVersion(v => v + 1),
   }}>{children}</Context.Provider>;
 }
 
