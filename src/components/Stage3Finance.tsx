@@ -7,6 +7,8 @@ import {
   type CompareRequest, type CompareResult, type HomeState, type Instrument,
   type LedgerTransaction, type ScenarioPath,
 } from '../lib/stage3Api';
+import { getMorningBriefing, getSavedPlans, getAssetNews, getSavedPlanTracking,
+  type MorningBriefing, type SavedPlan, type PlanTracking } from '../lib/stage6Api';
 
 /* ───────────────────────── 표시 형식 ───────────────────────── */
 
@@ -91,6 +93,8 @@ type ContextState = {
   home: HomeState | null; instruments: Instrument[]; comparison: CompareResult | null;
   params: CompareRequest; loading: boolean; comparing: boolean; error: string;
   compareError: string; retry: () => void; selectUser: (v: string) => void;
+  briefing: MorningBriefing | null; briefingError: string; savedPlans: SavedPlan[];
+  planTracking: PlanTracking | null; newsStatus: string; refreshSummary: () => void;
   selectDay: (v: string) => void; updateParams: (value: Partial<CompareRequest>) => void;
 };
 const Context = createContext<ContextState | null>(null);
@@ -110,12 +114,22 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
   const [homeKey, setHomeKey] = useState('');
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [comparison, setComparison] = useState<CompareResult | null>(null);
+  const [comparisonParamsKey, setComparisonParamsKey] = useState('');
+  const [instrumentsKey, setInstrumentsKey] = useState('');
+  const [savedPlansKey, setSavedPlansKey] = useState('');
   const [params, setParams] = useState<CompareRequest>(emptyReq);
   const [error, setError] = useState('');
   const [compareError, setCompareError] = useState('');
   const [loading, setLoading] = useState(true);
   const [comparing, setComparing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [summaryVersion, setSummaryVersion] = useState(0);
+  const [briefing, setBriefing] = useState<MorningBriefing | null>(null);
+  const [briefingKey, setBriefingKey] = useState('');
+  const [briefingError, setBriefingError] = useState('');
+  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
+  const [planTracking, setPlanTracking] = useState<PlanTracking | null>(null);
+  const [newsStatus, setNewsStatus] = useState('');
   const retry = () => setRetryCount(n => n + 1);
 
   useEffect(() => {
@@ -135,20 +149,21 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || !day) return;
     const controller = new AbortController();
-    setLoading(true); setHome(null); setHomeKey(''); setComparison(null);
-    setError(''); setCompareError(''); setInstruments([]);
-    Promise.all([getDemoHome(user, day, controller.signal), getInstruments(user, day, controller.signal)])
-      .then(([current, assets]) => {
+    setLoading(true); setHome(null); setHomeKey(''); setComparison(null); setComparisonParamsKey('');
+    setError(''); setCompareError(''); setInstruments([]); setInstrumentsKey('');
+    // The canonical home must render as soon as its own endpoint responds:
+    // instrument quotes can be absent, slow or unavailable without hiding money.
+    getDemoHome(user, day, controller.signal)
+      .then(current => {
         if (controller.signal.aborted) return;
-        setHome(current); setHomeKey(`${user}:${day}`); setInstruments(assets.prices);
+        setHome(current); setHomeKey(`${user}:${day}`);
         const candidate = current.purchase_candidates.at(-1);
         const total = candidate?.main_product?.final_estimated_payment ?? 0;
         const amount = Number.isSafeInteger(total) && total > 0 ? total : 0;
-        const firstInstrument = assets.prices[0];
         setParams({
           ...emptyReq, user_id: user, as_of: day, purchase_date: shiftDate(day, 1),
           purchase_amount: amount, savings_amount: amount, investment_amount: amount,
-          investment_code: firstInstrument?.code, allocation: splitBudget(Math.min(amount, Math.max(0, current.available_cash))),
+          allocation: splitBudget(Math.min(amount, Math.max(0, current.available_cash))),
         });
         setLoading(false);
       })
@@ -157,31 +172,79 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
           setError(e instanceof Error ? e.message : '금융 데이터를 불러오지 못했어요.'); setLoading(false);
         }
       });
+    getInstruments(user, day, controller.signal)
+      .then(assets => {
+        if (controller.signal.aborted) return;
+        setInstruments(assets.prices); setInstrumentsKey(`${user}:${day}`);
+        setParams(previous => previous.user_id === user && previous.as_of === day
+          && !previous.investment_code && assets.prices[0]
+          ? { ...previous, investment_code: assets.prices[0].code } : previous);
+      })
+      .catch(() => {
+        // A missing market reference must not be represented as a verified quote.
+        if (!controller.signal.aborted) { setInstruments([]); setInstrumentsKey(`${user}:${day}`); }
+      });
     return () => controller.abort();
   }, [user, day, retryCount]);
 
+  // Independent stage-6 data. The core home balance must stay visible if briefing fails.
+  // Abort or discard every stale response whenever the persona or observation date changes.
+  useEffect(() => {
+    if (!user || !day) return;
+    const controller = new AbortController();
+    setBriefing(null); setBriefingKey(''); setBriefingError('');
+    setSavedPlans([]); setSavedPlansKey(''); setPlanTracking(null); setNewsStatus('');
+    Promise.allSettled([
+      getMorningBriefing(user, day, controller.signal),
+      getSavedPlans(user, controller.signal),
+      getAssetNews(user, controller.signal),
+    ]).then(([b, p, n]) => {
+      if (controller.signal.aborted) return;
+      if (b.status === 'fulfilled') {
+        setBriefing(b.value); setBriefingKey(`${user}:${day}`);
+      } else setBriefingError(b.reason instanceof Error ? b.reason.message : '금융 변화를 불러오지 못했어요.');
+      if (p.status === 'fulfilled') {
+        setSavedPlans(p.value.plans); setSavedPlansKey(`${user}:${day}`);
+        const latest = p.value.plans.find(plan => plan.has_immutable_snapshot && plan.analysis_as_of <= day);
+        if (latest) getSavedPlanTracking(user, latest.id, day, controller.signal)
+          .then(value => { if (!controller.signal.aborted) setPlanTracking(value); })
+          .catch(() => { if (!controller.signal.aborted) setPlanTracking(null); });
+      }
+      if (n.status === 'fulfilled') setNewsStatus(n.value.status);
+    });
+    return () => controller.abort();
+  }, [user, day, retryCount, summaryVersion]);
+
+  const paramsKey = JSON.stringify(params);
   useEffect(() => {
     if (!home || homeKey !== `${user}:${day}` || params.user_id !== user || params.as_of !== day) return;
     const controller = new AbortController();
+    setComparison(null); setComparisonParamsKey('');
     const timer = window.setTimeout(() => {
       setComparing(true); setCompareError('');
       compareScenarios(params, controller.signal).then(data => {
-        if (!controller.signal.aborted) setComparison(data);
+        if (!controller.signal.aborted) { setComparison(data); setComparisonParamsKey(paramsKey); }
       }).catch(e => {
         if (!controller.signal.aborted) { setComparison(null); setCompareError(e instanceof Error ? e.message : '비교 결과를 계산하지 못했어요.'); }
       }).finally(() => { if (!controller.signal.aborted) setComparing(false); });
     }, 180);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [home, homeKey, user, day, params]);
+  }, [home, homeKey, user, day, params, paramsKey]);
 
   // 사용자·날짜가 바뀌면 이전 사람의 비교 결과를 즉시 지운다.
   const visibleHome = homeKey === `${user}:${day}` ? home : null;
-  const visibleComparison = comparison && comparison.user_id === user && comparison.as_of === day ? comparison : null;
+  const visibleComparison = comparison && comparison.user_id === user && comparison.as_of === day && comparisonParamsKey === paramsKey ? comparison : null;
+  const visibleInstruments = instrumentsKey === `${user}:${day}` ? instruments : [];
+  const visibleSavedPlans = savedPlansKey === `${user}:${day}` ? savedPlans : [];
+  const visibleBriefing = briefingKey === `${user}:${day}` ? briefing : null;
   const updateParams = (value: Partial<CompareRequest>) => setParams(old => ({ ...old, ...value }));
   return <Context.Provider value={{
     user, day, users, dateStart, dateEnd, home: visibleHome,
-    instruments, comparison: visibleComparison, params, loading, comparing, error, compareError, retry,
+    instruments: visibleInstruments, comparison: visibleComparison, params, loading, comparing, error, compareError, retry,
     selectUser: setUser, selectDay: setDay, updateParams,
+    briefing: visibleBriefing, briefingError, savedPlans: visibleSavedPlans,
+    planTracking: savedPlansKey === `${user}:${day}` ? planTracking : null, newsStatus,
+    refreshSummary: () => setSummaryVersion(v => v + 1),
   }}>{children}</Context.Provider>;
 }
 
@@ -435,7 +498,7 @@ function firstShortfall(days: { date: string; closing_balance: number; lowest_ba
 export function Stage3Home() {
   const { update } = useStore();
   const nav = useNav();
-  const { home, comparison, loading, error, retry, params } = useTwin();
+  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans } = useTwin();
   const [sel, setSel] = useState<number | null>(null);
 
   const points = useMemo<ChartPoint[]>(() => home ? [
@@ -463,12 +526,24 @@ export function Stage3Home() {
 
   return <div className="page st3 st3-home">
     <PageHead title="모아" logo sub="결제일에 돈이 모자라지 않는지 확인하고, 사기 전에 미래를 비교해요" />
+    <section className="st6-morning" aria-label="오늘의 금융 변화" aria-live="polite">
+      <div className="st6-morning-heading"><span>오늘의 금융 변화</span><time dateTime={home.as_of_date}>{mdw(home.as_of_date)} 기준</time></div>
+      {briefing ? <>
+        <p>{briefing.summary}</p>
+        {briefing.change_detection.events.some(e => e.importance === 'high') &&
+          <p className="st6-attention">주의가 필요한 결제일 변화가 있어요. 아래 현금흐름을 확인해 주세요.</p>}
+      </> : <p className="st3-muted">{briefingError || '금융 변화를 분석하고 있어요…'}</p>}
+    </section>
     
     <div className="st3-layout">
       <div className="st3-col-main">
         <section className="st3-card st3-hero" aria-labelledby="st3-hero-label">
-          <p id="st3-hero-label" className="st3-hero-label">지금 쓸 수 있는 돈<span>결제계좌 · {mdw(home.as_of_date)} 기준</span></p>
+          <p id="st3-hero-label" className="st3-hero-label">현재 결제계좌 현금<span>결제계좌 · {mdw(home.as_of_date)} 기준</span></p>
           <Money value={home.available_cash} />
+          {briefing && <div className="st6-spend-capacity">
+            <div><span>오늘의 예상 추가 소비 여유</span><Money value={briefing.spending_capacity.estimated_additional_spend}/></div>
+            <small>{briefing.spending_capacity.message}</small>
+          </div>}
           {shortfall
             ? <div className="st3-status danger" role="note">
                 <span aria-hidden className="st3-status-icon">!</span>
@@ -556,8 +631,15 @@ export function Stage3Home() {
       </aside>
     </div>
 
+    <section className="st6-insights" aria-labelledby="st6-insights-title">
+      <div className="st6-insights-head">
+        <h2 id="st6-insights-title">내 금융 변화 살펴보기</h2>
+        <button type="button" className="st3-link" onClick={() => nav.push({name:'insights'})}>자세히 보기</button>
+      </div>
+      <p>저장한 경로 {savedPlans.length}개 · {briefing?.change_detection.events.length ?? '—'}건의 주요 변화</p>
+    </section>
     <footer className="st3-foot">
-      <p>AI 요약은 아직 연결되지 않아 보여드리지 않아요. 화면의 숫자는 체험용 예시 데이터로 계산한 결과이며, 실제 계좌·시세가 아니에요.</p>
+      <p>체험용 합성 데이터와 예측 결과이며 실제 은행 잔액·시세·소비 허가액이 아니에요.</p>
       <button type="button" className="st3-btn" onClick={() => update(s => ({ ...s, demo: false, profile: null, introSeen: false, setupDraft: null }))}>내 재무 정보로 시작하기</button>
     </footer>
   </div>;
@@ -636,7 +718,7 @@ function PathCard({ path, base, active, onPick }: { path: ScenarioPath; base?: S
 
 
 export function Stage3Worlds() {
-  const { home, params, updateParams, comparison, comparing, compareError, loading, error, retry, instruments } = useTwin();
+  const { home, params, updateParams, comparison, comparing, compareError, loading, error, retry, instruments, savedPlans, refreshSummary } = useTwin();
   const [all, setAll] = useState(false);
   const [picked, setPicked] = useState('purchase_now');
   const [sel, setSel] = useState<number | null>(null);
@@ -653,7 +735,7 @@ export function Stage3Worlds() {
   async function save() {
     if (!comparison || capExceeded) return;
     setSaving(true); setSaveMessage('');
-    try { await saveScenario(params); setSaveMessage('이 조건을 가상 기록에 저장했어요.'); }
+    try { await saveScenario(params, picked); setSaveMessage('이 조건과 당시 예상 결과를 가상 기록에 보존했어요.'); refreshSummary(); }
     catch (e) { setSaveMessage(e instanceof Error ? e.message : '저장하지 못했어요. 다시 시도해 주세요.'); }
     finally { setSaving(false); }
   }
@@ -687,6 +769,7 @@ export function Stage3Worlds() {
 
   return <div className="page st3 st3-worlds-page">
     <PageHead title="평행세계" sub="같은 시작 잔액에서 선택만 바꿔 계산한 가상의 미래예요. 실제 계좌의 돈은 움직이지 않아요." />
+    {savedPlans.length > 0 && <p className="st6-saved-summary">저장한 경로 {savedPlans.length}개 · 저장 당시 예상 결과를 보존하고 있어요.</p>}
     
     {error ? <ErrorNotice message={error} retry={retry} /> : loading || !home ? <Loading label="체험 계정 상태를 불러오는 중이에요" /> :
       <div className="st3-layout worlds">
@@ -799,7 +882,7 @@ export function Stage3Worlds() {
 
 export function Stage3Assets({ focus = 'save' }: { focus?: 'save' | 'invest' }) {
   const nav = useNav();
-  const { home, instruments, comparison, error, loading, retry } = useTwin();
+  const { home, instruments, comparison, error, loading, retry, newsStatus } = useTwin();
   const title = focus === 'invest' ? '가상 투자' : '모으기';
   const sub = focus === 'invest' ? '체험용 가격으로 하는 모의투자예요. 결제계좌와 따로 계산해요.' : '평행세계에서 아낀 돈을 가상 저축으로 모아요.';
   const byCode = new Map(instruments.map(i => [i.code, i]));
@@ -849,9 +932,77 @@ export function Stage3Assets({ focus = 'save' }: { focus?: 'save' | 'invest' }) 
     
     {error ? <ErrorNotice message={error} retry={retry} /> : loading || !home ? <Loading label="가상 자산을 불러오는 중이에요" /> :
       <div className="st3-layout">
-        <div className="st3-col-main">{focus === 'invest' ? invest : savings}</div>
+        <div className="st3-col-main">{focus === 'invest' ? invest : savings}
+          {focus === 'invest' && <section className="st6-news" aria-label="보유 종목 관련 뉴스">
+            <h2>내 보유 종목 관련 뉴스</h2>
+            <p>{newsStatus === 'provider_not_configured' ? '확인 가능한 뉴스 출처가 아직 연결되지 않았어요. 실제 뉴스가 확인되기 전까지 가상 뉴스를 보여주지 않아요.' : '관련 뉴스를 확인할 수 없어요.'}</p>
+          </section>}
+        </div>
         <aside className="st3-col-side">{focus === 'invest' ? prices : invest}{focus === 'invest' && savings}</aside>
       </div>}
+  </div>;
+}
+
+/* ─────────────── Stage 6: personal Insights (same FastAPI data) ─────────────── */
+
+export function Stage3Insights() {
+  const nav = useNav();
+  const { home, briefing, briefingError, savedPlans, planTracking, error, loading, retry } = useTwin();
+  const week = home?.daily_cashflow.slice(0, 7) ?? [];
+  const changes = briefing?.change_detection.events ?? [];
+  const observed = planTracking?.daily_spend_comparison ?? [];
+  return <div className="page st3 st3-insights">
+    <header className="st6-insights-title">
+      <button type="button" className="st3-link" onClick={() => nav.pop()}>‹ 홈으로</button>
+      <h1>내 금융 변화</h1>
+      <p>금융 선택 이후의 계획과 관측 기록을 비교해요.</p>
+    </header>
+    {error ? <ErrorNotice message={error} retry={retry}/> : loading || !home ? <Loading label="금융 기록을 불러오는 중이에요"/> : <>
+      <p className="st6-insights-asof">{mdw(home.as_of_date)} 기준 · 가상 체험 데이터</p>
+      <section className="st6-insights-section" aria-labelledby="st6-week">
+        <h2 id="st6-week">앞으로 7일 결제계좌 현금흐름</h2>
+        <ul className="st3-list">
+          {week.map(d => <li key={d.date}><time dateTime={d.date}>{mdw(d.date)}</time>
+            <span><Money as="span" value={d.closing_balance} className={d.closing_balance < 0 ? 'neg' : ''} /></span></li>)}
+        </ul>
+        <small className="st3-muted">확정된 금융 일정과 변동 지출 전망 기준이며 미래 관측 잔액이 아니에요.</small>
+      </section>
+      <section className="st6-insights-section" aria-labelledby="st6-differences">
+        <h2 id="st6-differences">이번에 달라진 점</h2>
+        {changes.length ? <ul className="st3-list">{changes.map((e,i) =>
+          <li key={e.code+i}><span>{e.title}</span><small>{e.importance === 'high' ? '확인 필요' : '변화 감지'}</small></li>)}</ul> :
+          <p>{briefing?.change_detection.status === 'first_analysis'
+            ? '첫 분석이라 지난 결과와 비교할 수 없어요.'
+            : briefingError || '지난 분석 이후 새로 확인된 주요 변화가 없어요.'}</p>}
+      </section>
+      <section className="st6-insights-section" aria-labelledby="st6-plans">
+        <h2 id="st6-plans">저장한 평행세계</h2>
+        {savedPlans.length ? <ul className="st3-list">{savedPlans.map(p => <li key={p.id}>
+          <span>{p.label}<small>{p.analysis_as_of} 기준 · {p.kind === 'agent' ? '추천 경로' : '직접 비교'}</small></span>
+          <span>{p.has_immutable_snapshot ? '당시 결과 보존' : '기존 기록'}</span>
+        </li>)}</ul> : <p>저장한 계획이 없어요. 평행세계에서 경로를 저장하면 이후 기록과 비교할 수 있어요.</p>}
+      </section>
+      <section className="st6-insights-section" aria-labelledby="st6-plan-actual">
+        <h2 id="st6-plan-actual">예상 지출과 이후 관측 지출</h2>
+        {observed.length ? <table className="st3-table">
+          <thead><tr><th scope="col">날짜</th><th scope="col">당시 예상</th><th scope="col">이후 관측</th></tr></thead>
+          <tbody>{observed.map(row => <tr key={row.date}>
+            <th scope="row">{md(row.date)}</th>
+            <td><Money as="span" value={row.predicted}/></td>
+            <td>{row.observed == null ? '기록 없음' : <Money as="span" value={row.observed}/>}</td>
+          </tr>)}</tbody></table> :
+          <p>{planTracking?.message || '저장 시점 이후 관측 기록이 있어야 차이를 계산할 수 있어요.'}</p>}
+        <small className="st3-muted">누락된 관측 기록이나 결제일 변경을 무조건 AI 예측 오류로 판단하지 않아요.</small>
+      </section>
+      <section className="st6-insights-section" aria-labelledby="st6-goal">
+        <h2 id="st6-goal">가상 저축·투자</h2>
+        <p>{home.savings_goals.length ? '설정한 가상 저축 목표가 있어요.' :
+          '원본 기록에는 저축 목표가 없어요. 평행세계에서 금액과 목표를 설정해 비교할 수 있어요.'}</p>
+        <p>모의투자 현금 <Money as="span" value={home.virtual_investments.virtual_cash}/> ·
+          보유 종목 {Object.keys(home.virtual_investments.positions ?? {}).length}개</p>
+      </section>
+      <p className="st3-note">실제 은행 거래와 연결하지 않은 합성 관측 데이터입니다. 미래 날짜의 기록을 과거 거래로 표시하지 않아요.</p>
+    </>}
   </div>;
 }
 

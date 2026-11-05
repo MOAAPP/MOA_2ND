@@ -1,4 +1,4 @@
-name: V4 final design + ML cashflow browser integration
+name: V4 stage 6 personalized briefing + 20-user browser integration
 on:
   pull_request:
     paths:
@@ -18,11 +18,11 @@ jobs:
     steps:
       - name: Checkout React PR branch
         uses: actions/checkout@v4
-      - name: Checkout matching FastAPI stage-4 branch
+      - name: Checkout matching FastAPI Stage 7 regression branch
         uses: actions/checkout@v4
         with:
           repository: MOAAPP/MOA_2ND_BE
-          ref: feat/v4-stage4-lightgbm-cashflow
+          ref: fix/v4-stage7-integration-audit-20261105
           path: _stage3_backend
       - uses: actions/setup-python@v5
         with:
@@ -81,6 +81,10 @@ jobs:
           npm ci
           npm install --no-save --package-lock=false playwright@1.58.2
           npx playwright install --only-shell chromium
+      - name: Typecheck and build existing React PWA
+        run: npm run build
+      - name: Run frontend regression tests
+        run: npm test -- --run
       - name: Start React Vite server (proxy -> FastAPI)
         run: |
           nohup npm run dev:web -- --host 127.0.0.1 > /tmp/stage3-vite.log 2>&1 &

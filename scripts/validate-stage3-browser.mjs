@@ -52,6 +52,17 @@ try {
   assert.equal(forecast.daily.length,14);
   assert.notEqual(forecast.model_type,'unavailable');
   const next7 = forecast.forecasts.find(f => f.horizon_days === 7).predicted_variable_outflow;
+  // Stage-6 data must be visible in actual React DOM, not merely HTTP 200.
+  const stage6 = await fetchJSON('/api/v4/users/S01/briefing?as_of=2026-11-04');
+  assert.equal(stage6.user_id, 'S01');
+  assert.equal(stage6.llm_used, false);
+  await page.getByText('오늘의 예상 추가 소비 여유').waitFor({timeout:25000});
+  await page.waitForFunction(expected =>
+    document.querySelector('.st6-spend-capacity')?.textContent?.includes(expected),
+    won(stage6.spending_capacity.estimated_additional_spend));
+  assert.match(await page.locator('.st6-morning').innerText(), /오늘의 금융 변화/);
+  assert.ok((await page.locator('.st6-morning').innerText()).length > 20);
+  assert.equal(stage6.spending_capacity.current_cash, s01.available_cash);
   await page.getByText('앞으로 7일 변동 지출 전망').waitFor();
   assert.ok((await page.locator('.st3-home').innerText()).includes(won(next7)));
 
@@ -62,6 +73,11 @@ try {
     document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
     won(s02.available_cash));
   assert.equal(await hero.innerText(), won(s02.available_cash));
+  const stage6S02 = await fetchJSON('/api/v4/users/S02/briefing?as_of=2026-11-04');
+  await page.waitForFunction(expected =>
+    document.querySelector('.st6-spend-capacity')?.textContent?.includes(expected),
+    won(stage6S02.spending_capacity.estimated_additional_spend));
+  assert.equal(stage6S02.spending_capacity.current_cash, s02.available_cash);
   assert.notEqual(await hero.innerText(), won(s01.available_cash));
   await page.locator('input[aria-label="금융 관측 기준일"]').fill('2026-11-03');
   await page.waitForFunction(expected =>
@@ -104,6 +120,22 @@ try {
   assert.equal(await page.locator('.st3-world-card strong.num').first().innerText(),won(buy.future_balances['14']));
   await page.screenshot({path:'/tmp/stage3-six-worlds.png',fullPage:true});
 
+  // Regression: an unavailable OPTIONAL investment price API must never hide
+  // canonical FastAPI cash balances, recent transactions or the main graph.
+  const noQuotes = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  try {
+    await noQuotes.route('**/api/v4/instruments**', route => route.fulfill({
+      status: 503, contentType: 'application/json',
+      body: JSON.stringify({ detail: { code: 'quotes_unavailable' } }),
+    }));
+    await noQuotes.goto(base + '/?demo=1');
+    await noQuotes.waitForFunction(expected =>
+      document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
+      won(s01.available_cash), { timeout: 25000 });
+    assert.equal(await noQuotes.locator('.st3-error').count(), 0);
+    assert.ok((await noQuotes.locator('.st3-home').innerText()).includes(won(s01.available_cash)));
+  } finally { await noQuotes.close(); }
+
   // Reproduce old persisted introSeen=true without any actual finance profile.
   const stale = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
@@ -126,7 +158,7 @@ try {
   await page.locator('.st3-error').first().waitFor({timeout:25000});
   assert.equal(await page.locator('.st3-hero > strong').count(),0);
   assert.match(await page.locator('.st3-error').innerText(),/데이터 형식/);
-  console.log('STAGE3_BROWSER_PASS: 20 users, S01 home amount, S02 isolation, date movement, 6 worlds, API matching, schema-error state.');
+  console.log('STAGE6_BROWSER_PASS: 20 users, S01/S02 Home and personalized briefing DOM, date movement, 6 worlds, backend alignment, schema-error state.');
 } finally {
   await browser.close();
 }

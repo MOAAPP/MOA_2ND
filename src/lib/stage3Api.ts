@@ -139,9 +139,9 @@ export const compareScenarios = (payload: CompareRequest, signal?: AbortSignal) 
       x.paths.every((p: unknown) => isObject(p) && Array.isArray(p.daily_cashflow) &&
         Number.isFinite(p.minimum_balance) && isObject(p.future_balances)));
 
-export const saveScenario = (payload: CompareRequest, signal?: AbortSignal) =>
+export const saveScenario = (payload: CompareRequest, selectedScenarioId: string = 'purchase_now', signal?: AbortSignal) =>
   request('/scenarios/save', { method: 'POST', signal,
-    body: JSON.stringify({ request: payload, label: '내가 선택한 금융 시나리오' }) },
+    body: JSON.stringify({ request: payload, selected_scenario_id: selectedScenarioId, label: '내가 선택한 금융 시나리오' }) },
   (x): x is { id: string; saved: boolean } => isObject(x) && typeof x.id === 'string' && x.saved === true);
 
 export const getTransactions = (user: string, day: string, signal?: AbortSignal) =>
