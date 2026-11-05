@@ -1,3 +1,11 @@
+> **평행통장 V4.0 7단계 프론트 회귀 검증 (2026-11-05)**  
+> 브랜치: `fix/v4-stage7-integration-audit-20261105` (6단계 UI를 기반으로 함)  
+> 대응 FastAPI: [MOAAPP/MOA_2ND_BE](https://github.com/MOAAPP/MOA_2ND_BE/tree/fix/v4-stage7-integration-audit-20261105)의 동일한 7단계 브랜치  
+> `npm ci && npm run dev:web` → http://localhost:5173 (금융 API `/api/v4`는 로컬 FastAPI :8000으로 프록시)  
+> 신규/비어 있는 로컬 세션은 별도 선택 없이 기본 **S01 · 2026-11-04** 합성 기록을 보여야 하며, 기존에 사용자가 직접 입력한 기록은 덮어쓰지 않습니다.  
+> 7단계 수정: 투자 가격 API 장애가 계좌 잔액/거래/현금흐름 표시를 가리지 않도록 호출 분리, 사용자·날짜·시나리오 변경 시 오래된 응답 화면 표시 방지, Chromium 회귀 테스트 추가  
+> 로컬 FastAPI가 없으면 데이터를 조작하거나 하드코딩으로 대체하지 않고 오류 상태를 표시합니다. 원격 Vercel 앱은 Mac의 `localhost:8000`에 연결할 수 없습니다.
+
 > **V4.0 백엔드 저장소 분리 (2026-11-04):** Python FastAPI 금융 계산 엔진·원본 합성 데이터·pytest는 [MOAAPP/MOA_2ND_BE](https://github.com/MOAAPP/MOA_2ND_BE)로 이동했습니다. 이 저장소의 React 화면은 `/api/v4`(개발 환경) 또는 `VITE_FINANCE_API_BASE`(배포 환경)로 연결합니다. 기존 Node 시세·Discord API는 기능 보존을 위해 그대로 유지합니다. 프론트 연동: [docs/V4_STAGE1_FRONTEND.md](docs/V4_STAGE1_FRONTEND.md)
 
 > **결제일 부족 탐지 MVP (2026-10-31):** 기획서 기준 핵심 기능을 붙였습니다. 결제계좌 기준 현금흐름 엔진(결제 수단별 출금 시점·카드 청구·입금 지연), 네 시나리오 등급과 D-7·D-3 알림, 문자 마스킹 후 AI 추출, 1분 설정·홈 부족 카드·살까 말까. 대응표: [docs/MOA_ENGINE.md](docs/MOA_ENGINE.md) · 검증: [docs/eval/RESULTS.md](docs/eval/RESULTS.md) · ML 비교: [ml/README.md](ml/README.md)
