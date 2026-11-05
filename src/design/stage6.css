@@ -1,0 +1,22 @@
+/* Stage 6: a restrained editorial layer, not another stack of dashboard cards. */
+.st6-morning{padding:1.05rem 0 1.25rem;border-bottom:1px solid var(--line,rgba(25,34,42,.12));margin:0 0 1.2rem}
+.st6-morning-heading{display:flex;align-items:baseline;justify-content:space-between;gap:1.2rem;margin-bottom:.45rem}
+.st6-morning-heading span{font-size:.82rem;letter-spacing:.02em;font-weight:750}
+.st6-morning-heading time{color:var(--muted,#65717e);font-size:.75rem}
+.st6-morning>p{max-width:65ch;font-size:.94rem;line-height:1.6;margin:.3rem 0 0}
+.st6-morning .st6-attention{color:#a13d32;font-weight:650;font-size:.87rem}
+.st6-spend-capacity{border-top:1px solid rgba(0,0,0,.12);margin-top:1.15rem;padding-top:1rem}
+.st6-spend-capacity>div{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap}
+.st6-spend-capacity>div>span{font-size:.88rem;font-weight:660}
+.st6-spend-capacity .money{font-size:clamp(1.1rem,2vw,1.6rem)}
+.st6-spend-capacity>small{display:block;font-size:.74rem;color:var(--muted,#626e79);line-height:1.65;margin-top:.42rem}
+.st6-insights{margin:1.5rem 0 1.1rem;padding:1.2rem 0;border-block:1px solid rgba(0,0,0,.12)}
+.st6-insights-head{display:flex;justify-content:space-between;gap:1.2rem;align-items:center}
+.st6-insights-head h2,.st6-news h2{font-size:1.06rem;font-weight:750;letter-spacing:-.025em;margin:0}
+.st6-insights>p,.st6-insights-detail>p,.st6-news p{font-size:.83rem;color:var(--muted,#626e79);line-height:1.6}
+.st6-insights-detail{padding-top:.75rem}
+.st6-insights-detail .st3-list{margin:.5rem 0 1rem}
+.st6-saved-summary{font-size:.82rem;color:var(--muted,#626e79);padding:.25rem 0 .75rem}
+.st6-news{margin:1.1rem 0 0;padding:1rem 0 0;border-top:1px solid rgba(0,0,0,.12)}
+@media(max-width:640px){.st6-morning{margin-bottom:.9rem;padding:1rem 0}.st6-spend-capacity>div{align-items:flex-start}.st6-spend-capacity .money{font-size:1.25rem}.st6-insights{margin:1rem 0}}
+@media(prefers-reduced-motion:reduce){.st6-morning,.st6-insights,.st6-spend-capacity,.st6-news{scroll-behavior:auto;animation:none;transition:none}}
