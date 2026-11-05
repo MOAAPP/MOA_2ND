@@ -29,7 +29,7 @@ try {
   await page.getByRole('textbox',{name:'질문'}).fill('다음 결제일에 지출해도 괜찮을까?');
   await page.getByRole('button',{name:'보내기'}).click();
   await page.getByText('지금은 모아 AI 상담을 준비 중이에요.',{exact:false}).waitFor({timeout:15000});
-  await page.getByRole('button',{name:'뒤로가기'}).click();
+  await page.getByRole('button',{name:'뒤로 가기'}).click();
   await page.getByRole('button',{name:'평행세계',exact:true}).click();
   const chart=page.locator('.t-world .ps-svg');await chart.waitFor({timeout:30000});
   assert.ok(await chart.locator('path').count()>=4);
