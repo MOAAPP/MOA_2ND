@@ -1,0 +1,90 @@
+/* Restore the established v22 fintech home and original motion paths.
+   AI is a prominent editorial briefing, NOT another generic dashboard grid. */
+.ux-ai-spotlight {
+  margin: 0 0 18px;
+  padding: 17px 17px 15px;
+  border: 1px solid #e1e4f7;
+  border-radius: 17px;
+  background: linear-gradient(128deg, #fafaff 0%, #ffffff 69%);
+  box-shadow: 0 5px 18px rgba(30, 39, 90, .035);
+  color: #202641;
+  animation: ux-ai-arrive .42s ease-out both;
+}
+.ux-ai-spotlight-top {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 11px;
+}
+.ux-ai-identity { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 800; color: #4746bb; letter-spacing: -.01em; }
+.ux-ai-identity .ai-mark { display: inline-flex; gap: 3px; align-items: center; }
+.ux-ai-identity .ai-mark svg { width: 16px; height: 16px; animation: ux-ai-sparkle 2.8s ease-in-out infinite; }
+.ux-ai-provenance { font-size: 10.5px; color: #646d83; font-weight: 650; }
+.ux-ai-spotlight h2 { margin: 0 0 8px; font-size: clamp(18px, 4.8vw, 21px); line-height: 1.35; letter-spacing: -.035em; font-weight: 800; }
+.ux-ai-spotlight-summary { margin: 0; color: #47516b; font-size: 13px; line-height: 1.7; min-height: 22px; overflow-wrap: anywhere; }
+.ux-ai-snapshot { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 13px 0 12px; margin-top: 9px; border-top: 1px solid #ebeef6; border-bottom: 1px solid #ebeef6; }
+.ux-ai-snapshot > div { display: grid; gap: 4px; min-width: 0; }
+.ux-ai-snapshot span { font-size: 11px; font-weight: 600; color: #727b91; }
+.ux-ai-snapshot strong { font-size: 18px; letter-spacing: -.03em; font-weight: 800; font-variant-numeric: tabular-nums; color: #242944; white-space: nowrap; }
+.ux-ai-home-actions { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; margin-top: 13px; }
+.ux-ai-home-ask { display: inline-flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; flex: 1; padding: 0 12px; border: 0; border-radius: 10px; background: #4546cf; color: #fff; font: inherit; font-size: 12px; font-weight: 780; white-space: nowrap; }
+.ux-ai-home-ask .ai-mark { display: inline-flex; align-items: center; }
+.ux-ai-home-ask .ai-mark svg { width: 15px; height: 15px; }
+.ux-ai-home-ask > span:last-child { margin-left: auto; font-size: 17px; line-height: 1; }
+.ux-ai-home-ask:active { transform: translateY(1px); }
+.ux-ai-home-world-link { padding: 8px 4px; border: 0; background: transparent; color: #4b5390; font: inherit; font-size: 12px; font-weight: 720; white-space: nowrap; }
+.ux-ai-home-source { display: block; font-size: 10px; line-height: 1.6; color: #788195; margin-top: 11px; }
+.ux-ai-home-planner { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e6e8f2; animation: ux-ai-expand .22s ease-out both; }
+.ux-ai-home-planner .st3-ai-agent { margin: 0; padding: 0; border: none; background: transparent; box-shadow: none; }
+.ux-ai-home-planner .st3-ai-agent .st3-card-head { display: none; }
+.ux-ai-home-planner .st3-ai-label { font-size: 12px; }
+.ux-ai-home-planner .st3-ai-input { font-size: 13px; }
+.ux-ai-home-planner .st3-ai-actions { flex-wrap: wrap; }
+.ux-ai-home-planner .st3-ai-results { max-width: 100%; }
+.ux-ai-spotlight button:focus-visible { outline: 3px solid #a3a7fb; outline-offset: 2px; }
+
+/* Original parallel-world SVG paths were retained; restore their draw/fade
+   movement as the paths diverge, without changing geometry or product colors. */
+.ux-canonical-home .ux-home-world-comparison svg path:first-of-type {
+  stroke-dasharray: 140;
+  stroke-dashoffset: 140;
+  animation: ux-world-branch-draw 1.15s .16s cubic-bezier(.25,.75,.2,1) forwards;
+}
+.ux-canonical-home .ux-home-world-comparison svg path:nth-of-type(2) {
+  animation: ux-world-branch-fade .65s .38s ease-out both;
+}
+.ux-canonical-home .ux-home-world-comparison svg circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ux-world-dot .38s .7s ease-out both;
+}
+.ux-canonical-home .ux-home-world-comparison svg circle:last-of-type { animation-delay: .85s; }
+
+@keyframes ux-ai-arrive { from { opacity: .25; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ux-ai-expand { from { opacity: .3; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ux-ai-sparkle { 0%, 90%, 100% { transform: scale(1) rotate(0); } 45% { transform: scale(1.1) rotate(10deg); } }
+@keyframes ux-world-branch-draw { to { stroke-dashoffset: 0; } }
+@keyframes ux-world-branch-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ux-world-dot { from { opacity: 0; transform: scale(.65); } to { opacity: 1; transform: scale(1); } }
+
+@media (max-width: 380px) {
+  .ux-ai-spotlight { padding: 15px 13px 14px; }
+  .ux-ai-home-actions { gap: 5px; }
+  .ux-ai-home-world-link { font-size: 11px; }
+  .ux-ai-snapshot { gap: 10px; }
+  .ux-ai-snapshot strong { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ux-ai-spotlight, .ux-ai-identity .ai-mark svg, .ux-ai-home-planner,
+  .ux-canonical-home .ux-home-world-comparison svg path,
+  .ux-canonical-home .ux-home-world-comparison svg circle {
+    animation: none !important; stroke-dashoffset: 0 !important; opacity: 1 !important; transform: none !important;
+  }
+}
+.reduce-motion .ux-ai-spotlight, .reduce-motion .ux-ai-identity .ai-mark svg,
+.reduce-motion .ux-ai-home-planner, .reduce-motion .ux-canonical-home .ux-home-world-comparison svg path,
+.reduce-motion .ux-canonical-home .ux-home-world-comparison svg circle {
+  animation: none !important; stroke-dashoffset: 0 !important; opacity: 1 !important; transform: none !important;
+}
