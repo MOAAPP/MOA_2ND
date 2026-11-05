@@ -1,6 +1,6 @@
 import { ShortfallCard } from './moa/parts';
 import { FinanceEnginePanel } from '../components/FinanceEnginePanel';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { won } from '../../shared/format';
 import { addDays, parseISO, startOfMonth } from '../../shared/dates';
 import { appDay, appNow, DEMO_END_DAY, DEMO_SNAPSHOT_DAY } from '../lib/appClock';
@@ -17,6 +17,7 @@ import { Row, useSpending } from './Ledger';
 import { AiCard, AiMark } from '../components/Ai';
 import { useAi } from '../lib/ai';
 import { briefInput } from '../lib/ai/context';
+import { getMorningBriefing, type MorningBriefing } from '../lib/stage6Api';
 
 const fmt = (n: number) => won(Math.max(0, Math.round(n)));
 
@@ -52,13 +53,58 @@ function HomeBrief() {
   const nav = useNav();
   const { all, today } = useSpending();
   const input = useMemo(() => briefInput(state.worldWallet, all, today), [state.worldWallet, all, today]);
-  const ai = useAi('brief', input, JSON.stringify(input));
+  // Private/manual accounts keep their original local experience. Synthetic
+  // S01 uses the actual canonical FastAPI calculation; never relabel an
+  // example/template response as a live LLM answer.
+  const original = useAi('brief', state.demo ? null : input, JSON.stringify(input));
+  const [apiData, setApiData] = useState<MorningBriefing | null>(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
+  useEffect(() => {
+    if (!state.demo) { setApiData(null); setApiError(''); return; }
+    const ctrl = new AbortController();
+    setApiData(null); setApiLoading(true); setApiError('');
+    // The canonical dataset is observed through 2026-11-04. Do not
+    // represent later projected days as newly observed transactions.
+    void getMorningBriefing('S01', '2026-11-04', ctrl.signal).then(data => {
+      if (!ctrl.signal.aborted) setApiData(data);
+    }).catch(() => {
+      if (!ctrl.signal.aborted) setApiError('상세 금융 분석을 잠시 불러오지 못했어요.');
+    }).finally(() => {
+      if (!ctrl.signal.aborted) setApiLoading(false);
+    });
+    return () => ctrl.abort();
+  }, [state.demo]);
+  const nextBill = apiData?.nearest_essential_payment;
+  const capacity = apiData?.spending_capacity.estimated_additional_spend;
+  const covered = nextBill?.covered ?? true;
+  const title = !covered
+    ? '다음 결제일 전 잔액을 확인해 주세요'
+    : nextBill ? '다가오는 결제부터 챙겨볼까요?'
+      : '앞으로의 지출을 함께 살펴봤어요';
+  const grounded = apiData && capacity != null
+    ? `11월 4일에 기록된 S01 데이터로 계산했어요. 예상 추가 소비 여유는 ${won(capacity)}이고, ${nextBill ? `다음 필수 결제는 ${parseISO(nextBill.date).m}월 ${parseISO(nextBill.date).d}일` : '등록된 다음 필수 결제는 없어요'}${nextBill ? '이에요' : ''}. 미래 예측은 실제 소비를 보장하지 않아요.`
+    : '';
   return (
-    <AiCard title="오늘의 분석" loading={ai.loading} source={ai.source} className="ux-home-brief" foot={false}>
-      {ai.data && <>
-        <strong className="ai-headline">{ai.data.headline}</strong>
-        <p className="ai-body">{ai.data.body}</p>
-        <button type="button" className="ux-home-textlink" onClick={() => nav.push({ name: 'ask' })}><AiMark label="" />분석에 대해 물어보기 <IconChevron /></button>
+    <AiCard title="오늘의 분석"
+      loading={state.demo ? apiLoading : original.loading}
+      source={state.demo ? (apiData?.llm_used ? 'live' : 'example') : original.source}
+      className="ux-home-brief" foot={false}>
+      {state.demo ? (
+        apiData ? <>
+          <strong className="ai-headline">{title}</strong>
+          <p className="ai-body">{apiData.llm_used ? apiData.summary : grounded}</p>
+          <small className="ai-src">{apiData.llm_used ? 'AI가 금융 기록에 근거해 설명했어요' : '확인된 기록을 바탕으로 계산했어요 · AI 생성 설명 아님'}</small>
+          <button type="button" className="ux-home-textlink" onClick={() => nav.push({ name: 'ask' })}>
+            <AiMark label="" />분석에 대해 물어보기 <IconChevron />
+          </button>
+        </> : <p className="ai-body" role="status">{apiError || '금융 기록을 확인하고 있어요…'}</p>
+      ) : original.data && <>
+        <strong className="ai-headline">{original.data.headline}</strong>
+        <p className="ai-body">{original.data.body}</p>
+        <button type="button" className="ux-home-textlink" onClick={() => nav.push({ name: 'ask' })}>
+          <AiMark label="" />분석에 대해 물어보기 <IconChevron />
+        </button>
       </>}
     </AiCard>
   );
