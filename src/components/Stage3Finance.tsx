@@ -1324,6 +1324,18 @@ export function Stage3ClassicHome() {
       </section>
     </div>
 
+    <HomeWorldPreview
+      comparison={comparison}
+      amount={params.purchase_amount}
+      onAmount={price => updateParams({
+        purchase_amount: price,
+        savings_amount: price,
+        investment_amount: price,
+        allocation: splitBudget(Math.min(price, Math.max(0, home.available_cash))),
+      })}
+      onExpand={() => nav.setTab('forks')}
+    />
+
     <section className="ux-home-ledger" aria-label="최근 거래 기록">
       <header className="ux-home-section-heading">
         <div><small className="ux-home-overline">RECENT · 결제계좌 거래</small><h2>최근 가계부</h2></div>
@@ -1342,25 +1354,6 @@ export function Stage3ClassicHome() {
         <button type="button" onClick={() => nav.setTab('forks')}>미래 지출 비교 ›</button>
       </div>
     </section>
-
-    <section className="ux-home-decision" aria-label="소비 선택 비교하기">
-      <small className="ux-home-overline">BEFORE YOU BUY · 소비 결정</small>
-      <h2>지금 사면, 다음 결제일은 괜찮을까요?</h2>
-      <p>현재 관측된 잔액에서 구매와 보류를 계산해요. 가상 선택만으로 실제 잔액은 움직이지 않아요.</p>
-      <button type="button" className="ux-home-primary" onClick={() => nav.setTab('forks')}>소비 선택 비교하기 <span aria-hidden="true">→</span></button>
-    </section>
-
-    <HomeWorldPreview
-      comparison={comparison}
-      amount={params.purchase_amount}
-      onAmount={price => updateParams({
-        purchase_amount: price,
-        savings_amount: price,
-        investment_amount: price,
-        allocation: splitBudget(Math.min(price, Math.max(0, home.available_cash))),
-      })}
-      onExpand={() => nav.setTab('forks')}
-    />
 
     <section className="ux-home-extras" aria-label="가상 자산">
       <div className="ux-home-section-heading">
