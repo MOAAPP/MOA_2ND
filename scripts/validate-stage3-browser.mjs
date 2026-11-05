@@ -144,7 +144,7 @@ try {
     won(stage6.spending_capacity.estimated_additional_spend));
   assert.match(await page.locator('.ux-ai-spotlight').innerText(), /모아 AI|오늘 내 금융 상태/);
   assert.match(await page.locator('.ux-ai-home-source').innerText(), /LLM 설명 미사용|브리핑은 규칙 기반/);
-  assert.ok((await page.locator('.st6-morning').innerText()).length > 20);
+  assert.ok((await page.locator('.ux-ai-spotlight').innerText()).length > 30);
   assert.equal(stage6.spending_capacity.current_cash, s01.available_cash);
   await page.getByText('앞으로 7일 변동 지출 전망').waitFor();
   assert.ok((await page.locator('.st3-home').innerText()).includes(won(next7)));
