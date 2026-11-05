@@ -26,6 +26,7 @@ import './design/tokens.css';
 import './design/stage3.css';
 import './design/stage6.css';
 import './design/stage3-ai.css';
+import './design/home-ai-restore.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
