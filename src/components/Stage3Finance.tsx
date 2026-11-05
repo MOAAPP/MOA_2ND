@@ -253,15 +253,10 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
   const viewDay = previewDay ?? day;
   const selectDay = (selected: string) => {
     if (!selected || selected < dateStart || selected > previewEnd) return;
-    if (selected > dateEnd) {
-      // UI-only expected date. Never request an unobserved day as an actual
-      // dataset snapshot or mix future synthetic oracle entries into history.
-      setPreviewDay(selected);
-      setDay(dateEnd);
-    } else {
-      setPreviewDay(null);
-      setDay(selected);
-    }
+    // Confirmed post-snapshot transactions are now loaded by the same backend
+    // date for Home, forecast, worlds, ledger and briefing.
+    setPreviewDay(null);
+    setDay(selected);
   };
   const updateParams = (value: Partial<CompareRequest>) => setParams(old => ({ ...old, ...value }));
   return <Context.Provider value={{
@@ -390,7 +385,7 @@ export function Stage3DevPanel() {
         <button type="button" aria-label="하루 뒤" disabled={!viewDay || viewDay >= previewEnd} onClick={() => selectDay(shiftDate(viewDay, 1))}>›</button>
       </div>
     </fieldset>
-    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}은 미래 예상일이에요. 금융 원본 관측은 {mdw(dateEnd)}까지이며, 예상 잔액만 표시해요.</p>}
+    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}은 원본 관측 종료일 이후예요. {mdw(dateEnd)}의 잔액과 사용자가 직접 확인한 거래만 반영하며, 미입력 거래는 포함되지 않을 수 있어요.</p>}
     {nav.tab === 'forks' && <WorldDevControls />}
     <dl className="st3-dev-meta">
       <div><dt>데이터</dt><dd>합성 데이터셋 · 실제 계좌 아님</dd></div>
@@ -557,7 +552,7 @@ export function Stage3Home() {
 
   return <div className="page st3 st3-home">
     <PageHead title="모아" logo sub="결제일에 돈이 모자라지 않는지 확인하고, 사기 전에 미래를 비교해요" />
-    {viewDay > home.observation_end && <p className="st3-note warn" role="note">{mdw(viewDay)}은 아직 관측된 거래가 없는 미래 예상일이에요. {mdw(home.observation_end)}의 확정 잔액에서 출발한 예측을 확인해 주세요. 예상 마감 잔액: <Money as="span" value={home.daily_cashflow.find(d => d.date === viewDay)?.closing_balance} /></p>}
+    {viewDay > home.observation_end && <p className="st3-note warn" role="note">{mdw(viewDay)}은 원본 관측 종료일 이후예요. 사용자가 확인한 거래만 반영한 부분 잔액이며 미기록 소비가 있을 수 있어요. 확인된 항목 기준 잔액: <Money as="span" value={home.available_cash} /></p>}
     <section className="st6-morning" aria-label="오늘의 금융 변화" aria-live="polite">
       <div className="st6-morning-heading"><span>오늘의 금융 변화</span><time dateTime={home.as_of_date}>{mdw(home.as_of_date)} 기준</time></div>
       {briefing ? <>
@@ -1153,8 +1148,8 @@ export function Stage3ClassicHome() {
   </div>;
 
   const forecastDay = viewDay > home.observation_end;
-  const forecastRow = home.daily_cashflow.find(d => d.date === viewDay);
-  const shownBalance = forecastDay ? forecastRow?.closing_balance ?? null : home.available_cash;
+  // Never portray a day beyond the observed ZIP as a complete observed balance.
+  const shownBalance = home.available_cash;
   const horizon = [3, 7, 14];
   const points = [
     { date: home.as_of_date, value: home.available_cash },
@@ -1178,7 +1173,7 @@ export function Stage3ClassicHome() {
       <div><span>가상 체험 · {user}</span><b>{mdw(viewDay)} {forecastDay ? '예상' : '관측'} 기준</b></div>
       <span className="ux-home-date">총 20명 중 {user}</span>
       <p>{forecastDay
-        ? `${mdw(dateEnd)}까지 관측된 금융 기록을 기준으로 계산한 미래 예상이에요. ${mdw(viewDay)}에 새 거래가 실제로 발생했다고 가정하지 않았어요.`
+        ? `${mdw(dateEnd)}까지 관측된 금융 기록에 직접 확인한 새 거래만 더했어요. 전체 소비를 관측한 것이 아니므로 부분 잔액이에요.`
         : `${mdw(dateEnd)}까지 기록된 합성 데이터를 보여줘요. 오른쪽 체험 설정에서 사용자·날짜를 바꿀 수 있어요.`}</p>
     </div>
 
@@ -1192,9 +1187,9 @@ export function Stage3ClassicHome() {
           ? `${mdw(shortfall.date)}에 결제계좌 잔액이 부족해질 수 있어요`
           : '예정된 결제일까지 잔액 흐름을 확인했어요'}</p>
         <div className="ux-canonical-risk-value">
-          <small>{forecastDay ? `${mdw(viewDay)} 예상 결제계좌 잔액` : `${mdw(home.as_of_date)} 관측 결제계좌 잔액`}</small>
+          <small>{forecastDay ? `${mdw(viewDay)} 확인된 거래 기준 부분 잔액` : `${mdw(home.as_of_date)} 관측 결제계좌 잔액`}</small>
           <strong className="num">{shownBalance == null ? '예측 범위를 벗어났어요' : balanceText(shownBalance)}</strong>
-          <span>{forecastDay ? '확정 잔액 아님 · 미래 지출 예측 포함' : '관측된 합성 금융 기록 기준 · 실제 은행 잔액 아님'}</span>
+          <span>{forecastDay ? '전날 합성 잔액 + 확인한 거래 · 미기록 지출 제외 · 전체 확정 잔액 아님' : '관측된 합성 금융 기록 기준 · 실제 은행 잔액 아님'}</span>
         </div>
         <div className="ux-python-audit">
           <div className="ux-python-audit-head"><strong>앞으로 14일 <span>· Python 금융 계산</span></strong>
