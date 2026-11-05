@@ -599,8 +599,8 @@ function HomeAiSpotlight() {
       </div>
       <svg className="ux-ai-orbit" viewBox="0 0 110 92" aria-hidden="true">
         <circle cx="49" cy="45" r="27" className="ux-ai-orbit-ring" />
-        <path className="ux-ai-orbit-path" d="M5 70 C20 70 26 42 49 42 S80 18 105 18" />
-        <path className="ux-ai-orbit-path alt" d="M5 70 C22 70 28 50 49 50 S85 71 105 75" />
+        <path className="ux-ai-orbit-path" pathLength={1} d="M5 70 C20 70 26 42 49 42 S80 18 105 18" />
+        <path className="ux-ai-orbit-path alt" pathLength={1} d="M5 70 C22 70 28 50 49 50 S85 71 105 75" />
         <circle cx="49" cy="46" r="5" className="ux-ai-orbit-core" />
         <circle cx="105" cy="18" r="3" className="ux-ai-orbit-end" />
         <circle cx="105" cy="75" r="3" className="ux-ai-orbit-end alt" />
