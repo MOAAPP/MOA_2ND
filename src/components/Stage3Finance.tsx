@@ -711,7 +711,7 @@ function PathCard({ path, base, active, onPick }: { path: ScenarioPath; base?: S
 
 
 export function Stage3Worlds() {
-  const { home, params, updateParams, comparison, comparing, compareError, loading, error, retry, instruments } = useTwin();
+  const { home, params, updateParams, comparison, comparing, compareError, loading, error, retry, instruments, savedPlans, refreshSummary } = useTwin();
   const [all, setAll] = useState(false);
   const [picked, setPicked] = useState('purchase_now');
   const [sel, setSel] = useState<number | null>(null);
@@ -728,7 +728,7 @@ export function Stage3Worlds() {
   async function save() {
     if (!comparison || capExceeded) return;
     setSaving(true); setSaveMessage('');
-    try { await saveScenario(params); setSaveMessage('이 조건을 가상 기록에 저장했어요.'); }
+    try { await saveScenario(params); setSaveMessage('이 조건과 당시 예상 결과를 가상 기록에 보존했어요.'); refreshSummary(); }
     catch (e) { setSaveMessage(e instanceof Error ? e.message : '저장하지 못했어요. 다시 시도해 주세요.'); }
     finally { setSaving(false); }
   }
@@ -762,6 +762,7 @@ export function Stage3Worlds() {
 
   return <div className="page st3 st3-worlds-page">
     <PageHead title="평행세계" sub="같은 시작 잔액에서 선택만 바꿔 계산한 가상의 미래예요. 실제 계좌의 돈은 움직이지 않아요." />
+    {savedPlans.length > 0 && <p className="st6-saved-summary">저장한 경로 {savedPlans.length}개 · 저장 당시 예상 결과를 보존하고 있어요.</p>}
     
     {error ? <ErrorNotice message={error} retry={retry} /> : loading || !home ? <Loading label="체험 계정 상태를 불러오는 중이에요" /> :
       <div className="st3-layout worlds">
@@ -874,7 +875,7 @@ export function Stage3Worlds() {
 
 export function Stage3Assets({ focus = 'save' }: { focus?: 'save' | 'invest' }) {
   const nav = useNav();
-  const { home, instruments, comparison, error, loading, retry } = useTwin();
+  const { home, instruments, comparison, error, loading, retry, newsStatus } = useTwin();
   const title = focus === 'invest' ? '가상 투자' : '모으기';
   const sub = focus === 'invest' ? '체험용 가격으로 하는 모의투자예요. 결제계좌와 따로 계산해요.' : '평행세계에서 아낀 돈을 가상 저축으로 모아요.';
   const byCode = new Map(instruments.map(i => [i.code, i]));
@@ -924,7 +925,12 @@ export function Stage3Assets({ focus = 'save' }: { focus?: 'save' | 'invest' }) 
     
     {error ? <ErrorNotice message={error} retry={retry} /> : loading || !home ? <Loading label="가상 자산을 불러오는 중이에요" /> :
       <div className="st3-layout">
-        <div className="st3-col-main">{focus === 'invest' ? invest : savings}</div>
+        <div className="st3-col-main">{focus === 'invest' ? invest : savings}
+          {focus === 'invest' && <section className="st6-news" aria-label="보유 종목 관련 뉴스">
+            <h2>내 보유 종목 관련 뉴스</h2>
+            <p>{newsStatus === 'provider_not_configured' ? '확인 가능한 뉴스 출처가 아직 연결되지 않았어요. 실제 뉴스가 확인되기 전까지 가상 뉴스를 보여주지 않아요.' : '관련 뉴스를 확인할 수 없어요.'}</p>
+          </section>}
+        </div>
         <aside className="st3-col-side">{focus === 'invest' ? prices : invest}{focus === 'invest' && savings}</aside>
       </div>}
   </div>;
