@@ -178,6 +178,34 @@ try {
   assert.equal(await page.locator('.st3-world-card strong.num').first().innerText(),won(buy.future_balances['14']));
   await page.screenshot({path:'/tmp/stage3-six-worlds.png',fullPage:true});
 
+  // Stage8: the default finance screens expose REAL AI endpoints, not silently
+  // fabricated results. The no-key CI environment must disclose unavailability.
+  const aiSettings = await fetchJSON('/api/v4/ai/status');
+  assert.equal(aiSettings.keys_exposed, false);
+  assert.equal(aiSettings.llm_configured, false);
+  await page.locator('.st3-ai-agent').waitFor();
+  assert.equal(await page.getByRole('button',{name:'AI 경로 분석'}).isDisabled(),true);
+  assert.match(await page.locator('.st3-ai-agent').innerText(),/AI 키가 설정되지 않았어요/);
+  const consent = page.locator('.st3-ai-vision-upload input[type="file"]');
+  assert.equal(await consent.count(),1);
+
+  // Personalized daily quiz must render the API question and persist the
+  // selection per user, without showing the answer before submission.
+  await page.getByRole('button',{name:'학습',exact:true}).click();
+  const quizCard = page.locator('.st6-learning');
+  await quizCard.waitFor({timeout:25000});
+  await page.locator('.st6-learning-question').waitFor({timeout:25000});
+  const options = page.locator('.st6-learning-options [role="radio"]');
+  assert.equal(await options.count(),4);
+  assert.match(await quizCard.innerText(),/규칙 기반/);
+  assert.equal(await quizCard.getByText('정답', {exact:false}).count(),0);
+  await options.first().click();
+  await page.getByRole('button',{name:'정답 확인'}).click();
+  await quizCard.locator('.st6-learning-feedback').waitFor({timeout:25000});
+  assert.match(await quizCard.innerText(),/정답|오답/);
+  await page.getByRole('button',{name:'평행세계',exact:true}).click();
+  await page.locator('.st3-world-card').first().waitFor({timeout:25000});
+
   // Regression: an unavailable OPTIONAL investment price API must never hide
   // canonical FastAPI cash balances, recent transactions or the main graph.
   const noQuotes = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -216,7 +244,7 @@ try {
   await page.locator('.st3-error').first().waitFor({timeout:25000});
   assert.equal(await page.locator('.st3-hero > strong').count(),0);
   assert.match(await page.locator('.st3-error').innerText(),/데이터 형식/);
-  console.log('STAGE6_BROWSER_PASS: classic v22 root design, clean URL, S01/S02 canonical data, preserved localStorage, 20-user desktop sidebar, observed Nov 4 and projected Nov 5 date, six worlds, briefing, schema validation.');
+  console.log('STAGE8_BROWSER_PASS: AI provider status and per-persona quiz, classic v22 root design, clean URL, S01/S02 canonical data, preserved localStorage, 20-user desktop sidebar, observed Nov 4 and projected Nov 5 date, six worlds, briefing, schema validation.');
 } finally {
   await browser.close();
 }
