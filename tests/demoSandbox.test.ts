@@ -4,11 +4,13 @@ import { initialState } from '../src/state/store';
 import { seedDemoState } from '../src/lib/demoSeed';
 
 describe('isolated S01 demo entry', () => {
-  it('requires an explicit ?demo=1 URL and not a regular user session', () => {
+  it('shows the canonical finance demo on the landing URL but not the opted-in personal session', () => {
     expect(isSandboxDemo('?demo=1')).toBe(true);
     expect(isSandboxDemo('?intro=1&demo=1')).toBe(true);
-    expect(isSandboxDemo('')).toBe(false);
-    expect(isSandboxDemo('?demo=0')).toBe(false);
+    expect(isSandboxDemo('')).toBe(true);
+    expect(isSandboxDemo('?utm_source=chatgpt.com')).toBe(true);
+    expect(isSandboxDemo('?personal=1')).toBe(false);
+    expect(isSandboxDemo('?intro=1')).toBe(false);
   });
   it('starts from S01 observations without changing the original app state', () => {
     const personal = initialState();
