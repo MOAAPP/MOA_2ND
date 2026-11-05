@@ -131,3 +131,16 @@
 }
 .reduce-motion .ux-ai-spotlight,.reduce-motion .ux-ai-orbit-path,.reduce-motion .ux-ai-orbit-core,.reduce-motion .ux-ai-orbit-end,.reduce-motion .ux-ai-identity svg,
 .reduce-motion .ux-ai-home-planner,.reduce-motion .ux-world-loading path,.reduce-motion .ux-world-gesture-glyph { animation:none!important; transform:none!important; stroke-dashoffset:0!important; opacity:1!important; }
+
+/* AI assistant: brief conversational input, not provider/LLM/tool diagnostics */
+.st3-ai-prompts { display:grid; gap:7px; margin:11px 0 15px; }
+.st3-ai-prompts > button { border:1px solid #e4e5ef; border-radius:10px; background:#fbfbfe; padding:10px 11px; color:#555d79; text-align:left; font:inherit; font-size:12px; line-height:1.5; }
+.st3-ai-prompts > button:hover,.st3-ai-prompts > button:focus-visible { background:#f2f1ff; border-color:#c2bef5; color:#3f4294; }
+.st3-ai-agent .st3-ai-actions { margin-top:10px; }
+.st3-ai-agent .st3-ai-actions .st3-btn { width:100%; min-height:43px; border-radius:10px; background:#4446d1; color:#fff; }
+.st3-ai-agent .st3-ai-input { min-height:91px; border:1px solid #e1e3ee; background:#fff; border-radius:10px; }
+.st3-ai-agent .st3-card-head { margin-bottom:8px; }
+.st3-ai-agent .st3-ai-results h3 { font-size:15px; line-height:1.5; letter-spacing:-.025em; font-weight:760; color:#232a44; margin:6px 0; }
+.st3-ai-agent .st3-ai-results li { background:transparent; border-bottom:1px solid #ecedf3; padding:11px 0; }
+.st3-ai-agent .st3-ai-results > small { display:block; font-size:10px; color:#9399a7; line-height:1.55; }
+.ux-world-loading path { path-length: 1; }
