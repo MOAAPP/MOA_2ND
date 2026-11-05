@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useId, useMemo, useRef, useState,
 
 import { useNav } from '../state/nav';
 import { Logo } from './Glyph';
+import { Stage3AiAgent, Stage3DailyQuiz } from './Stage3Ai';
+import { Stage2Vision } from './Stage2Vision';
 import {
   compareScenarios, getDemoDefault, getDemoHome, getDemoUsers, getInstruments, getTransactions, saveScenario,
   type CompareRequest, type CompareResult, type HomeState, type Instrument,
@@ -249,17 +251,32 @@ export function Stage3Provider({ children }: { children: ReactNode }) {
     ? (kstToday() <= shiftDate(dateEnd, 14) ? kstToday() : shiftDate(dateEnd, 14))
     : dateEnd;
   const viewDay = previewDay ?? day;
+  const selectionRef = useRef(0);
+  useEffect(() => {
+    // Never apply another persona's delayed post-snapshot lookup.
+    selectionRef.current += 1;
+    setPreviewDay(null);
+  }, [user]);
   const selectDay = (selected: string) => {
     if (!selected || selected < dateStart || selected > previewEnd) return;
-    if (selected > dateEnd) {
-      // UI-only expected date. Never request an unobserved day as an actual
-      // dataset snapshot or mix future synthetic oracle entries into history.
-      setPreviewDay(selected);
-      setDay(dateEnd);
-    } else {
+    const seq = ++selectionRef.current;
+    if (selected <= dateEnd) {
       setPreviewDay(null);
       setDay(selected);
+      return;
     }
+    // No confirmed post-snapshot transactions? Keep the 11/04 anchor and show
+    // the requested forecast day without pretending it was observed.
+    setPreviewDay(selected);
+    setDay(dateEnd);
+    void getDemoHome(user, selected).then(actual => {
+      if (seq !== selectionRef.current || actual.user_id !== user) return;
+      setPreviewDay(null);
+      setDay(selected); // Confirmed local transactions: all APIs share this day.
+    }).catch(() => {
+      // A 422 is an expected forecast-only date, not a blank financial home.
+      // Other API errors are left to the canonical home fetch/retry UX.
+    });
   };
   const updateParams = (value: Partial<CompareRequest>) => setParams(old => ({ ...old, ...value }));
   return <Context.Provider value={{
@@ -353,6 +370,11 @@ function WorldDevControls() {
  * 개발·시연 패널. 사용자 화면(폰) 밖에 둔다.
  * 컴퓨터: 폰 화면 오른쪽에 고정 / 폰: '체험 설정' 버튼 → 아래에서 올라오는 시트.
  */
+export function Stage3CurrentQuiz() {
+  const { user } = useTwin();
+  return <Stage3DailyQuiz user={user} />;
+}
+
 export function Stage3DevPanel() {
   const nav = useNav();
   const { user, viewDay, previewEnd, users, dateStart, dateEnd, selectUser, selectDay, comparison } = useTwin();
@@ -383,7 +405,7 @@ export function Stage3DevPanel() {
         <button type="button" aria-label="하루 뒤" disabled={!viewDay || viewDay >= previewEnd} onClick={() => selectDay(shiftDate(viewDay, 1))}>›</button>
       </div>
     </fieldset>
-    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}은 미래 예상일이에요. 금융 원본 관측은 {mdw(dateEnd)}까지이며, 예상 잔액만 표시해요.</p>}
+    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}은 원본 관측 종료일 이후예요. 확인된 새 거래가 있으면 부분 잔액을, 없으면 마지막 관측일을 기준으로 한 예측을 보여줘요.</p>}
     {nav.tab === 'forks' && <WorldDevControls />}
     <dl className="st3-dev-meta">
       <div><dt>데이터</dt><dd>합성 데이터셋 · 실제 계좌 아님</dd></div>
@@ -522,7 +544,7 @@ function firstShortfall(days: { date: string; closing_balance: number; lowest_ba
 
 export function Stage3Home() {
   const nav = useNav();
-  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans, viewDay } = useTwin();
+  const { home, comparison, loading, error, retry, params, briefing, briefingError, savedPlans, day, viewDay } = useTwin();
   const [sel, setSel] = useState<number | null>(null);
 
   const points = useMemo<ChartPoint[]>(() => home ? [
@@ -550,7 +572,11 @@ export function Stage3Home() {
 
   return <div className="page st3 st3-home">
     <PageHead title="모아" logo sub="결제일에 돈이 모자라지 않는지 확인하고, 사기 전에 미래를 비교해요" />
-    {viewDay > home.observation_end && <p className="st3-note warn" role="note">{mdw(viewDay)}은 아직 관측된 거래가 없는 미래 예상일이에요. {mdw(home.observation_end)}의 확정 잔액에서 출발한 예측을 확인해 주세요. 예상 마감 잔액: <Money as="span" value={home.daily_cashflow.find(d => d.date === viewDay)?.closing_balance} /></p>}
+    {viewDay > home.observation_end && <p className="st3-note warn" role="note">
+      {viewDay !== day
+        ? <>{mdw(viewDay)}은 아직 관측된 거래가 없는 미래 예상일이에요. {mdw(home.observation_end)}의 관측 잔액과 예정된 현금흐름을 기준으로 추정한 예상 마감 잔액: <Money as="span" value={home.daily_cashflow.find(d => d.date === viewDay)?.closing_balance} /></>
+        : <>{mdw(viewDay)}은 원본 관측 종료일 이후예요. 직접 확인한 거래만 반영한 부분 잔액이며 미기록 소비가 있을 수 있어요. 확인된 항목 기준 잔액: <Money as="span" value={home.available_cash} /></>}
+    </p>}
     <section className="st6-morning" aria-label="오늘의 금융 변화" aria-live="polite">
       <div className="st6-morning-heading"><span>오늘의 금융 변화</span><time dateTime={home.as_of_date}>{mdw(home.as_of_date)} 기준</time></div>
       {briefing ? <>
@@ -743,7 +769,8 @@ function PathCard({ path, base, active, onPick }: { path: ScenarioPath; base?: S
 
 
 export function Stage3Worlds() {
-  const { home, params, updateParams, comparison, comparing, compareError, loading, error, retry, instruments, savedPlans, refreshSummary } = useTwin();
+  const { user, day, home, params, updateParams, comparison, comparing, compareError, loading, error, retry, instruments, savedPlans, refreshSummary } = useTwin();
+  const [visionFile, setVisionFile] = useState<File | null>(null);
   const [all, setAll] = useState(false);
   const [picked, setPicked] = useState('purchase_now');
   const [sel, setSel] = useState<number | null>(null);
@@ -795,6 +822,18 @@ export function Stage3Worlds() {
   return <div className="page st3 st3-worlds-page">
     <PageHead title="평행세계" sub="같은 시작 잔액에서 선택만 바꿔 계산한 가상의 미래예요. 실제 계좌의 돈은 움직이지 않아요." />
     {savedPlans.length > 0 && <p className="st6-saved-summary">저장한 경로 {savedPlans.length}개 · 저장 당시 예상 결과를 보존하고 있어요.</p>}
+    <Stage3AiAgent user={user} day={day} onApplyAmount={amount => updateAmount(amount)} />
+    <div className="st3-ai-vision-line">
+      <label className="st3-ai-vision-upload">
+        <span>쇼핑몰 화면을 AI로 분석해 결제 금액 가져오기</span>
+        <input type="file" accept="image/png,image/jpeg,image/webp"
+          onChange={e => { const file = e.currentTarget.files?.[0]; if (file) setVisionFile(file); e.currentTarget.value = ''; }} />
+      </label>
+      <small>이미지 지원 API 키가 있어야 호출돼요 · 인식한 가격은 확인 후 가상 비교에만 반영해요</small>
+    </div>
+    {visionFile && <Stage2Vision key={user + visionFile.name + visionFile.lastModified}
+      userId={user} file={visionFile} onClose={() => setVisionFile(null)}
+      onApply={({ amount }) => updateAmount(amount)} />}
     
     {error ? <ErrorNotice message={error} retry={retry} /> : loading || !home ? <Loading label="체험 계정 상태를 불러오는 중이에요" /> :
       <div className="st3-layout worlds">
@@ -918,6 +957,9 @@ export function Stage3Assets({ focus = 'save' }: { focus?: 'save' | 'invest' }) 
     <div className="st3-block-head"><h2 id="st3-portfolio">모의투자 계좌</h2>
       <p>{home.virtual_investments.snapshot_date ? `${md(home.virtual_investments.snapshot_date)} 기준` : ''} 체험용 포트폴리오</p></div>
     <div className="st3-kpi"><span>투자에 쓸 수 있는 가상 현금</span><Money value={home.virtual_investments.virtual_cash} /></div>
+    <button type="button" className="st3-btn ghost st3-learning-link" onClick={() => nav.setTab('learn')}>
+      오늘의 맞춤 금융 퀴즈 풀기
+    </button>
     {positions.length ? <table className="st3-table">
       <thead><tr><th scope="col">종목</th><th scope="col">수량</th><th scope="col">매수 금액</th><th scope="col">기준일 가격 환산</th></tr></thead>
       <tbody>{positions.map(([code, v]) => {
@@ -1117,7 +1159,7 @@ export function Stage3Ledger() {
  */
 export function Stage3ClassicHome() {
   const nav = useNav();
-  const { user, viewDay, dateEnd, home, comparison, loading, error, retry, briefing } = useTwin();
+  const { user, day, viewDay, dateEnd, home, comparison, loading, error, retry, briefing } = useTwin();
   const [expandedAssets, setExpandedAssets] = useState(false);
   const [expandedBrief, setExpandedBrief] = useState(false);
   const [chartSelected, setChartSelected] = useState<number | null>(null);
@@ -1133,8 +1175,10 @@ export function Stage3ClassicHome() {
   </div>;
 
   const forecastDay = viewDay > home.observation_end;
+  const forecastOnly = viewDay !== day;
+  // Distinguish an unobserved future projection from confirmed local transactions.
   const forecastRow = home.daily_cashflow.find(d => d.date === viewDay);
-  const shownBalance = forecastDay ? forecastRow?.closing_balance ?? null : home.available_cash;
+  const shownBalance = forecastOnly ? (forecastRow?.closing_balance ?? null) : home.available_cash;
   const horizon = [3, 7, 14];
   const points = [
     { date: home.as_of_date, value: home.available_cash },
@@ -1158,7 +1202,9 @@ export function Stage3ClassicHome() {
       <div><span>가상 체험 · {user}</span><b>{mdw(viewDay)} {forecastDay ? '예상' : '관측'} 기준</b></div>
       <span className="ux-home-date">총 20명 중 {user}</span>
       <p>{forecastDay
-        ? `${mdw(dateEnd)}까지 관측된 금융 기록을 기준으로 계산한 미래 예상이에요. ${mdw(viewDay)}에 새 거래가 실제로 발생했다고 가정하지 않았어요.`
+        ? (forecastOnly
+          ? `${mdw(dateEnd)}까지 관측된 금융 기록을 토대로 계산한 미래 예상이에요. 이 날짜의 실제 지출 기록은 없어요.`
+          : `${mdw(dateEnd)}까지의 기록과 직접 확인한 새 거래만 합산했어요. 미기록 거래가 있을 수 있는 부분 잔액이에요.`)
         : `${mdw(dateEnd)}까지 기록된 합성 데이터를 보여줘요. 오른쪽 체험 설정에서 사용자·날짜를 바꿀 수 있어요.`}</p>
     </div>
 
@@ -1172,9 +1218,13 @@ export function Stage3ClassicHome() {
           ? `${mdw(shortfall.date)}에 결제계좌 잔액이 부족해질 수 있어요`
           : '예정된 결제일까지 잔액 흐름을 확인했어요'}</p>
         <div className="ux-canonical-risk-value">
-          <small>{forecastDay ? `${mdw(viewDay)} 예상 결제계좌 잔액` : `${mdw(home.as_of_date)} 관측 결제계좌 잔액`}</small>
+          <small>{forecastDay
+            ? `${mdw(viewDay)} ${forecastOnly ? '예상 마감 잔액' : '확인된 거래 기준 부분 잔액'}`
+            : `${mdw(home.as_of_date)} 관측 결제계좌 잔액`}</small>
           <strong className="num">{shownBalance == null ? '예측 범위를 벗어났어요' : balanceText(shownBalance)}</strong>
-          <span>{forecastDay ? '확정 잔액 아님 · 미래 지출 예측 포함' : '관측된 합성 금융 기록 기준 · 실제 은행 잔액 아님'}</span>
+          <span>{forecastDay
+            ? (forecastOnly ? '미래 현금흐름 예측 · 실제 결제 기록 아님' : '확정 잔액 아님 · 확인한 거래만 반영 · 미기록 지출 제외')
+            : '관측된 합성 금융 기록 기준 · 실제 은행 잔액 아님'}</span>
         </div>
         <div className="ux-python-audit">
           <div className="ux-python-audit-head"><strong>앞으로 14일 <span>· Python 금융 계산</span></strong>

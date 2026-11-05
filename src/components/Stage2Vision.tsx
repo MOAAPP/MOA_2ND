@@ -8,6 +8,7 @@ import { Sheet, Spinner } from './ui';
 
 interface Props {
   file: File;
+  userId?: string;
   onClose: () => void;
   onApply: (item: { amount: number; name?: string }) => void;
 }
@@ -24,7 +25,7 @@ function MoneyField({ title, value, change, hint }: {
 }
 
 /** New purchase intent lives only in Python candidate overlay until user explicitly records a choice. */
-export function Stage2Vision({ file, onClose, onApply }: Props) {
+export function Stage2Vision({ file, onClose, onApply, userId = 'S01' }: Props) {
   const [analysis, setAnalysis] = useState<VisionAnalysis | null>(null);
   const [product, setProduct] = useState<VisionProduct | null>(null);
   const [candidate, setCandidate] = useState<PurchaseCandidate | null>(null);
@@ -37,12 +38,16 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview] = useState(() => URL.createObjectURL(file));
+  const [privacyAllowed, setPrivacyAllowed] = useState(false);
 
+  // No image bytes reach the third-party vision provider without explicit approval.
+  useEffect(() => () => URL.revokeObjectURL(preview), [preview]);
   useEffect(() => {
+    if (!privacyAllowed) return;
     let cancelled = false;
     setBusy(true);
     setError(null);
-    void analyzeShopScreenshot('S01', file).then(result => {
+    void analyzeShopScreenshot(userId, file).then(result => {
       if (cancelled) return;
       if (result.source !== 'multimodal_llm' || result.analysis_status !== 'succeeded') {
         setError('실제 비전 AI 결과가 아닙니다.');
@@ -53,8 +58,8 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     }).catch(e => {
       if (!cancelled) setError(e instanceof Error ? e.message : '이미지 분석 실패');
     }).finally(() => { if (!cancelled) setBusy(false); });
-    return () => { cancelled = true; URL.revokeObjectURL(preview); };
-  }, [file, preview]);
+    return () => { cancelled = true; };
+  }, [file, userId, privacyAllowed]);
 
   const patch = <K extends keyof VisionProduct>(key: K, value: VisionProduct[K]) => {
     setProduct(p => p ? { ...p, [key]: value } : p);
@@ -73,7 +78,7 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     if (!analysis || !product || !verified) return;
     setBusy(true); setError(null);
     try {
-      const saved = await confirmProduct('S01', analysis.analysis_id, product, discount);
+      const saved = await confirmProduct(userId, analysis.analysis_id, product, discount);
       setCandidate(saved);
     } catch (e) {
       setError(e instanceof Error ? e.message : '구매 후보 저장에 실패했습니다.');
@@ -85,7 +90,7 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     try {
       // The exact next calendar day relative to the dataset snapshot; not a physical purchase.
       const when = new Date(simDate + 'T12:00:00+09:00').toISOString();
-      const result = await simulateCandidate('S01', candidate.id, when);
+      const result = await simulateCandidate(userId, candidate.id, when);
       setSimulation(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : '가상 구매 비교에 실패했습니다.');
@@ -106,6 +111,13 @@ export function Stage2Vision({ file, onClose, onApply }: Props) {
     <div className="s2-preview">
       <img src={preview} alt="업로드한 쇼핑몰 화면" style={{ width: '100%', maxHeight: 200, objectFit: 'contain' }} />
     </div>
+    {!privacyAllowed && <div className="s2-privacy-consent">
+      <p className="sheet-note">사진 속 이름·주소·전화번호·계좌·주문번호 등 개인정보를 가린 뒤 분석해 주세요. 확인 시 사진이 설정한 외부 비전 AI 제공업체로 전송돼요.</p>
+      <label className="s2-check"><input type="checkbox" checked={privacyAllowed}
+        onChange={e => setPrivacyAllowed(e.target.checked)} />
+        개인정보를 가렸으며 외부 비전 AI 전송에 동의해요
+      </label>
+    </div>}
     {busy && <Spinner label={analysis ? '저장 또는 비교 중…' : '레이아웃과 상품 가격을 분석하고 있어요'} />}
     {error && <p role="alert" className="sheet-note" style={{ color: 'var(--danger)' }}>{error}</p>}
     {analysis && <p className="sheet-note">실제 비전 AI: {analysis.model} · {analysis.latency_ms}ms
