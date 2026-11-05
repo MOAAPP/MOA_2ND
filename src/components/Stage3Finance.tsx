@@ -575,7 +575,7 @@ function HomeAiSpotlight() {
   };
   return <section className="ux-ai-spotlight" aria-labelledby="ux-ai-home-title">
     <div className="ux-ai-spotlight-top">
-      <div className="ux-ai-identity"><AiMark /><span>모아 AI</span></div>
+      <div className="ux-ai-identity"><AiMark label="" /><span>모아 AI</span></div>
       <span className="ux-ai-provenance" title={sourceLabel}>{live ? 'AI 분석 완료' : '데이터 분석'} · {md(showDate)}</span>
     </div>
     <h2 id="ux-ai-home-title">오늘 내 금융 상태, 이렇게 읽었어요</h2>
@@ -1356,9 +1356,9 @@ export function Stage3ClassicHome() {
       <button type="button" className="ux-home-textlink" onClick={() => nav.setTab('forks')}>선택 비교 결과 보기 ›</button>
     </section>
 
-    <section className="ux-home-extras" aria-label="가상 자산 및 금융 분석">
+    <section className="ux-home-extras" aria-label="가상 자산">
       <div className="ux-home-section-heading">
-        <div><small className="ux-home-overline">SANDBOX · 가상 실험</small><h2>가상 자산 · 분석</h2></div>
+        <div><small className="ux-home-overline">SANDBOX · 가상 실험</small><h2>가상 자산</h2></div>
       </div>
       <button type="button" className="ux-home-expand" aria-expanded={expandedAssets} onClick={() => setExpandedAssets(v => !v)}>
         <span><b>가상 자산 구성</b><small>모의 계좌·ETF 평가액 · 실제 금융자산 아님</small></span>
