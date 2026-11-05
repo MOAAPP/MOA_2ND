@@ -1,0 +1,41 @@
+name: Verify public Vercel FastAPI reverse proxy (preview)
+on:
+  pull_request:
+    paths:
+      - 'vercel.json'
+      - 'src/screens/V8Finance.tsx'
+      - 'src/screens/AskAi.tsx'
+      - '.github/workflows/verify-fastapi-proxy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  proxy-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify preview URL proxies FastAPI v4 instead of Node /api
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          root="https://parallel-bank-mf22jfs6k-jihyuncodings-projects.vercel.app"
+          for suffix in (
+              "/api/v4/health",
+              "/api/v4/ai/status",
+              "/api/v4/users/S01/briefing?as_of=2026-11-04",
+          ):
+              req=urllib.request.Request(root+suffix,headers={"Accept":"application/json"})
+              with urllib.request.urlopen(req,timeout=40) as response:
+                  item=json.load(response)
+                  print(suffix,response.status,str(item)[:250])
+                  assert response.status==200
+                  if suffix.endswith("/health"):
+                      assert item["users"]==20 and item["synthetic"] is True
+                  elif suffix.endswith("/ai/status"):
+                      assert item["keys_exposed"] is False
+                  else:
+                      assert item["user_id"]=="S01"
+                      assert item["spending_capacity"]["current_cash"]==27800
+          PY
