@@ -35,6 +35,42 @@ const closeDev = async () => {
   if (await close.count()) await close.click();
 };
 try {
+  // The regular landing URL must render the same canonical S01 dataset as
+  // ?demo=1, even with unrelated tracking parameters and stale personal data.
+  const desktop = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  try {
+    await desktop.goto(base + '/');
+    await desktop.waitForFunction(expected =>
+      document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
+      won(s01.available_cash), { timeout: 25000 });
+
+    const personalFixture = JSON.stringify({
+      version: 3, introSeen: true, demo: false,
+      profile: { fullName: 'SAVED_PERSONAL_DATA_MUST_REMAIN' },
+      records: [{ id: 'persisted-private-choice' }],
+    });
+    await desktop.evaluate(raw => localStorage.setItem('pb.state.v3', raw), personalFixture);
+    await desktop.goto(base + '/?utm_source=chatgpt.com');
+    await desktop.waitForFunction(expected =>
+      document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
+      won(s01.available_cash), { timeout: 25000 });
+    assert.equal(await desktop.evaluate(() => localStorage.getItem('pb.state.v3')), personalFixture);
+
+    const panel = desktop.locator('aside.st3-dev-panel[aria-label="체험 설정"]');
+    await panel.waitFor({ timeout: 10000 });
+    assert.equal(await panel.isVisible(), true);
+    assert.equal(await desktop.locator('select[aria-label="가상 사용자 선택"] option').count(), 20);
+    const panelBox = await panel.boundingBox();
+    const appBox = await desktop.locator('.app').boundingBox();
+    assert.ok(panelBox && appBox, 'desktop panel and app are visible');
+    assert.ok(panelBox.x >= appBox.x + appBox.width, 'demo panel must sit to the right of the app');
+    assert.ok(panelBox.x + panelBox.width <= 1280, 'demo panel must not be clipped off-screen');
+    await desktop.locator('select[aria-label="가상 사용자 선택"]').selectOption('S02');
+    await desktop.waitForFunction(expected =>
+      document.querySelector('.st3-hero > strong')?.textContent?.trim() === expected,
+      won(s02.available_cash), { timeout: 25000 });
+  } finally { await desktop.close(); }
+
   await page.goto(base + '/?demo=1');
   const hero = page.locator('.st3-hero > strong');
   await hero.waitFor({timeout: 25000});
@@ -158,7 +194,7 @@ try {
   await page.locator('.st3-error').first().waitFor({timeout:25000});
   assert.equal(await page.locator('.st3-hero > strong').count(),0);
   assert.match(await page.locator('.st3-error').innerText(),/데이터 형식/);
-  console.log('STAGE6_BROWSER_PASS: 20 users, S01/S02 Home and personalized briefing DOM, date movement, 6 worlds, backend alignment, schema-error state.');
+  console.log('STAGE6_BROWSER_PASS: root & utm tracking URL, preserved personal localStorage, visible desktop sidebar, 20 users, S01/S02 Home, personalized briefing, date movement, 6 worlds, schema-error state.');
 } finally {
   await browser.close();
 }
