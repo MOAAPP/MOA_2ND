@@ -1,5 +1,6 @@
 import { ShortfallCard } from './moa/parts';
 import { HomeIntelligence } from '../components/HomeIntelligence';
+import { HomeGoalExplorer } from '../components/HomeGoalExplorer';
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
 import { addDays, parseISO, startOfMonth } from '../../shared/dates';
@@ -134,13 +135,24 @@ export function V8Home() {
       <section className="ux-home-decision" aria-label="소비 선택 비교하기">
         <small className="ux-home-overline">구매 전 미리보기</small>
         <h2>지금 사고 싶은 게 있나요?</h2>
-        <p>구매하거나 미뤘을 때, 다음 결제일과 남는 돈이 어떻게 달라지는지 미리 비교해요.</p>
-        <button type="button" className="ux-home-primary" onClick={() => nav.push({ name: 'choose' })}>
-          구매 전 결과 비교하기 <span aria-hidden="true">→</span>
-        </button>
-        <button type="button" className="ux-home-capture" onClick={() => nav.push({ name: 'newChoice' })}>
-          <span aria-hidden="true">▧</span> 상품 캡처로 입력하기 <IconChevron />
-        </button>
+        <p>{state.demo
+          ? '사고 싶은 것과 지키고 싶은 조건을 알려주세요. AI가 금융 상황에 맞는 경로를 찾아봐요.'
+          : '금액 하나로 구매와 보류를 비교해요. 기록하기 전에는 잔액을 바꾸지 않아요.'}</p>
+        {state.demo && <HomeGoalExplorer />}
+        <div className="ux-home-decision-links">
+          {state.demo ? (
+            <button type="button" className="ux-home-decision-link" onClick={() => nav.push({ name: 'choose' })}>
+              금액만 입력해서 비교하기 <IconChevron />
+            </button>
+          ) : (
+            <button type="button" className="ux-home-primary" onClick={() => nav.push({ name: 'choose' })}>
+              구매 전 결과 비교하기 <span aria-hidden="true">→</span>
+            </button>
+          )}
+          <button type="button" className="ux-home-capture" onClick={() => nav.push({ name: 'newChoice' })}>
+            <span aria-hidden="true">▧</span> 상품 캡처로 입력하기 <IconChevron />
+          </button>
+        </div>
       </section>
 
       {/* 03 · Keep the ORIGINAL gesture-enabled WorldTimeline navigation. */}
