@@ -297,3 +297,8 @@
   .quick-expense-bottom small { display:none; }
   .ux-home-goal-amounts { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+
+.ux-home-header-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.ux-home-header-add { min-height:36px; padding:7px 11px; border:1px solid #dde1ef; border-radius:10px; background:#fff; color:#3944a3; font:inherit; font-weight:760; font-size:13px; white-space:nowrap; }
+.ux-home-header-add:focus-visible { outline:2px solid #7c86e9; outline-offset:2px; }
