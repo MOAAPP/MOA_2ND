@@ -74,26 +74,31 @@ describe('active V8Home design hierarchy', () => {
   it('shows one coherent financial journey with observed 5-spend daily summary', () => {
     const html = renderToStaticMarkup(createElement(V8Home));
     const sections = [
-      'PAYMENT_RISK',
-      '오늘의 가계부',
-      '소비 선택 비교하기',
-      '나의 평행세계',
-      '가상 자산 · 분석',
+      'aria-label="오늘의 금융 분석"',
+      'aria-label="소비 선택 비교하기"',
+      'aria-label="평행세계 비교 결과"',
+      'aria-label="오늘의 가계부"',
     ];
     const positions = sections.map(x => html.indexOf(x));
     expect(positions.every(i => i >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a,b)=>a-b));
+    expect(html).toContain('모아 AI');
+    expect(html).toContain('구매 전 결과 비교하기');
+    expect(html).toContain('AI에게 내 소비 계획 물어보기');
+    expect(html).not.toContain('PAYMENT_RISK'); // never mix local risk with S01 FastAPI
+    expect(html).not.toContain('Python 계산');
+    expect(html).not.toContain('FastAPI');
+    expect(html).not.toContain('SANDBOX');
+    expect(html).not.toContain('가상 자산 · 분석');
+    expect(html).not.toContain('aria-expanded="false"');
     expect(html).toContain('31,000원');
     expect(html).toContain('기록 5건');
     expect(html).toContain('이번 달 기록된 지출');
     expect(html).toContain('지출 추가하기');
     expect(html).toContain('오늘 내역 보기');
-    expect(html).toContain('결제계좌에 부족 위험이 있어요');
-    expect(html).toContain('aria-expanded="false"');
-    expect(html.match(/소비 선택 비교하기/g) ?? []).toHaveLength(2); // section aria and ONE button
+    expect(html).toContain('상품 캡처로 입력하기');
+    expect(html).toContain('움직이는 그래프로 비교하기');
     expect(html).not.toContain('자유 저축</');
-    expect(html).not.toContain('사고 싶은 게 있어요');
-    expect(html).not.toContain('사기 전에 비교하기');
     expect(html).toContain('11월 4일까지 관측된 합성 기록');
   });
 });
