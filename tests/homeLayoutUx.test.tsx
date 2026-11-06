@@ -92,6 +92,7 @@ describe('active V8Home design hierarchy', () => {
     expect(html).toContain('비교할 소비 금액');
     expect(html).toContain('직접 입력');
     expect(html).toContain('한 줄 지출 기록');
+    expect(html).toContain('바로 지출 기록');
     expect(html).not.toContain('AI에게 원하는 소비 조건을 말해 주세요');
     expect(html).not.toContain('AI에게 내 소비 계획 물어보기');
     expect(html).not.toContain('예시 AI 응답');
