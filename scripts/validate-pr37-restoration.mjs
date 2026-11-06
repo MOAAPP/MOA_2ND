@@ -20,6 +20,8 @@ try {
     'AI can no longer be buried inside a collapsed virtual-assets section');
   assert.equal(await page.locator('.ux-home-ledger').count(),1);
   assert.equal(await page.locator('.ux-home-decision').count(),1);
+  assert.equal(await page.locator('.ux-home-goal').count(),1);
+  assert.equal(await page.getByRole('button',{name:'AI로 가능한 경로 찾아보기'}).isDisabled(),true);
   assert.equal(await page.locator('.ux-home-world').count(),1);
   const positions = await page.evaluate(() => [
     '.ux-home-ai-hero','.ux-home-decision','.ux-home-world','.ux-home-ledger'
@@ -54,7 +56,8 @@ try {
   await page.getByRole('button',{name:'보내기'}).click();
   await page.getByText('지금은 모아 AI 상담을 준비 중이에요.',{exact:false}).waitFor({timeout:15000});
   await page.getByRole('button',{name:'뒤로 가기'}).click();
-  await page.getByRole('button',{name:'구매 전 결과 비교하기'}).click();
+  await page.locator('#ux-goal-prompt').waitFor({timeout:10000});
+  await page.getByRole('button',{name:'금액만 입력해서 비교하기'}).click();
   await page.locator('.c-page').waitFor({timeout:10000});
   await page.getByRole('button',{name:'뒤로 가기'}).click();
   await page.locator('.ux-home-decision').waitFor({timeout:10000});
