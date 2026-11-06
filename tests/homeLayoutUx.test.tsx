@@ -83,7 +83,9 @@ describe('active V8Home design hierarchy', () => {
     expect(positions.every(i => i >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a,b)=>a-b));
     expect(html).toContain('모아 AI');
-    expect(html).toContain('구매 전 결과 비교하기');
+    expect(html).toContain('AI로 가능한 경로 찾아보기');
+    expect(html).toContain('금액만 입력해서 비교하기');
+    expect(html).toContain('AI에게 원하는 소비 조건을 말해 주세요');
     expect(html).toContain('AI에게 내 소비 계획 물어보기');
     expect(html).not.toContain('PAYMENT_RISK'); // never mix local risk with S01 FastAPI
     expect(html).not.toContain('Python 계산');
