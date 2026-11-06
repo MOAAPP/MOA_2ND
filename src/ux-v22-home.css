@@ -220,3 +220,9 @@
 }
 @media(prefers-reduced-motion:reduce) { .ux-home-goal-result {animation:none;} }
 .reduce-motion .ux-home-goal-result {animation:none;}
+
+
+.ux-home-goal-confirmations { border-top:1px solid #dfe2f7; padding-top:10px; margin-top:10px; }
+.ux-home-goal-confirmations > b { display:block; font-size:12px; color:#374176; margin-bottom:7px; }
+.ux-home-goal-confirmations > ul { margin:0; padding-left:17px; }
+.ux-home-goal-confirmations li { margin:5px 0; line-height:1.5; font-size:12px; color:#4f587b; }
