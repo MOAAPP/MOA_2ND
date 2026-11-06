@@ -22,10 +22,6 @@ import { WORLD_FIXED_BILLS, WORLD_SAFETY_BUFFER, transactWorldWallet, type World
 import { useBank } from '../state/bank';
 import { useNav } from '../state/nav';
 import { useStore, withEvent } from '../state/store';
-import { AiCard } from '../components/Ai';
-import { useAi } from '../lib/ai';
-import { coachInput } from '../lib/ai/context';
-import { useSpending } from './Ledger';
 import { useMoa } from '../state/moa';
 import { assessRisk, billingDate, RISK_HORIZON, type Line, type ScenarioKey } from '../lib/moa';
 import { GradeBadge, md } from './moa/parts';
@@ -200,7 +196,6 @@ export function Choose() {
         ) : null}
       </section>
 
-      <Coach item={title} price={price} freq={freq} usableNow={fc.now.usable} usableAfter={fc.buy.usable} afterBills={fc.buy.afterBills} yearGap={fc.year.net} memory={state.categoryMemory} />
       </>}
 
       <Card title="어떻게 할래요?" className="c-pick-card">
@@ -296,18 +291,6 @@ function PayDayImpact({ price, freq, method, onMethod }: { price: number; freq: 
         </>
       ) : <p className="c-sec-title">14일 안에 등록된 필수결제가 없어서 결제일 영향은 없어요</p>}
     </section>
-  );
-}
-
-function Coach({ item, price, freq, usableNow, usableAfter, afterBills, yearGap, memory }: { item: string; price: number; freq: Frequency; usableNow: number; usableAfter: number; afterBills: number; yearGap: number; memory: Record<string, string> }) {
-  const { all, today } = useSpending();
-  const category = ruleClassify(item, memory)?.category ?? '기타';
-  const input = useMemo(() => coachInput({ item, category, price, frequency: freq, usableNow, usableAfter, afterBills, yearGap }, all, today), [item, category, price, freq, usableNow, usableAfter, afterBills, yearGap, all, today]);
-  const ai = useAi('coach', input, JSON.stringify(input));
-  return (
-    <AiCard title="AI 코치" loading={ai.loading} source={ai.source} tone={ai.data?.tone} className="c-coach">
-      {ai.data && <><p className="ai-body">{ai.data.message}</p>{ai.data.tip && <p className="ai-tip">{ai.data.tip}</p>}</>}
-    </AiCard>
   );
 }
 
