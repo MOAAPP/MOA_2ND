@@ -1,0 +1,42 @@
+name: Verify live S01 goal search in customer flow
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-goal-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Verify real FactChat goal understanding and Python routes
+        run: |
+          python - <<'PY'
+          import json, urllib.request, urllib.error
+          endpoint = 'https://parallel-bank.vercel.app/api/v4/agent/analyze'
+          payload = json.dumps({
+              "user_id":"S01",
+              "as_of":"2026-11-04",
+              "goal":"월세와 생활비는 지키고 8만원짜리 운동화는 사고 싶어. 구매를 미루는 대안도 찾아줘",
+              "max_evaluations":36
+          },ensure_ascii=False).encode('utf-8')
+          req = urllib.request.Request(endpoint, data=payload,
+              headers={'Content-Type':'application/json','Accept':'application/json'},
+              method='POST')
+          try:
+              with urllib.request.urlopen(req,timeout=95) as response:
+                  data=json.load(response)
+                  print('HTTP',response.status)
+                  print('status',data.get('status'))
+                  print('routes',len(data.get('search',{}).get('routes',[])))
+                  print('model-present',bool(data.get('llm_model')))
+                  print('tools',[(x.get('tool'),x.get('status')) for x in data.get('tool_execution_log',[])])
+                  assert response.status==200
+                  assert data.get('llm_model')
+                  assert isinstance(data.get('search',{}).get('routes'),list)
+          except urllib.error.HTTPError as err:
+              print('HTTP',err.code)
+              print('response',err.read(2000).decode('utf-8','replace'))
+              raise
+          PY

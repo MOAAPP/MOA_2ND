@@ -1,6 +1,7 @@
 import { ShortfallCard } from './moa/parts';
-import { FinanceEnginePanel } from '../components/FinanceEnginePanel';
-import { useEffect, useMemo, useState } from 'react';
+import { HomeIntelligence } from '../components/HomeIntelligence';
+import { HomeGoalExplorer } from '../components/HomeGoalExplorer';
+import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
 import { addDays, parseISO, startOfMonth } from '../../shared/dates';
 import { appDay, appNow, DEMO_END_DAY, DEMO_SNAPSHOT_DAY } from '../lib/appClock';
@@ -9,15 +10,9 @@ import { Logo } from '../components/Glyph';
 import { useStore } from '../state/store';
 import { useNav } from '../state/nav';
 import { transactWorldWallet, type WorldWalletAction } from '../lib/worldWallet';
-import { Sheet } from '../components/ui';
 import { worldHistory } from '../lib/worldHistory';
-import { useMoa } from '../state/moa';
 import { useWallet } from '../state/wallet';
 import { Row, useSpending } from './Ledger';
-import { AiCard, AiMark } from '../components/Ai';
-import { useAi } from '../lib/ai';
-import { briefInput } from '../lib/ai/context';
-import { getMorningBriefing, type MorningBriefing } from '../lib/stage6Api';
 
 const fmt = (n: number) => won(Math.max(0, Math.round(n)));
 
@@ -44,69 +39,6 @@ export function TopHeader({ title, sub, logo = false }: { title: string; sub?: s
       </div>
       <button aria-label="설정 열기" className="t-head-icon" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
     </header>
-  );
-}
-
-/** AI is a detail-on-demand, not an equal-rank home CTA. */
-function HomeBrief() {
-  const { state } = useStore();
-  const nav = useNav();
-  const { all, today } = useSpending();
-  const input = useMemo(() => briefInput(state.worldWallet, all, today), [state.worldWallet, all, today]);
-  // Private/manual accounts keep their original local experience. Synthetic
-  // S01 uses the actual canonical FastAPI calculation; never relabel an
-  // example/template response as a live LLM answer.
-  const original = useAi('brief', state.demo ? null : input, JSON.stringify(input));
-  const [apiData, setApiData] = useState<MorningBriefing | null>(null);
-  const [apiLoading, setApiLoading] = useState(false);
-  const [apiError, setApiError] = useState('');
-  useEffect(() => {
-    if (!state.demo) { setApiData(null); setApiError(''); return; }
-    const ctrl = new AbortController();
-    setApiData(null); setApiLoading(true); setApiError('');
-    // The canonical dataset is observed through 2026-11-04. Do not
-    // represent later projected days as newly observed transactions.
-    void getMorningBriefing('S01', '2026-11-04', ctrl.signal).then(data => {
-      if (!ctrl.signal.aborted) setApiData(data);
-    }).catch(() => {
-      if (!ctrl.signal.aborted) setApiError('상세 금융 분석을 잠시 불러오지 못했어요.');
-    }).finally(() => {
-      if (!ctrl.signal.aborted) setApiLoading(false);
-    });
-    return () => ctrl.abort();
-  }, [state.demo]);
-  const nextBill = apiData?.nearest_essential_payment;
-  const capacity = apiData?.spending_capacity.estimated_additional_spend;
-  const covered = nextBill?.covered ?? true;
-  const title = !covered
-    ? '다음 결제일 전 잔액을 확인해 주세요'
-    : nextBill ? '다가오는 결제부터 챙겨볼까요?'
-      : '앞으로의 지출을 함께 살펴봤어요';
-  const grounded = apiData && capacity != null
-    ? `11월 4일에 기록된 S01 데이터로 계산했어요. 예상 추가 소비 여유는 ${won(capacity)}이고, ${nextBill ? `다음 필수 결제는 ${parseISO(nextBill.date).m}월 ${parseISO(nextBill.date).d}일` : '등록된 다음 필수 결제는 없어요'}${nextBill ? '이에요' : ''}. 미래 예측은 실제 소비를 보장하지 않아요.`
-    : '';
-  return (
-    <AiCard title="오늘의 분석"
-      loading={state.demo ? apiLoading : original.loading}
-      source={state.demo ? (apiData?.llm_used ? 'live' : 'example') : original.source}
-      className="ux-home-brief" foot={false}>
-      {state.demo ? (
-        apiData ? <>
-          <strong className="ai-headline">{title}</strong>
-          <p className="ai-body">{apiData.llm_used ? apiData.summary : grounded}</p>
-          <small className="ai-src">{apiData.llm_used ? 'AI가 금융 기록에 근거해 설명했어요' : '확인된 기록을 바탕으로 계산했어요 · AI 생성 설명 아님'}</small>
-          <button type="button" className="ux-home-textlink" onClick={() => nav.push({ name: 'ask' })}>
-            <AiMark label="" />분석에 대해 물어보기 <IconChevron />
-          </button>
-        </> : <p className="ai-body" role="status">{apiError || '금융 기록을 확인하고 있어요…'}</p>
-      ) : original.data && <>
-        <strong className="ai-headline">{original.data.headline}</strong>
-        <p className="ai-body">{original.data.body}</p>
-        <button type="button" className="ux-home-textlink" onClick={() => nav.push({ name: 'ask' })}>
-          <AiMark label="" />분석에 대해 물어보기 <IconChevron />
-        </button>
-      </>}
-    </AiCard>
   );
 }
 
@@ -180,11 +112,7 @@ function DemoDayBar() {
 export function V8Home() {
   const { state } = useStore();
   const nav = useNav();
-  const { summary: wallet, wallet: walletData } = useWallet();
-  const { report } = useMoa();
-  const [showBudget, setShowBudget] = useState(false);
-  const [showAi, setShowAi] = useState(false);
-  const [showAssets, setShowAssets] = useState(false);
+  const { wallet: walletData } = useWallet();
   const when = appNow(state);
   const gap = useMemo(() => {
     const points = worldHistory(walletData, 30, when);
@@ -192,41 +120,45 @@ export function V8Home() {
   }, [walletData, when]);
   const decisions = walletData.decisions.filter(d => d.at <= when);
   const latest = decisions.at(-1);
-  const isShort = Boolean(report.worst && report.worst.shortBy > 0);
-  const holdings = [
-    { key: 'savings', name: '자유 저축', amount: wallet.freeSavings, tab: 'save' as const },
-    { key: 'deposit', name: '정기예금', amount: wallet.deposit, tab: 'save' as const },
-    { key: 'installment', name: '적금', amount: wallet.installment, tab: 'save' as const },
-    { key: 'stock', name: '주식·ETF', amount: wallet.stockValue, tab: 'invest' as const },
-  ].filter(x => x.amount > 0);
   return (
     <div className="page t-page t-home ux-home">
-      <TopHeader title="모아" logo sub="결제일을 확인하고, 오늘의 소비를 관리해요" />
+      <TopHeader title="모아" logo sub="결제일을 살펴보고, 내 선택의 미래를 비교해요" />
       <DemoDayBar />
 
-      {/* 01 · Payment-account risk, the primary service promise */}
-      <div className="ux-home-risk" aria-label="다가오는 결제일 상태">
-        <ShortfallCard />
-        <FinanceEnginePanel />
-      </div>
+      {/* 01 · Visible AI briefing and user-facing cashflow from one source. */}
+      <HomeIntelligence />
+      {/* The manual account's own on-device payment schedule stays separate
+          from S01 FastAPI data: never mix two conflicting cash balances. */}
+      {!state.demo && <div className="ux-home-risk" aria-label="다가오는 결제일 상태"><ShortfallCard /></div>}
 
-      {/* 02 · Actual or entered spending, not simulated investment returns */}
-      <HomeSpend />
-
-      {/* 03 · One and only primary purchase-comparison CTA */}
+      {/* 02 · Purchase intent before transaction; no ledger mutation until save. */}
       <section className="ux-home-decision" aria-label="소비 선택 비교하기">
-        <small className="ux-home-overline">BEFORE YOU BUY · 소비 결정</small>
-        <h2>지금 사면, 다음 결제일은 괜찮을까요?</h2>
-        <p>금액 하나로 구매와 보류를 비교해요. 기록하기 전에는 잔액을 바꾸지 않아요.</p>
-        <button type="button" className="ux-home-primary" onClick={() => nav.push({ name: 'choose' })}>
-          소비 선택 비교하기 <span aria-hidden="true">→</span>
-        </button>
+        <small className="ux-home-overline">구매 전 미리보기</small>
+        <h2>지금 사고 싶은 게 있나요?</h2>
+        <p>{state.demo
+          ? '사고 싶은 것과 지키고 싶은 조건을 알려주세요. AI가 금융 상황에 맞는 경로를 찾아봐요.'
+          : '금액 하나로 구매와 보류를 비교해요. 기록하기 전에는 잔액을 바꾸지 않아요.'}</p>
+        {state.demo && <HomeGoalExplorer />}
+        <div className="ux-home-decision-links">
+          {state.demo ? (
+            <button type="button" className="ux-home-decision-link" onClick={() => nav.push({ name: 'choose' })}>
+              금액만 입력해서 비교하기 <IconChevron />
+            </button>
+          ) : (
+            <button type="button" className="ux-home-primary" onClick={() => nav.push({ name: 'choose' })}>
+              구매 전 결과 비교하기 <span aria-hidden="true">→</span>
+            </button>
+          )}
+          <button type="button" className="ux-home-capture" onClick={() => nav.push({ name: 'newChoice' })}>
+            <span aria-hidden="true">▧</span> 상품 캡처로 입력하기 <IconChevron />
+          </button>
+        </div>
       </section>
 
-      {/* 04 · Choice effect != real bank balance or investments */}
+      {/* 03 · Keep the ORIGINAL gesture-enabled WorldTimeline navigation. */}
       <section className="ux-home-world" aria-label="평행세계 비교 결과">
         <div className="ux-home-section-heading">
-          <div><small className="ux-home-overline">WHAT IF · 가상 비교</small><h2>나의 평행세계</h2></div>
+          <div><small className="ux-home-overline">선택으로 달라지는 미래</small><h2>나의 평행세계</h2></div>
           <span className="ux-home-virtual">가상 선택 기록</span>
         </div>
         {decisions.length ? (
@@ -245,56 +177,15 @@ export function V8Home() {
           </div>
         ) : <p className="ux-home-muted">비교한 선택이 아직 없어요. 선택을 남기면 두 경로가 나타나요.</p>}
         {latest && <p className="ux-home-recent-choice">최근 선택 · {latest.title} · {latest.choice === 'buy' ? '구매' : latest.choice === 'wait' ? '보류' : '대안 선택'}</p>}
-        <button type="button" className="ux-home-textlink" onClick={() => nav.setTab('forks')}>선택 비교 결과 보기 <IconChevron /></button>
+        <button type="button" className="ux-home-textlink" onClick={() => nav.setTab('forks')}>움직이는 그래프로 비교하기 <IconChevron /></button>
       </section>
 
-      {/* 05 · Secondary virtual holdings and AI. Neither competes with risk. */}
-      <section className="ux-home-extras" aria-label="보조 가상 기능">
-        <div className="ux-home-section-heading"><div><small className="ux-home-overline">SANDBOX · 가상 실험</small><h2>가상 자산 · 분석</h2></div></div>
-        {isShort && <p className="ux-home-finance-caution">결제계좌에 부족 위험이 있어요. 아래 가상 자산은 부족액을 충당할 수 있는 실제 돈이 아니에요.</p>}
-        <button type="button" className="ux-home-expand" aria-expanded={showAssets} onClick={() => setShowAssets(x => !x)}>
-          <span><b>가상 자산 구성</b><small>모의 계좌·ETF 평가액 · 실제 금융자산 아님</small></span>
-          <strong className="num">{won(wallet.totalAssets)}</strong>
-          <span aria-hidden="true">{showAssets ? '−' : '+'}</span>
-        </button>
-        {showAssets && (
-          <div className="ux-home-assets">
-            <div className="ux-home-asset-detail"><span>가상 지갑 현금</span><b className="num">{won(wallet.cash)}</b></div>
-            {holdings.map(h => (
-              <button key={h.key} type="button" onClick={() => nav.setTab(h.tab)}>
-                <span>{h.name}</span><b className="num">{won(h.amount)}</b><IconChevron />
-              </button>
-            ))}
-            {!holdings.length && <p>현재 보유 중인 가상 예·적금이나 ETF는 없어요.</p>}
-            <div className="ux-home-budget">
-              <span>이 중 가상 소비 가능 금액</span>
-              <b>{won(Math.max(0, wallet.monthlyUsable))}</b>
-              {wallet.monthlyUsable <= 0 && <small>등록 필수결제와 보호금액을 빼면 사용 여력이 없어요.</small>}
-              <button type="button" className="ux-home-textlink" onClick={() => setShowBudget(true)}>계산 기준 보기 <IconChevron /></button>
-            </div>
-          </div>
-        )}
-        <button type="button" className="ux-home-expand" aria-expanded={showAi} onClick={() => setShowAi(x => !x)}>
-          <span><b>AI 소비 분석</b><small>기록을 참고한 보조 설명 · 숫자는 앱에서 계산</small></span>
-          <span aria-hidden="true">{showAi ? '−' : '+'}</span>
-        </button>
-        {showAi && <HomeBrief />}
-      </section>
+      {/* 04 · Spending records support decisions without outranking AI. */}
+      <HomeSpend />
 
       <p className="ux-home-legal">결제계좌는 입력하거나 합성한 잔액 기준으로 예측해요. 은행과 자동 연결되지 않으며, 평행세계·모의투자 기록은 실제 돈과 합산하지 않아요.</p>
 
-      {showBudget && (
-        <Sheet title="가상 소비 가능 금액 계산" onClose={() => setShowBudget(false)}>
-          <dl className="ob-calc t-how-calc">
-            <div><dt>가상 지갑 현금</dt><dd className="num">{won(wallet.cash)}</dd></div>
-            <div><dt>등록된 월 필수결제 합계</dt><dd className="num">−{won(wallet.protectedBills)}</dd></div>
-            <div><dt>지켜둘 보호금액</dt><dd className="num">−{won(wallet.protectedBuffer)}</dd></div>
-            <div className="total"><dt>가상 소비 가능 금액</dt><dd className="num">{wallet.monthlyUsable > 0 ? won(wallet.monthlyUsable) : '0원'}</dd></div>
-          </dl>
-          {wallet.monthlyUsable < 0 && <p className="ux-home-finance-caution">지금 가상 장부에서 필요한 보호금액이 {won(-wallet.monthlyUsable)}만큼 더 커요. 현금이 마이너스라는 뜻은 아니에요.</p>}
-          <p className="t-how-note">이것은 모의 소비 한도 계산이에요. 실제 결제일·급여일은 위 결제계좌 위험 정보에서 별도로 계산합니다.</p>
-        </Sheet>
-      )}
+
     </div>
   );
 }
