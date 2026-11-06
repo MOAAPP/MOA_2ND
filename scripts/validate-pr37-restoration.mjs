@@ -52,6 +52,8 @@ try {
   await page.screenshot({path:'/tmp/pr37-original-home.png',fullPage:true});
   // The user's main job is recording spending, not entering a ChatGPT prompt.
   const quick = page.locator('.ux-home-ledger .quick-expense');
+  await page.getByRole('button',{name:'바로 지출 기록'}).click();
+  assert.equal(await page.locator('#quick-expense-home').evaluate(el => document.activeElement === el),true);
   await quick.waitFor({timeout:10000});
   await quick.getByRole('textbox',{name:'지출 한 줄 입력'}).fill('커피 4,500원');
   await quick.getByRole('button',{name:'기록',exact:true}).click();
