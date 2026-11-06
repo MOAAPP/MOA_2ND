@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AiLines, AiMark, AiSourceNote } from '../components/Ai';
 import { TopBar } from '../components/ui';
-import { runAi, type AiSource } from '../lib/ai';
-import { askContext } from '../lib/ai/context';
+import type { AiSource } from '../lib/ai';
 import { getAiStatus, askFinanceAgent } from '../lib/v4AiApi';
 import { ASK_SUGGESTIONS } from '../lib/ai/example';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
-import { useSpending } from './Ledger';
 
 type Msg = { id: number; who: 'me' | 'ai'; text: string; followUps?: string[]; source?: AiSource };
 
@@ -15,9 +13,6 @@ type Msg = { id: number; who: 'me' | 'ai'; text: string; followUps?: string[]; s
 export function AskAi({ initial }: { initial?: string }) {
   const nav = useNav();
   const { state } = useStore();
-  const { all, today } = useSpending();
-  const goal = state.profile?.goal ? { name: state.profile.goal.name, target: state.profile.goal.target, saved: state.profile.goal.saved } : null;
-  const ctx = useMemo(() => askContext(state.worldWallet, all, today, goal), [state.worldWallet, all, today, goal]);
   const [msgs, setMsgs] = useState<Msg[]>([{ id: 0, who: 'ai', text: '안녕하세요, 모아예요. 이번 달 돈 쓰는 거, 모으는 거 뭐든 물어보세요. 앱에 있는 내 기록을 보고 답할게요.', followUps: ASK_SUGGESTIONS }]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -43,7 +38,9 @@ export function AskAi({ initial }: { initial?: string }) {
         } else {
           const answer = await askFinanceAgent('S01', '2026-11-04', question);
           const options = answer.search.routes.filter(route => route.hard_constraints_met).slice(0, 3);
-          const explanation = options.length
+          const explanation = answer.status === 'needs_confirmation'
+            ? '비교에 필요한 정보를 더 확인해야 해요. 구매 금액과 지켜야 할 결제 조건을 구체적으로 알려주세요.'
+            : options.length
             ? '입력한 조건을 금융 기록과 비교했어요.\\n' + options.map((route, i) =>
               `${i + 1}. ${route.label} — 구매액 ${route.purchase_amount.toLocaleString('ko-KR')}원, 예상 최저 잔액 ${route.minimum_balance.toLocaleString('ko-KR')}원`).join('\\n')
             : '입력한 조건을 모두 지킬 수 있는 선택을 찾지 못했어요. 구매 금액이나 날짜를 조정해 보세요.';
@@ -55,9 +52,8 @@ export function AskAi({ initial }: { initial?: string }) {
             source: 'live' }]);
         }
       } else {
-        const r = await runAi('ask', { question, context: ctx });
-        setMsgs((m) => [...m, { id: seq.current++, who: 'ai', text: r.data.answer,
-          followUps: r.data.followUps, source: r.source }]);
+        setMsgs((m) => [...m, { id: seq.current++, who: 'ai',
+          text: '내 개인 가계부 기록은 AI 서버와 아직 연결되지 않았어요. 확인되지 않은 AI 답변을 대신 보여주지 않을게요. 가계부의 소비 통계와 결제일 계산을 먼저 확인해 주세요.' }]);
       }
     } catch {
       setMsgs(m => [...m, { id: seq.current++, who: 'ai',

@@ -7,16 +7,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { addDays, addMonths, daysInMonth, parseISO, startOfMonth, weekdayOf, type ISODate } from '../../shared/dates';
 import { manShort } from '../../shared/format';
-import { AiCard, AiMark } from '../components/Ai';
+import { QuickExpense } from '../components/QuickExpense';
 import { CategoryIcon, categoryColor } from '../components/CategoryIcon';
 import { AmountText, Button, Chip, Chips, NumberPad, Won } from '../components/ds';
 import { IconGear } from '../components/Icons';
 import { Sheet, useToast } from '../components/ui';
-import { useAi, exampleNow } from '../lib/ai';
+import { ruleClassify } from '../lib/ml/classify';
 import { METHOD_LABEL, type PayMethod } from '../lib/moa';
 import { useMoa } from '../state/moa';
 import { PasteFlow } from './moa/PasteFlow';
-import { ledgerSummaryInput, monthSlice } from '../lib/ai/context';
+import { monthSlice } from '../lib/ai/context';
 import { CATEGORIES } from '../lib/categories';
 import { spendHistory } from '../lib/ml/provider';
 import type { SpendEntry } from '../lib/ml/types';
@@ -73,7 +73,6 @@ export function Ledger({ initialSheet = null }: { initialSheet?: 'add' | 'paste'
   // through the 2026-11-04 snapshot, so today is never a blank calendar day.
   const [month, setMonth] = useState<ISODate>(() => startOfMonth(today));
   const [view, setView] = useState<View>('calendar');
-  const [showAi, setShowAi] = useState(false);
   const [cat, setCat] = useState<string | null>(null);
   const [day, setDay] = useState<ISODate | null>(null);
   useEffect(() => { setMonth(startOfMonth(today)); setDay(today); }, [today]);
@@ -110,6 +109,8 @@ export function Ledger({ initialSheet = null }: { initialSheet?: 'add' | 'paste'
         </div>
       </section>
 
+      <QuickExpense />
+
       <div className="t-seg lg-seg lg-first-tabs" role="tablist" aria-label="가계부 보기">
         {([['calendar', '달력'], ['list', '내역'], ['report', '분석']] as const).map(([k, l]) => (
           <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)}>{l}</button>
@@ -123,39 +124,17 @@ export function Ledger({ initialSheet = null }: { initialSheet?: 'add' | 'paste'
         ? <ListView items={inMonth} byCat={byCat} cat={cat} setCat={(c) => { setCat(c); setPages(1); }} pages={pages} more={() => setPages(pages + 1)} today={today} />
         : <section className="t-card lg-empty"><p>이 달에는 아직 작성한 내역이 없어요</p></section>)}
       {view === 'report' && (inMonth.length > 0
-        ? <ReportView items={inMonth} byCat={byCat} total={total} openCat={(c) => { setCat(c); setView('list'); }} />
+        ? <ReportView items={inMonth} byCat={byCat} total={total} prevTotal={prevTotal} openCat={(c) => { setCat(c); setView('list'); }} />
         : <section className="t-card lg-empty"><p>지출을 추가하면 분석이 나타나요</p></section>)}
 
       <div className="lg-first-actions">
         <button type="button" className="lg-act primary" onClick={() => setSheet('add')}><span aria-hidden="true">＋</span> 지출 쓰기</button>
-        <button type="button" className="lg-act" onClick={() => setSheet('paste')}><AiMark label="" /> 문자로 가져오기</button>
+        <button type="button" className="lg-act" onClick={() => setSheet('paste')}>▤ 문자로 가져오기</button>
       </div>
-
-      <section className="lg-first-secondary" aria-label="추가 분석">
-        <button type="button" className="lg-ai-disclosure" aria-expanded={showAi} onClick={() => setShowAi((v) => !v)}>
-          <span className="lg-ai-mark"><AiMark label="AI" /></span>
-          <span className="lg-ai-disclosure-label"><b>AI로 소비 패턴 분석하기</b><small>이번 달 지출 특징과 개선할 점을 확인해요</small></span>
-          <span className="lg-disclosure-arrow" aria-hidden="true">{showAi ? '−' : '+'}</span>
-        </button>
-        {showAi && (inMonth.length > 0
-          ? <LedgerAiSummary all={all} month={month} today={today} />
-          : <p className="small muted">지출 내역을 입력하면 AI 분석을 볼 수 있어요.</p>)}
-      </section>
 
       {sheet === 'add' && <AddSheet today={today} onClose={() => { setSheet(null); if (initialSheet) nav.pop(); }} />}
       {sheet === 'paste' && <PasteFlow onClose={() => { setSheet(null); if (initialSheet) nav.pop(); }} />}
     </div>
-  );
-}
-
-/** AI is mounted only when requested; entering the ledger does not call the model. */
-function LedgerAiSummary({ all, month, today }: { all: SpendEntry[]; month: ISODate; today: ISODate }) {
-  const input = useMemo(() => ledgerSummaryInput(all, month, today), [all, month, today]);
-  const ai = useAi('ledgerSummary', input, JSON.stringify(input));
-  return (
-    <AiCard title={ai.data?.title ?? '이번 달 AI 소비 분석'} loading={ai.loading} source={ai.source}>
-      <ul className="ai-points">{ai.data?.points.map((point) => <li key={point}>{point}</li>)}</ul>
-    </AiCard>
   );
 }
 
@@ -221,15 +200,27 @@ function CalendarView({ month, items, today, day, setDay }: { month: ISODate; it
   );
 }
 
-function ReportView({ items, byCat, total, openCat }: { items: SpendEntry[]; byCat: [string, number][]; total: number; openCat: (c: string) => void }) {
+function ReportView({ items, byCat, total, prevTotal, openCat }: { items: SpendEntry[]; byCat: [string, number][]; total: number; prevTotal: number | null; openCat: (c: string) => void }) {
   const byWd = [0, 1, 2, 3, 4, 5, 6].map((w) => {
     const days = new Set(items.filter((e) => weekdayOf(e.date) === w).map((e) => e.date)).size;
     return { w, avg: days ? sum(items.filter((e) => weekdayOf(e.date) === w)) / days : 0 };
   });
   const maxWd = Math.max(1, ...byWd.map((x) => x.avg));
   const top = [...items].sort((a, b) => b.amount - a.amount).slice(0, 3);
+  const mainCategory = byCat[0];
   return (
     <>
+      <section className="t-card lg-record-insights" aria-label="지출 기록 요약">
+        <div className="t-card-head"><h2>이번 달 한눈에</h2></div>
+        {mainCategory && <p>가장 많이 기록된 항목은 <b>{mainCategory[0]}</b>예요 · {fmt(mainCategory[1])} ({Math.round(mainCategory[1] / total * 100)}%)</p>}
+        <p>{prevTotal === null
+          ? '지난달 같은 기간의 기록이 있으면 지출 변화를 비교할 수 있어요.'
+          : total === prevTotal
+            ? '지난달 같은 기간과 기록된 지출이 같아요.'
+            : `지난달 같은 기간보다 ${fmt(Math.abs(total - prevTotal))} ${total > prevTotal ? '더' : '덜'} 기록됐어요.`}</p>
+        {top[0] && <p>가장 큰 단일 지출 · <b>{top[0].name || top[0].category}</b> {fmt(top[0].amount)}</p>}
+        <small>입력한 기록으로 계산한 요약이에요 · AI가 생성한 내용은 아니에요</small>
+      </section>
       <section className="t-card">
         <div className="t-card-head"><h2>어디에 많이 썼을까</h2></div>
         <div className="lg-stack" role="img" aria-label={byCat.map(([c, v]) => `${c} ${fmt(v)}`).join(', ')}>{byCat.map(([c, v]) => <span key={c} style={{ width: `${(100 * v) / total}%`, background: categoryColor(c) }} />)}</div>
@@ -270,9 +261,10 @@ function AddSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
   const [amount, setAmount] = useState(0);
   const [name, setName] = useState('');
   const [picked, setPicked] = useState<string | null>(null);
+  const [advanced, setAdvanced] = useState(false);
   const [date, setDate] = useState<ISODate>(today);
-  const guess = name.trim() ? exampleNow('categorize', { name: name.trim(), categories: [...CATEGORIES] }) : null;
-  const remembered = name.trim() ? state.categoryMemory[name.trim().toLowerCase().replace(/\s+/g, '')] : undefined;
+  const guess = name.trim() ? ruleClassify(name.trim(), state.categoryMemory) : null;
+  const remembered = name.trim() ? state.categoryMemory[name.trim().toLowerCase().replace(/\\s+/g, '')] : undefined;
   const suggested = remembered ?? (guess && guess.confidence >= 0.5 ? guess.category : null);
   const category = picked ?? suggested ?? '기타';
 
@@ -290,20 +282,26 @@ function AddSheet({ today, onClose }: { today: ISODate; onClose: () => void }) {
     <Sheet title="지출 쓰기" onClose={onClose} footer={<Button disabled={amount <= 0} onClick={save}>{amount > 0 ? `${fmt(amount)} 저장` : '금액을 넣어 주세요'}</Button>}>
       <AmountText value={amount} placeholder="얼마 썼어요?" />
       <input className="lg-input" value={name} onChange={(e) => { setName(e.target.value.slice(0, 30)); setPicked(null); }} placeholder="어디에 썼어요? (예: 스타벅스 라떼)" autoComplete="off" />
-      <div className="lg-cat">
-        {suggested && !picked && <p className="lg-ai-guess"><AiMark label="AI" /><span><b>{suggested}</b>{euro(suggested)} 분류했어요{remembered ? ' · 전에 고친 대로' : ''}</span></p>}
-        <Chips label="카테고리">
-          {CATEGORIES.map((c) => <Chip key={c} on={category === c} onClick={() => setPicked(c)}>{c}</Chip>)}
+      <button type="button" className="lg-advanced-toggle" aria-expanded={advanced} onClick={() => setAdvanced(v => !v)}>
+        <span><b>{suggested ? `자동 분류 · ${suggested}` : '카테고리 · 기타'}</b><small>결제수단: {METHOD_LABEL[method]} · {date === today ? '오늘' : date}</small></span>
+        <span aria-hidden="true">{advanced ? '접기 −' : '수정 +'}</span>
+      </button>
+      {advanced && <>
+        <div className="lg-cat">
+          {suggested && !picked && <p className="lg-ai-guess"><span>{suggested}{euro(suggested)} 자동 분류했어요</span></p>}
+          <Chips label="카테고리">
+            {CATEGORIES.map((c) => <Chip key={c} on={category === c} onClick={() => setPicked(c)}>{c}</Chip>)}
+          </Chips>
+        </div>
+        <Chips label="결제 수단">
+          {(['debit', 'credit', 'transfer', 'cash'] as PayMethod[]).map((p) => <Chip key={p} on={method === p} onClick={() => setMethod(p)}>{METHOD_LABEL[p]}</Chip>)}
         </Chips>
-      </div>
-      <Chips label="결제 수단">
-        {(['debit', 'credit', 'transfer', 'cash'] as PayMethod[]).map((p) => <Chip key={p} on={method === p} onClick={() => setMethod(p)}>{METHOD_LABEL[p]}</Chip>)}
-      </Chips>
-      <Chips label="날짜">
-        <Chip on={date === today} onClick={() => setDate(today)}>오늘</Chip>
-        <Chip on={date === addDays(today, -1)} onClick={() => setDate(addDays(today, -1))}>어제</Chip>
-        <Chip on={date === addDays(today, -2)} onClick={() => setDate(addDays(today, -2))}>그저께</Chip>
-      </Chips>
+        <Chips label="날짜">
+          <Chip on={date === today} onClick={() => setDate(today)}>오늘</Chip>
+          <Chip on={date === addDays(today, -1)} onClick={() => setDate(addDays(today, -1))}>어제</Chip>
+          <Chip on={date === addDays(today, -2)} onClick={() => setDate(addDays(today, -2))}>그저께</Chip>
+        </Chips>
+      </>}
       <div className="lg-pad"><NumberPad value={amount} onChange={setAmount} max={10_000_000} /></div>
     </Sheet>
   );

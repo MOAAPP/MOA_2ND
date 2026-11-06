@@ -1,6 +1,7 @@
 import { ShortfallCard } from './moa/parts';
 import { HomeIntelligence } from '../components/HomeIntelligence';
 import { HomeGoalExplorer } from '../components/HomeGoalExplorer';
+import { QuickExpense } from '../components/QuickExpense';
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
 import { addDays, parseISO, startOfMonth } from '../../shared/dates';
@@ -29,7 +30,7 @@ export function TAvatar({ kind }: { kind: AvatarKind }) {
   return <span className={`t-avatar ${a.tone}`} aria-hidden="true">{a.glyph}</span>;
 }
 
-export function TopHeader({ title, sub, logo = false }: { title: string; sub?: string; logo?: boolean }) {
+export function TopHeader({ title, sub, logo = false, quickAdd = false }: { title: string; sub?: string; logo?: boolean; quickAdd?: boolean }) {
   const nav = useNav();
   return (
     <header className="t-head">
@@ -37,7 +38,15 @@ export function TopHeader({ title, sub, logo = false }: { title: string; sub?: s
         <h1 className={logo ? 'with-logo' : ''}>{logo && <Logo size={26} />}{title}</h1>
         {sub && <p className="t-head-sub">{sub}</p>}
       </div>
-      <button aria-label="설정 열기" className="t-head-icon" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
+      <div className="ux-home-header-actions">
+        {quickAdd && <button type="button" className="ux-home-header-add" aria-label="바로 지출 기록"
+          onClick={() => {
+            const input = document.querySelector<HTMLInputElement>('#quick-expense-home');
+            input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            input?.focus({ preventScroll: true });
+          }}>＋ 기록</button>}
+        <button aria-label="설정 열기" className="t-head-icon" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
+      </div>
     </header>
   );
 }
@@ -58,6 +67,7 @@ function HomeSpend() {
         <div><small className="ux-home-overline">TODAY · 기록한 소비</small><h2>오늘의 가계부</h2></div>
         <span className="ux-home-date">{parseISO(today).m}월 {parseISO(today).d}일</span>
       </header>
+      <QuickExpense compact />
       {todayItems.length ? (
         <>
           <div className="ux-home-today-number">
@@ -122,7 +132,7 @@ export function V8Home() {
   const latest = decisions.at(-1);
   return (
     <div className="page t-page t-home ux-home">
-      <TopHeader title="모아" logo sub="결제일을 살펴보고, 내 선택의 미래를 비교해요" />
+      <TopHeader title="모아" logo sub="결제일을 살펴보고, 내 선택의 미래를 비교해요" quickAdd />
       <DemoDayBar />
 
       {/* 01 · Visible AI briefing and user-facing cashflow from one source. */}
@@ -131,12 +141,15 @@ export function V8Home() {
           from S01 FastAPI data: never mix two conflicting cash balances. */}
       {!state.demo && <div className="ux-home-risk" aria-label="다가오는 결제일 상태"><ShortfallCard /></div>}
 
-      {/* 02 · Purchase intent before transaction; no ledger mutation until save. */}
+      {/* 02 · The everyday action: enter one expense immediately. */}
+      <HomeSpend />
+
+      {/* 03 · Optional exploration only when the user is considering a purchase. */}
       <section className="ux-home-decision" aria-label="소비 선택 비교하기">
-        <small className="ux-home-overline">구매 전 미리보기</small>
-        <h2>지금 사고 싶은 게 있나요?</h2>
+        <small className="ux-home-overline">필요할 때 비교하기</small>
+        <h2>이 돈, 지금 써도 괜찮을까?</h2>
         <p>{state.demo
-          ? '사고 싶은 것과 지키고 싶은 조건을 알려주세요. AI가 금융 상황에 맞는 경로를 찾아봐요.'
+          ? '금액을 선택하면 AI가 다음 결제일까지의 선택지를 비교해요.'
           : '금액 하나로 구매와 보류를 비교해요. 기록하기 전에는 잔액을 바꾸지 않아요.'}</p>
         {state.demo && <HomeGoalExplorer />}
         <div className="ux-home-decision-links">
@@ -155,7 +168,7 @@ export function V8Home() {
         </div>
       </section>
 
-      {/* 03 · Keep the ORIGINAL gesture-enabled WorldTimeline navigation. */}
+      {/* 04 · Preserve the original gestural WorldTimeline without changing its charts. */}
       <section className="ux-home-world" aria-label="평행세계 비교 결과">
         <div className="ux-home-section-heading">
           <div><small className="ux-home-overline">선택으로 달라지는 미래</small><h2>나의 평행세계</h2></div>
@@ -179,9 +192,6 @@ export function V8Home() {
         {latest && <p className="ux-home-recent-choice">최근 선택 · {latest.title} · {latest.choice === 'buy' ? '구매' : latest.choice === 'wait' ? '보류' : '대안 선택'}</p>}
         <button type="button" className="ux-home-textlink" onClick={() => nav.setTab('forks')}>움직이는 그래프로 비교하기 <IconChevron /></button>
       </section>
-
-      {/* 04 · Spending records support decisions without outranking AI. */}
-      <HomeSpend />
 
       <p className="ux-home-legal">결제계좌는 입력하거나 합성한 잔액 기준으로 예측해요. 은행과 자동 연결되지 않으며, 평행세계·모의투자 기록은 실제 돈과 합산하지 않아요.</p>
 

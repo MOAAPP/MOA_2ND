@@ -21,13 +21,15 @@ try {
   assert.equal(await page.locator('.ux-home-ledger').count(),1);
   assert.equal(await page.locator('.ux-home-decision').count(),1);
   assert.equal(await page.locator('.ux-home-goal').count(),1);
-  assert.equal(await page.getByRole('button',{name:'AI로 가능한 경로 찾아보기'}).isDisabled(),true);
+  assert.equal(await page.getByRole('button',{name:'30,000원 지금 써도 될까?'}).isDisabled(),false);
+  assert.equal(await page.locator('.ux-home-goal textarea').count(),0,
+    'no requirement to compose a natural-language AI prompt');
   assert.equal(await page.locator('.ux-home-world').count(),1);
   const positions = await page.evaluate(() => [
-    '.ux-home-ai-hero','.ux-home-decision','.ux-home-world','.ux-home-ledger'
+    '.ux-home-ai-hero','.ux-home-ledger','.ux-home-decision','.ux-home-world'
   ].map(selector => document.querySelector(selector)?.getBoundingClientRect().top ?? -9999));
   assert.ok(positions.every((x,i) => i === 0 || x > positions[i-1]),
-    'AI -> purchase decision -> parallel worlds -> ledger order');
+    'daily insight -> instant expense -> optional comparison -> original worlds');
   const homeText = await page.locator('.ux-home').innerText();
   for (const forbidden of ['Python 계산','FastAPI','API 키','SANDBOX','LightGBM']) {
     assert.ok(!homeText.includes(forbidden),'internal implementation label leaked: '+forbidden);
@@ -44,23 +46,42 @@ try {
     facts.spending_capacity.current_cash.toLocaleString('ko-KR')+'원'),
     'cash and cashflow must come from one FastAPI source');
   assert.match(await page.locator('.ux-home-ai-interpretation').innerText(),
-    /AI 생성 답변이 아닌 금융 계산 결과 안내예요|AI 생성 설명/);
+    /기록으로 계산한 안내|AI 설명/);
   const rect=await page.locator('.ux-home-ai-hero').boundingBox();
   assert.ok(rect && rect.x >= 0 && rect.x+rect.width <= 392,'mobile AI hero must fit in viewport');
   await page.screenshot({path:'/tmp/pr37-original-home.png',fullPage:true});
-  // AI consultation must be accessible from the FIRST screen, even without
-  // configured credentials in CI. It must never forge a live LLM response.
-  await page.getByRole('button',{name:'AI에게 내 소비 계획 물어보기'}).click();
-  await page.locator('.ask-page').waitFor({timeout:10000});
-  await page.getByRole('textbox',{name:'질문'}).fill('다음 결제일에 지출해도 괜찮을까?');
-  await page.getByRole('button',{name:'보내기'}).click();
-  await page.getByText('지금은 모아 AI 상담을 준비 중이에요.',{exact:false}).waitFor({timeout:15000});
-  await page.getByRole('button',{name:'뒤로 가기'}).click();
-  await page.locator('#ux-goal-prompt').waitFor({timeout:10000});
+  // The user's main job is recording spending, not entering a ChatGPT prompt.
+  const quick = page.locator('.ux-home-ledger .quick-expense');
+  await page.getByRole('button',{name:'바로 지출 기록'}).click();
+  assert.equal(await page.locator('#quick-expense-home').evaluate(el => document.activeElement === el),true);
+  await quick.waitFor({timeout:10000});
+  await quick.getByRole('textbox',{name:'지출 한 줄 입력'}).fill('커피 4,500원');
+  await quick.getByRole('button',{name:'기록',exact:true}).click();
+  await page.getByText('기록 6건',{exact:false}).waitFor({timeout:10000});
+  assert.ok((await page.locator('.ux-home-today-number').innerText()).includes('35,500원'));
+  // S01 canonical AI briefing stays anchored; this locally added ledger
+  // item must not be represented as a new observation by the public model.
+  assert.ok((await page.locator('.ux-home-ai-cash').innerText()).includes(expected));
+  await page.getByRole('button',{name:'10,000원',exact:true}).click();
+  assert.equal(await page.getByRole('button',{name:'10,000원 지금 써도 될까?'}).isDisabled(),false);
+  await page.getByRole('button',{name:'직접 입력'}).click();
+  await page.getByRole('textbox',{name:'비교할 금액'}).fill('89000');
+  assert.equal(await page.getByRole('button',{name:'89,000원 지금 써도 될까?'}).isDisabled(),false);
+  assert.equal(await page.locator('.ux-home-goal textarea').count(),0);
+  const quickBox=await quick.boundingBox();
+  assert.ok(quickBox && quickBox.x>=0 && quickBox.x+quickBox.width<=392,
+    'one-line input should fit in mobile width');
   await page.getByRole('button',{name:'금액만 입력해서 비교하기'}).click();
   await page.locator('.c-page').waitFor({timeout:10000});
   await page.getByRole('button',{name:'뒤로 가기'}).click();
   await page.locator('.ux-home-decision').waitFor({timeout:10000});
+  await page.getByRole('button',{name:'가계부',exact:true}).click();
+  await page.locator('.lg-page > .quick-expense').waitFor({timeout:10000});
+  assert.equal(await page.locator('.lg-ai-disclosure').count(),0,
+    'no fake monthly AI analysis accordion');
+  await page.getByRole('tab',{name:'분석'}).click();
+  await page.getByText('이번 달 한눈에').waitFor({timeout:10000});
+  assert.ok((await page.locator('.lg-record-insights').innerText()).includes('AI가 생성한 내용은 아니에요'));
   await page.getByRole('button',{name:'평행세계',exact:true}).click();
   const chart=page.locator('.t-world .ps-svg');await chart.waitFor({timeout:30000});
   assert.ok(await chart.locator('path').count()>=4);
@@ -78,5 +99,5 @@ try {
   assert.notEqual(before,await page.locator('.ps-date').innerText());
   await page.screenshot({path:'/tmp/pr37-original-world.png',fullPage:true});
   assert.deepEqual(errors,[]);
-  console.log('AI_FIRST_HOME_AND_ORIGINAL_WORLD_MOTION_PASS');
+  console.log('LEDGER_FIRST_QUICK_WRITE_NO_MOCK_AI_AND_ORIGINAL_WORLD_MOTION_PASS');
 } finally {await browser.close();}
