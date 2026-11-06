@@ -1,8 +1,5 @@
 name: Verify live S01 goal search in customer flow
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/verify-live-agent-s01.yml'
   workflow_dispatch:
 
 permissions:
