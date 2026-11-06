@@ -16,7 +16,7 @@ export function AiMark({ label = 'AI' }: { label?: string }) {
 
 /** 응답 출처 한 줄. 예시 응답이면 그렇다고 적는다. */
 export function AiSourceNote({ source }: { source: AiSource }) {
-  return <small className="ai-src">{source === 'live' ? 'AI가 만든 답이에요 · 숫자는 앱이 계산해요' : '예시 AI 응답이에요 · 숫자는 앱이 계산해요'}</small>;
+  return <small className="ai-src">{source === 'live' ? 'AI가 만든 답이에요 · 숫자는 앱이 계산해요' : '예시 안내 문구 · 실시간 AI 분석 결과는 아니에요'}</small>;
 }
 
 export function AiLines({ n = 2 }: { n?: number }) {
