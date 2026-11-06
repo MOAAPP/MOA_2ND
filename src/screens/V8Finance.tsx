@@ -9,9 +9,7 @@ import { Logo } from '../components/Glyph';
 import { useStore } from '../state/store';
 import { useNav } from '../state/nav';
 import { transactWorldWallet, type WorldWalletAction } from '../lib/worldWallet';
-import { Sheet } from '../components/ui';
 import { worldHistory } from '../lib/worldHistory';
-import { useMoa } from '../state/moa';
 import { useWallet } from '../state/wallet';
 import { Row, useSpending } from './Ledger';
 
