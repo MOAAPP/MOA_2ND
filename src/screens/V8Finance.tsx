@@ -30,7 +30,7 @@ export function TAvatar({ kind }: { kind: AvatarKind }) {
   return <span className={`t-avatar ${a.tone}`} aria-hidden="true">{a.glyph}</span>;
 }
 
-export function TopHeader({ title, sub, logo = false }: { title: string; sub?: string; logo?: boolean }) {
+export function TopHeader({ title, sub, logo = false, quickAdd = false }: { title: string; sub?: string; logo?: boolean; quickAdd?: boolean }) {
   const nav = useNav();
   return (
     <header className="t-head">
@@ -38,7 +38,15 @@ export function TopHeader({ title, sub, logo = false }: { title: string; sub?: s
         <h1 className={logo ? 'with-logo' : ''}>{logo && <Logo size={26} />}{title}</h1>
         {sub && <p className="t-head-sub">{sub}</p>}
       </div>
-      <button aria-label="설정 열기" className="t-head-icon" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
+      <div className="ux-home-header-actions">
+        {quickAdd && <button type="button" className="ux-home-header-add" aria-label="바로 지출 기록"
+          onClick={() => {
+            const input = document.querySelector<HTMLInputElement>('#quick-expense-home');
+            input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            input?.focus({ preventScroll: true });
+          }}>＋ 기록</button>}
+        <button aria-label="설정 열기" className="t-head-icon" onClick={() => nav.push({ name: 'settings' })}><IconGear /></button>
+      </div>
     </header>
   );
 }
@@ -124,7 +132,7 @@ export function V8Home() {
   const latest = decisions.at(-1);
   return (
     <div className="page t-page t-home ux-home">
-      <TopHeader title="모아" logo sub="결제일을 살펴보고, 내 선택의 미래를 비교해요" />
+      <TopHeader title="모아" logo sub="결제일을 살펴보고, 내 선택의 미래를 비교해요" quickAdd />
       <DemoDayBar />
 
       {/* 01 · Visible AI briefing and user-facing cashflow from one source. */}
