@@ -17,6 +17,8 @@ export function HomeGoalExplorer() {
     () => (result?.search.routes ?? []).filter(x => x.hard_constraints_met).slice(0, 3),
     [result],
   );
+  const needsMoreInfo = result?.status === 'needs_confirmation';
+  const confirmations = result?.search.confirmations_required ?? [];
 
   const analyze = async () => {
     const q = goal.trim();
@@ -57,12 +59,16 @@ export function HomeGoalExplorer() {
       {error && <p className="ux-home-goal-error" role="alert">{error}</p>}
       {result && (
         <div className="ux-home-goal-result" role="region" aria-label="AI 경로 탐색 결과" aria-live="polite">
-          <strong>{routes.length
-            ? '조건에 맞는 선택을 찾아봤어요'
-            : '조건을 모두 지키는 선택을 찾지 못했어요'}</strong>
-          <p>{routes.length
-            ? '각 선택의 예상 최저 잔액까지 함께 비교해 보세요.'
-            : '구매 시점이나 금액, 지켜둘 조건을 바꿔 다시 탐색할 수 있어요.'}</p>
+          <strong>{needsMoreInfo
+            ? '정확한 비교를 위해 확인할 조건이 있어요'
+            : routes.length
+              ? '조건에 맞는 선택을 찾아봤어요'
+              : '조건을 모두 지키는 선택을 찾지 못했어요'}</strong>
+          <p>{needsMoreInfo
+            ? 'AI가 구매 조건을 검토했어요. 아래 정보를 질문에 추가하면 다시 탐색할 수 있어요.'
+            : routes.length
+              ? '각 선택의 예상 최저 잔액까지 함께 비교해 보세요.'
+              : '현재 조건에서는 무리한 구매를 추천하지 않아요. 구매 시점이나 지켜둘 조건을 바꿔 다시 탐색해 보세요.'}</p>
           {routes.length > 0 && <ul>{routes.map(route => (
             <li key={route.id}>
               <b>{route.label}</b>
@@ -72,8 +78,11 @@ export function HomeGoalExplorer() {
           {!routes.length && result.search.conflict_explanations.length > 0 && (
             <p className="ux-home-goal-conflict">{result.search.conflict_explanations.slice(0, 2).join(' · ')}</p>
           )}
-          {result.search.confirmations_required.length > 0 && (
-            <small>확인할 조건: {result.search.confirmations_required.slice(0, 2).join(' · ')}</small>
+          {confirmations.length > 0 && (
+            <div className="ux-home-goal-confirmations">
+              <b>추가로 확인할 내용</b>
+              <ul>{confirmations.slice(0, 3).map((item, index) => <li key={index}>{item}</li>)}</ul>
+            </div>
           )}
           <small>가상 금융 경로이며 실제 거래가 아니에요. 최저 잔액은 분석 당시 조건으로 계산했어요.</small>
         </div>
