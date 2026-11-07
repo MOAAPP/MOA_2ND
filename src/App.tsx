@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconChartBars, IconFork, IconHome, IconPiggy, IconReceipt } from './components/Icons';
+import { IconFork, IconHome, IconPiggy, IconReceipt } from './components/Icons';
 import { ToastProvider, useKeyboardInset } from './components/ui';
 import { CardNews, CardsList, DailyScreen } from './screens/CardNews';
 import { CardNewsDemo } from './screens/CardNewsDemo';
@@ -28,7 +28,7 @@ import { WorldTimeline } from './screens/WorldTimeline';
 import { Ledger } from './screens/Ledger';
 import { NewChoice } from './screens/NewChoice';
 import { Choose } from './screens/Choose';
-import { SaveHome } from './screens/bank/SaveHome';
+import { Assets } from './screens/Assets';
 import { ProductDetail } from './screens/bank/ProductDetail';
 import { Join } from './screens/bank/Join';
 import { Account } from './screens/bank/Account';
@@ -45,25 +45,25 @@ import { Stage3Provider, Stage3Home, Stage3ClassicHome, Stage3Worlds, Stage3Asse
 
 
 /**
- * 하단 메뉴 = 모아의 두 축.
- *  실제 결제계좌: 홈(이번 결제일 괜찮은지) · 가계부(기록)
- *  평행세계(가상): 평행세계 · 모으기(예금·적금) · 투자(모의투자·학습)
- * 결제일 상세와 '사기 전에'는 홈에서 여는 화면이다.
+ * 하단 메뉴 4개 (V4 IA).
+ *  실제 결제계좌: 홈(결제일 괜찮은지 · 오늘 기록 · 사기 전 비교) · 가계부(기록·수정)
+ *  가상: 평행세계(선택의 두 갈래) · 자산(가상 저축·예적금 + 모의투자)
+ * 'save' | 'invest' 탭 id는 그대로 두고 자산 화면의 두 보기로 쓴다.
+ * 금융 학습(퀴즈)은 메인 메뉴에서 뺐다 — 화면 코드는 남아 있다.
  */
-const TABS: { id: Tab; label: string; Icon: typeof IconHome }[] = [
+const TABS: { id: Tab; label: string; Icon: typeof IconHome; also?: Tab[] }[] = [
   { id: 'home', label: '홈', Icon: IconHome },
   { id: 'ledger', label: '가계부', Icon: IconReceipt },
   { id: 'forks', label: '평행세계', Icon: IconFork },
-  { id: 'save', label: '모으기', Icon: IconPiggy },
-  { id: 'invest', label: '투자', Icon: IconChartBars },
+  { id: 'save', label: '자산', Icon: IconPiggy, also: ['invest', 'learn'] },
 ];
 
 function BottomNav() {
   const nav = useNav();
   return (
-    <nav className="bottom-nav" aria-label="주요 메뉴">
-      {TABS.map(({ id, label, Icon }) => (
-        <button key={id} aria-current={nav.tab === id || (id === 'invest' && nav.tab === 'learn') ? 'page' : undefined} onClick={() => nav.setTab(id)}>
+    <nav className="bottom-nav v23-nav" aria-label="주요 메뉴">
+      {TABS.map(({ id, label, Icon, also }) => (
+        <button key={id} aria-current={nav.tab === id || also?.includes(nav.tab) ? 'page' : undefined} onClick={() => nav.setTab(id === 'save' && (nav.tab === 'invest' || nav.tab === 'learn') ? nav.tab : id)}>
           <Icon />
           {label}
         </button>
@@ -159,9 +159,8 @@ function Shell() {
         {nav.tab === 'home' && <V8Home />}
         {nav.tab === 'ledger' && <Ledger />}
         {nav.tab === 'forks' && <WorldTimeline />}
-        {nav.tab === 'save' && <SaveHome />}
-        {nav.tab === 'invest' && <Practice />}
-        {nav.tab === 'learn' && <Learn />}
+        {nav.tab === 'save' && <Assets focus="save" />}
+        {(nav.tab === 'invest' || nav.tab === 'learn') && <Assets focus="invest" />}
       </main>
       <BottomNav />
     </>;
@@ -239,9 +238,8 @@ function Shell() {
         {nav.tab === 'home' && <V8Home />}
         {nav.tab === 'ledger' && <Ledger />}
         {nav.tab === 'forks' && <WorldTimeline />}
-        {nav.tab === 'save' && <SaveHome />}
-        {nav.tab === 'invest' && <Practice />}
-        {nav.tab === 'learn' && <Learn />}
+        {nav.tab === 'save' && <Assets focus="save" />}
+        {(nav.tab === 'invest' || nav.tab === 'learn') && <Assets focus="invest" />}
       </main>
       <BottomNav />
     </>

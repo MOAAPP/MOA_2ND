@@ -7,16 +7,27 @@ import { parseQuickExpense } from '../lib/quickExpense';
 import { useMoa } from '../state/moa';
 import { useStore } from '../state/store';
 
+const LAST_METHOD_KEY = 'moa.quickExpense.method';
+
 /** A single line, one confirmation, and no mandatory category/date wizard. */
 export function QuickExpense({ compact = false }: { compact?: boolean }) {
   const { state } = useStore();
   const { moa, saveTxns } = useMoa();
   const toast = useToast();
   const [text, setText] = useState('');
-  const [method, setMethod] = useState<PayMethod>(
-    moa.mainMethod === 'credit' || moa.mainMethod === 'transfer' || moa.mainMethod === 'cash'
-      ? moa.mainMethod : 'debit',
-  );
+  const [method, setMethodState] = useState<PayMethod>(() => {
+    // Keep the last method the user picked here; fall back to their main method.
+    try {
+      const last = localStorage.getItem(LAST_METHOD_KEY);
+      if (last === 'debit' || last === 'credit' || last === 'transfer' || last === 'cash') return last;
+    } catch { /* storage unavailable */ }
+    return moa.mainMethod === 'credit' || moa.mainMethod === 'transfer' || moa.mainMethod === 'cash'
+      ? moa.mainMethod : 'debit';
+  });
+  const setMethod = (next: PayMethod) => {
+    setMethodState(next);
+    try { localStorage.setItem(LAST_METHOD_KEY, next); } catch { /* storage unavailable */ }
+  };
   const [error, setError] = useState('');
   const save = (event: FormEvent) => {
     event.preventDefault();
@@ -72,10 +83,10 @@ export function QuickExpense({ compact = false }: { compact?: boolean }) {
               <option key={key} value={key}>{METHOD_LABEL[key]}</option>)}
           </select>
         </label>
-        <small>내역과 금액만 적으면 바로 저장돼요</small>
+        <small>카테고리는 자동으로 붙어요</small>
       </div>
       {error && <p className="quick-expense-error" role="alert">{error}</p>}
-      {state.demo && <small className="quick-expense-demo-note">체험 기록에 추가돼요 · 상단 AI 브리핑은 기존 체험 기준일의 분석이에요</small>}
+      {state.demo && <small className="quick-expense-demo-note">체험 가계부에만 추가돼요 · 새로고침하면 체험 처음 상태로 돌아가요 · 위 잔액 분석은 11월 4일 마감 기준</small>}
     </form>
   );
 }

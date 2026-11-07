@@ -27,7 +27,7 @@ export function historyEvents(wallet:WorldWallet):WorldHistoryEvent[]{
     const investing=['buyStock','sellStock'].includes(m.kind);
     const delta=m.simulatedOnly?0:out?m.amount:-m.amount;
     return {id:m.id,at:m.at,day:koreaDay(m.at),kind:investing?'investing' as const:'saving' as const,
-      title:m.memo,detail:flow?(m.kind==='income'?'월급 → 현금':'현금 → 고정지출'):out?(investing?'가상 주식 → 현금':'저축 자산 → 현금'):(investing?'현금 → 가상 주식':'현금 → 저축 자산'),
+      title:m.memo,detail:flow?(m.kind==='income'?'들어온 돈 → 지갑 현금':'지갑 현금 → 지출'):out?(investing?'가상 주식 → 현금':'저축 자산 → 현금'):(investing?'현금 → 가상 주식':'현금 → 저축 자산'),
       cashDelta:delta,referenceDelta:delta,difference:0};
   });
   return [...decisions,...moves].sort((a,b)=>a.at-b.at);

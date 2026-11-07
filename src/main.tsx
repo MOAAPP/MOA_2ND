@@ -26,6 +26,11 @@ import './design/tokens.css';
 import './design/stage3.css';
 import './design/stage6.css';
 import './design/stage3-ai.css';
+// Scoped to ?demo=1 classes only (.ux-ai-*, .st3-*, .ux-world-*, .ux-canonical-home).
+// Un-importing it on 11/6 left the demo home's AI hero SVG unstyled (giant black shape).
+import './design/home-immersive.css';
+// V23 home / assets / 4-tab nav. Scoped to .v23-* classes. Must stay last.
+import './design/v23.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

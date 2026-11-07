@@ -51,7 +51,7 @@ export function DailyQuizCard({ quiz }: { quiz: DailyQuiz }) {
 }
 
 
-export function Practice() {
+export function Practice({ embedded = false }: { embedded?: boolean } = {}) {
   const [intro, setIntro] = useState(true);
   const { state, update } = useStore();
   const nav = useNav();
@@ -75,7 +75,7 @@ export function Practice() {
 
   return (
     <div className="page t-page t-invest">
-      <InvestHead />
+      {!embedded && <InvestHead />}
 
       <div className="t-ticker">
         <span className={`t-mkt ${m.status.state === 'open' ? 'open' : ''}`}><i />{m.status.label}</span>
@@ -92,7 +92,7 @@ export function Practice() {
         <span className={`t-pnl num ${pnl > 0 ? 'up' : pnl < 0 ? 'down' : ''}`}>주식·ETF 평가손익 {signedWon(pnl)} (매수가 대비)</span>
         {Object.keys(state.worldWallet.etfs).some((c) => !m.quotes[c]) && <p className="t-note">시세가 없는 보유 종목은 매수가로 평가해요.</p>}
         <dl className="t-summary">
-          <div><dt>가상 현금</dt><dd className="num">{won(walletSummary.cash)}</dd></div>
+          <div><dt>평행세계 지갑 현금</dt><dd className="num">{won(walletSummary.cash)}</dd></div>
           <div><dt>투자 가능</dt><dd className="num">{won(Math.max(0, availableCash(p)))}</dd></div>
           <div><dt>주식·ETF 평가</dt><dd className="num">{won(walletSummary.stockValue)}</dd></div>
         </dl>
@@ -151,7 +151,7 @@ function StockRow({ code, name, sub, watched, onWatch }: { code: string; name: s
       <button className="t-stock-main" onClick={() => nav.push({ name: 'stock', code })}>
         <span className="t-row-main"><b>{name}</b><small>{sub}</small></span>
         <span className={`t-stock-price ${flash}`}>
-          {qq ? (<><b className="num">{won(qq.price)}</b><ChangeText q={qq} /></>) : err ? <small className="up">시세 오류</small> : m.loading ? <span className="skeleton" style={{ display: 'inline-block', width: 72, height: 16 }} /> : <small className="muted">—</small>}
+          {qq ? (<><b className="num">{won(qq.price)}</b><ChangeText q={qq} /></>) : err ? <small className="muted" title={err}>시세 미연결</small> : m.loading ? <span className="skeleton" style={{ display: 'inline-block', width: 72, height: 16 }} /> : <small className="muted">—</small>}
         </span>
       </button>
     </div>

@@ -72,7 +72,7 @@ function FreeSavingsSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function SaveHome() {
+export function SaveHome({ embedded = false }: { embedded?: boolean } = {}) {
   const nav = useNav();
   const { bank, today, totals, usable, freeSavings, travel } = useBank();
   const [filter, setFilter] = useState<Filter>('all');
@@ -93,7 +93,7 @@ export function SaveHome() {
 
   return (
     <div className="page t-page b-save">
-      <TopHeader title="모으기" sub="참은 돈을 예금·적금에 넣고 이자가 붙는 걸 봐요" />
+      {!embedded && <TopHeader title="모으기" sub="참은 돈을 예금·적금에 넣고 이자가 붙는 걸 봐요" />}
 
       <section className="t-card b-hero">
         <span className="t-label">모은 돈</span>
