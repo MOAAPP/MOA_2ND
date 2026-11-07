@@ -1,6 +1,8 @@
 import { ShortfallCard } from './moa/parts';
 import { HomeIntelligence } from '../components/HomeIntelligence';
-import { HomeGoalExplorer } from '../components/HomeGoalExplorer';
+import { HomeMoney } from '../components/HomeMoney';
+import { HomeCompare } from '../components/HomeCompare';
+import { useHomeFinance } from '../lib/homeFinance';
 import { QuickExpense } from '../components/QuickExpense';
 import { useMemo, useState } from 'react';
 import { won } from '../../shared/format';
@@ -51,7 +53,7 @@ export function TopHeader({ title, sub, logo = false, quickAdd = false }: { titl
   );
 }
 
-/** Daily ledger is the second screen priority, immediately below payment risk. */
+/** Home block 02 — the everyday action: one line, one tap, totals update in place. */
 function HomeSpend() {
   const nav = useNav();
   const { all, today } = useSpending();
@@ -61,41 +63,34 @@ function HomeSpend() {
   const monthTotal = all.filter(e => e.date >= startOfMonth(today) && e.date <= today)
     .reduce((s, e) => s + e.amount, 0);
   const completedZero = !todayItems.length && state.moa.dayStatus[today] === 'self';
+  const d = parseISO(today);
   return (
-    <section className="ux-home-ledger" aria-label="오늘의 가계부">
-      <header className="ux-home-section-heading">
-        <div><small className="ux-home-overline">TODAY · 기록한 소비</small><h2>오늘의 가계부</h2></div>
-        <span className="ux-home-date">{parseISO(today).m}월 {parseISO(today).d}일</span>
-      </header>
+    <section className="v23-block v23-spend" aria-labelledby="v23-spend-title">
+      <div className="v23-block-head">
+        <h2 id="v23-spend-title">오늘 쓴 돈</h2>
+        <span className="v23-muted">{d.m}월 {d.d}일</span>
+      </div>
       <QuickExpense compact />
-      {todayItems.length ? (
-        <>
-          <div className="ux-home-today-number">
-            <strong className="num">−{won(todayTotal)}</strong>
-            <span>기록 {todayItems.length}건</span>
-          </div>
-          <div className="ux-home-ledger-items">
-            {todayItems.slice(0, 3).map((e, i) => <Row key={e.txnId ?? i} e={e} />)}
-          </div>
-        </>
-      ) : (
-        <div className="ux-home-empty">
-          <strong>{completedZero ? '오늘은 지출 없음으로 기록했어요' : '오늘 등록된 소비 내역이 없어요'}</strong>
-          <p>{completedZero ? '새 지출이 생겼다면 언제든 추가할 수 있어요.' : '아직 입력하지 않은 날일 수 있어요. 0원 소비로 확정하지 않았어요.'}</p>
+      <div className="v23-spend-totals">
+        <div><span>오늘</span><b className="num">{won(todayTotal)}</b><small>{todayItems.length ? `${todayItems.length}건` : completedZero ? '지출 없음' : '아직 기록 없음'}</small></div>
+        <div><span>이번 달</span><b className="num">{won(monthTotal)}</b><small>고정비 포함</small></div>
+      </div>
+      {todayItems.length > 0 && (
+        <div className="v23-spend-list">
+          {todayItems.slice(-3).reverse().map((e, i) => <Row key={e.txnId ?? i} e={e} />)}
         </div>
       )}
-      <div className="ux-home-ledger-bottom">
-        <span>이번 달 기록된 지출 <b className="num">{won(monthTotal)}</b></span>
-        <small>고정비 포함 · 입력한 기록 기준</small>
-      </div>
-      <div className="ux-home-ledger-actions">
-        <button type="button" onClick={() => nav.setTab('ledger')}>오늘 내역 보기 <IconChevron /></button>
-        <button type="button" onClick={() => nav.push({ name: 'ledgerAdd' })}>＋ 지출 추가하기</button>
-      </div>
+      <button type="button" className="v23-textlink" onClick={() => nav.setTab('ledger')}>
+        {todayItems.length > 3 ? `오늘 내역 ${todayItems.length}건 모두 보기` : '가계부에서 고치거나 자세히 보기'} <IconChevron />
+      </button>
     </section>
   );
 }
 
+/**
+ * Presenter/developer date control. On a phone it is a single compact row;
+ * on wide screens it sits outside the phone column so the product UI stays clean.
+ */
 function DemoDayBar() {
   const { state, update } = useStore();
   if (!state.demo) return null;
@@ -105,98 +100,97 @@ function DemoDayBar() {
     if (next < DEMO_SNAPSHOT_DAY || next > DEMO_END_DAY) return;
     update(s => ({ ...s, demoDay: next }));
   };
+  const future = day > DEMO_SNAPSHOT_DAY;
   return (
-    <div className="ux-home-demo-clock" aria-label="가상 시연 기준일">
-      <div><span>가상 체험 · S01</span><b>{date.m}월 {date.d}일 기준</b></div>
-      <div className="ux-home-demo-clock-actions">
+    <aside className="v23-devbar" aria-label="체험 기준일 (시연용)">
+      <span className="v23-devbar-label">체험 S01</span>
+      <b>{date.m}월 {date.d}일</b>
+      {future && <span className="v23-tag assume">가정</span>}
+      <span className="v23-devbar-actions">
         <button type="button" aria-label="시연 날짜 하루 전" disabled={day <= DEMO_SNAPSHOT_DAY} onClick={() => change(addDays(day, -1))}>‹</button>
         <button type="button" aria-label="시연 날짜 하루 뒤" disabled={day >= DEMO_END_DAY} onClick={() => change(addDays(day, 1))}>›</button>
-        {day !== DEMO_SNAPSHOT_DAY && <button type="button" className="reset" onClick={() => change(DEMO_SNAPSHOT_DAY)}>기준일</button>}
-      </div>
-      <p>{day > DEMO_SNAPSHOT_DAY ? '11월 4일 이후는 가정 시나리오예요. 새로운 날짜의 거래는 아직 기록되지 않았어요.' : '11월 4일까지 관측된 합성 기록을 보여줘요. 날짜를 넘겨도 과거 기록은 유지돼요.'}</p>
+        {future && <button type="button" className="reset" onClick={() => change(DEMO_SNAPSHOT_DAY)}>기준일</button>}
+      </span>
+      {future && <p>11월 5일부터는 아직 일어나지 않은 날이에요. 새 거래는 기록되지 않고, 잔액 분석은 11월 4일 기록 기준이에요.</p>}
       {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1' && <a className="ux-home-demo-exit" href="/">내 기록으로 돌아가기</a>}
-    </div>
+    </aside>
+  );
+}
+
+function WorldSummary() {
+  const nav = useNav();
+  const { state } = useStore();
+  const { wallet: walletData } = useWallet();
+  const when = appNow(state);
+  const gap = useMemo(() => worldHistory(walletData, 30, when).at(-1)?.gap ?? 0, [walletData, when]);
+  const decisions = walletData.decisions.filter(d => d.at <= when);
+  const latest = decisions.at(-1);
+  return (
+    <section className="v23-block v23-world" aria-labelledby="v23-world-title">
+      <div className="v23-block-head">
+        <h2 id="v23-world-title">나의 평행세계</h2>
+        <span className="v23-tag virtual">가상</span>
+      </div>
+      {decisions.length ? (
+        <button type="button" className="v23-world-row" onClick={() => nav.setTab('forks')}>
+          <span className="v23-world-copy">
+            <small>선택 {decisions.length}건을 모두 정가로 샀을 때와의 차이</small>
+            <strong className="num">{gap >= 0 ? '+' : '−'}{won(Math.abs(gap))}</strong>
+            {latest && <small>최근 · {latest.title} · {latest.choice === 'buy' ? '구매' : latest.choice === 'wait' ? '보류' : '대안 선택'}</small>}
+          </span>
+          <svg viewBox="0 0 112 70" aria-hidden="true" className="v23-world-fork">
+            <path className="real" d="M8 35 C39 35 58 19 105 14" />
+            <path className="alt" d="M8 35 C39 35 58 48 105 58" />
+            <circle cx="8" cy="35" r="4" />
+          </svg>
+          <IconChevron />
+        </button>
+      ) : <p className="v23-muted">아직 남긴 선택이 없어요. 위에서 비교한 뒤 기록하면 두 갈래 길이 생겨요.</p>}
+    </section>
   );
 }
 
 export function V8Home() {
   const { state } = useStore();
-  const nav = useNav();
-  const { wallet: walletData } = useWallet();
-  const when = appNow(state);
-  const gap = useMemo(() => {
-    const points = worldHistory(walletData, 30, when);
-    return points.at(-1)?.gap ?? 0;
-  }, [walletData, when]);
-  const decisions = walletData.decisions.filter(d => d.at <= when);
-  const latest = decisions.at(-1);
+  const fin = useHomeFinance('S01', DEMO_SNAPSHOT_DAY, state.demo);
   return (
-    <div className="page t-page t-home ux-home">
-      <TopHeader title="모아" logo sub="결제일을 살펴보고, 내 선택의 미래를 비교해요" quickAdd />
+    <div className="page t-page t-home ux-home v23-home">
+      <TopHeader title="모아" logo quickAdd />
       <DemoDayBar />
 
-      {/* 01 · Visible AI briefing and user-facing cashflow from one source. */}
-      <HomeIntelligence />
-      {/* The manual account's own on-device payment schedule stays separate
-          from S01 FastAPI data: never mix two conflicting cash balances. */}
-      {!state.demo && <div className="ux-home-risk" aria-label="다가오는 결제일 상태"><ShortfallCard /></div>}
+      {/* 01 · 결제계좌: 실제 기록 / 예상 / 확정 일정을 구분 */}
+      {state.demo ? <HomeMoney fin={fin} /> : <>
+        <HomeIntelligence />
+        {/* Manual account keeps its own on-device schedule; never mixed with S01. */}
+        <div className="ux-home-risk" aria-label="다가오는 결제일 상태"><ShortfallCard /></div>
+      </>}
 
-      {/* 02 · The everyday action: enter one expense immediately. */}
+      {/* 02 · 오늘 지출 한 줄 기록 */}
       <HomeSpend />
 
-      {/* 03 · Optional exploration only when the user is considering a purchase. */}
-      <section className="ux-home-decision" aria-label="소비 선택 비교하기">
-        <small className="ux-home-overline">필요할 때 비교하기</small>
-        <h2>이 돈, 지금 써도 괜찮을까?</h2>
-        <p>{state.demo
-          ? '금액을 선택하면 AI가 다음 결제일까지의 선택지를 비교해요.'
-          : '금액 하나로 구매와 보류를 비교해요. 기록하기 전에는 잔액을 바꾸지 않아요.'}</p>
-        {state.demo && <HomeGoalExplorer />}
-        <div className="ux-home-decision-links">
-          {state.demo ? (
-            <button type="button" className="ux-home-decision-link" onClick={() => nav.push({ name: 'choose' })}>
-              금액만 입력해서 비교하기 <IconChevron />
-            </button>
-          ) : (
-            <button type="button" className="ux-home-primary" onClick={() => nav.push({ name: 'choose' })}>
-              구매 전 결과 비교하기 <span aria-hidden="true">→</span>
-            </button>
-          )}
-          <button type="button" className="ux-home-capture" onClick={() => nav.push({ name: 'newChoice' })}>
-            <span aria-hidden="true">▧</span> 상품 캡처로 입력하기 <IconChevron />
-          </button>
-        </div>
-      </section>
+      {/* 03 · 필요할 때만: 사기 전 비교 */}
+      {state.demo
+        ? <HomeCompare user="S01" asOf={DEMO_SNAPSHOT_DAY} cash={fin.home?.available_cash ?? null} />
+        : <ManualCompareEntry />}
 
-      {/* 04 · Preserve the original gestural WorldTimeline without changing its charts. */}
-      <section className="ux-home-world" aria-label="평행세계 비교 결과">
-        <div className="ux-home-section-heading">
-          <div><small className="ux-home-overline">선택으로 달라지는 미래</small><h2>나의 평행세계</h2></div>
-          <span className="ux-home-virtual">가상 선택 기록</span>
-        </div>
-        {decisions.length ? (
-          <div className="ux-home-world-comparison">
-            <div><span>기록한 선택 {decisions.length}건의 누적 비교 차이</span>
-              <strong className="num">{gap >= 0 ? '+' : '−'}{won(Math.abs(gap))}</strong>
-              <small>모든 선택을 정가로 구매한 경우와의 차이 · 실제 통장 잔액 아님</small>
-            </div>
-            <svg viewBox="0 0 112 70" role="img" aria-label="같은 지점에서 갈라지는 두 가상 경로">
-              <path d="M8 35 C39 35 58 19 105 14" fill="none" stroke="#545DE8" strokeWidth="3.5" strokeLinecap="round" />
-              <path d="M8 35 C39 35 58 48 105 58" fill="none" stroke="#8993A8" strokeDasharray="5 5" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="8" cy="35" r="4" fill="#545DE8"/>
-              <circle cx="105" cy="14" r="4" fill="#545DE8"/>
-              <circle cx="105" cy="58" r="3.5" fill="#8993A8"/>
-            </svg>
-          </div>
-        ) : <p className="ux-home-muted">비교한 선택이 아직 없어요. 선택을 남기면 두 경로가 나타나요.</p>}
-        {latest && <p className="ux-home-recent-choice">최근 선택 · {latest.title} · {latest.choice === 'buy' ? '구매' : latest.choice === 'wait' ? '보류' : '대안 선택'}</p>}
-        <button type="button" className="ux-home-textlink" onClick={() => nav.setTab('forks')}>움직이는 그래프로 비교하기 <IconChevron /></button>
-      </section>
+      {/* 04 · 평행세계 누적 차이 → 움직이는 그래프 */}
+      <WorldSummary />
 
-      <p className="ux-home-legal">결제계좌는 입력하거나 합성한 잔액 기준으로 예측해요. 은행과 자동 연결되지 않으며, 평행세계·모의투자 기록은 실제 돈과 합산하지 않아요.</p>
-
-
+      <p className="ux-home-legal">은행과 자동 연결되지 않아요. 평행세계·가상 저축·모의투자 금액은 결제계좌 잔액과 합산하지 않아요.</p>
     </div>
+  );
+}
+
+function ManualCompareEntry() {
+  const nav = useNav();
+  return (
+    <section className="v23-block v23-compare" aria-labelledby="v23-compare-title">
+      <span className="v23-eyebrow">사기 전에</span>
+      <h2 id="v23-compare-title">이거 사면, 다음 결제일은 괜찮을까?</h2>
+      <p className="v23-muted">금액 하나로 사는 경우와 안 사는 경우를 비교해요. 기록하기 전에는 잔액이 바뀌지 않아요.</p>
+      <button type="button" className="v23-btn primary" onClick={() => nav.push({ name: 'choose' })}>사기 전 비교하기</button>
+      <button type="button" className="v23-textlink" onClick={() => nav.push({ name: 'newChoice' })}>상품 캡처로 가격 불러오기 ›</button>
+    </section>
   );
 }
 

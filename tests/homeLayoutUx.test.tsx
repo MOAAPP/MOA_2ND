@@ -77,39 +77,41 @@ import { V8Home } from '../src/screens/V8Finance';
 describe('active V8Home design hierarchy', () => {
   it('shows one coherent financial journey with observed 5-spend daily summary', () => {
     const html = renderToStaticMarkup(createElement(V8Home));
+    // V23 order: 결제계좌 상태 → 오늘 쓴 돈(한 줄 기록) → 사기 전 비교 → 평행세계
     const sections = [
-      'aria-label="오늘의 금융 분석"',
-      'aria-label="오늘의 가계부"',
-      'aria-label="소비 선택 비교하기"',
-      'aria-label="평행세계 비교 결과"',
+      'aria-label="결제계좌 상태"',
+      'id="v23-spend-title"',
+      'id="v23-compare-title"',
+      'id="v23-world-title"',
     ];
     const positions = sections.map(x => html.indexOf(x));
     expect(positions.every(i => i >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a,b)=>a-b));
-    expect(html).toContain('모아 AI');
-    expect(html).toContain('30,000원 지금 써도 될까?');
-    expect(html).toContain('금액만 입력해서 비교하기');
-    expect(html).toContain('비교할 소비 금액');
+    // Money block starts in an explicit loading state, never with guessed numbers.
+    expect(html).toContain('aria-busy="true"');
+    expect(html).not.toContain('27,800원');
+    // No AI branding on numbers when AI is not used; comparison is deterministic.
+    expect(html).not.toContain('모아 AI');
+    // Compare waits for the API balance instead of guessing an allocation cap.
+    expect(html).toContain('disabled="">잔액을 불러오는 중이에요');
+    expect(html).toContain('비교할 금액');
     expect(html).toContain('직접 입력');
     expect(html).toContain('한 줄 지출 기록');
     expect(html).toContain('바로 지출 기록');
     expect(html).not.toContain('AI에게 원하는 소비 조건을 말해 주세요');
-    expect(html).not.toContain('AI에게 내 소비 계획 물어보기');
     expect(html).not.toContain('예시 AI 응답');
     expect(html).not.toContain('PAYMENT_RISK'); // never mix local risk with S01 FastAPI
     expect(html).not.toContain('Python 계산');
     expect(html).not.toContain('FastAPI');
     expect(html).not.toContain('SANDBOX');
-    expect(html).not.toContain('가상 자산 · 분석');
-    expect(html).not.toContain('aria-expanded="false"');
     expect(html).toContain('31,000원');
-    expect(html).toContain('기록 5건');
-    expect(html).toContain('이번 달 기록된 지출');
-    expect(html).toContain('지출 추가하기');
-    expect(html).toContain('오늘 내역 보기');
-    expect(html).toContain('상품 캡처로 입력하기');
-    expect(html).toContain('움직이는 그래프로 비교하기');
+    expect(html).toContain('5건');
+    expect(html).toContain('이번 달');
+    expect(html).toContain('오늘 내역 5건 모두 보기');
+    expect(html).toContain('상품 캡처로 가격 불러오기');
+    expect(html).toContain('정가로 샀을 때와의 차이');
     expect(html).not.toContain('자유 저축</');
-    expect(html).toContain('11월 4일까지 관측된 합성 기록');
+    // Presenter date control stays available but compact.
+    expect(html).toContain('체험 기준일 (시연용)');
   });
 });
