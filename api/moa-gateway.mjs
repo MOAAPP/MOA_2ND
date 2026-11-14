@@ -32,9 +32,15 @@ async function rawBody(req) {
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  const origin = (process.env.MOA_FASTAPI_ORIGIN ?? '').replace(/\/+$/, '');
   const gatewayKey = process.env.MOA_PROXY_SHARED_KEY ?? '';
-  if (!origin.startsWith('https://') || !gatewayKey) {
+  // Keep the already-running financial app functional until EC2 gateway is
+  // deployed and its server-only shared token is configured in Vercel.
+  // No new browser credential is introduced by this temporary compatibility mode.
+  const usingLegacy = !gatewayKey;
+  const origin = (usingLegacy
+    ? 'https://moa-finance-api.vercel.app'
+    : (process.env.MOA_FASTAPI_ORIGIN ?? '')).replace(/\/+$/, '');
+  if (!origin.startsWith('https://')) {
     return res.status(503).json({ detail: {
       code: 'proxy_not_configured',
       message: 'MOA 서버 연결 설정을 확인해 주세요.',
@@ -49,13 +55,14 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ detail: { code: 'method_not_allowed' } });
   }
+  res.setHeader('X-MOA-Backend', usingLegacy ? 'legacy-compat' : 'ec2-gateway');
   const incoming = new URL(req.url || '/', 'https://frontend.invalid');
   incoming.searchParams.delete('path');
   const upstream = new URL('/api/v4/' + path, origin);
   upstream.search = incoming.searchParams.toString();
   const headers = {
     'Accept': 'application/json',
-    'X-MOA-Gateway-Key': gatewayKey,
+    ...(usingLegacy ? {} : { 'X-MOA-Gateway-Key': gatewayKey }),
     // Used for a per-client courtesy quota, not trusted for billing limits.
     'X-MOA-Client-IP': String(req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown')
       .split(',')[0].trim().slice(0, 128),
