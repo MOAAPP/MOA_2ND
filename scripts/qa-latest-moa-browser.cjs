@@ -80,6 +80,26 @@ const sleep=n=>new Promise(resolve=>setTimeout(resolve,n));
                        "/savings","/ledger","/record","/bills","/growth","/more"]){
      await goto(uri);count++;
    }
+   // The last financial-lab action must scroll fully above the fixed tab bar.
+   // Check a compact iPhone viewport and a standard iPhone viewport.
+   await page.setViewportSize({width,height:width===375?667:844});
+   await goto("/lab");
+   await page.locator(".moa-scroller").evaluate(el => {el.scrollTop=el.scrollHeight;});
+   await sleep(250);
+   const overlap=await page.evaluate(()=>{
+     const action=[...document.querySelectorAll("button")].find(x=>x.textContent?.includes("평행세계에서 비교하기"));
+     const nav=document.querySelector("nav");
+     if(!action||!nav)return null;
+     const bottom=action.getBoundingClientRect().bottom;
+     const navTop=nav.getBoundingClientRect().top;
+     const scroll=document.querySelector(".moa-scroller");
+     return {gap:navTop-bottom,bottom,navTop,scrollTop:scroll?.scrollTop||0};
+   });
+   assert(overlap, "Lab final comparison button or tab bar missing");
+   assert(overlap.scrollTop>0,"Lab cannot scroll to the last section");
+   assert(overlap.gap>=12,"Lab last action hidden beneath tab bar: "+JSON.stringify(overlap));
+   await page.screenshot({path:path.join(DIR,"lab-scroll-bottom-"+width+".png"),fullPage:false});
+   count++;
    if(runtimeErrors.length)throw new Error("JS page errors at "+width+"px:\n"+runtimeErrors.join("\n"));
    console.log("PASS viewport "+width+"px, onboard+world+agent+11 screens, API calls="+apiCalls.length);
    if(apiCalls.length===0)console.log("WARN frontend has no FastAPI /api/v4 calls (integration incomplete).");
