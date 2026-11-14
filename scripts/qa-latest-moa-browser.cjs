@@ -32,6 +32,11 @@ const sleep=n=>new Promise(resolve=>setTimeout(resolve,n));
    await page.waitForURL(/\/$/,{timeout:15000});
    await sleep(900);
    assert(!(await page.url()).endsWith("onboarding"),"onboarding did not finish");
+   assert(await page.getByRole("heading",{name:"요약",exact:true}).count()===1,"iOS native Home large title missing");
+   assert(await page.locator(".native-inset-group").count()>=3,"iOS grouped list sections missing");
+   assert(await page.locator(".moa-native-tabbar").count()===1,"iOS bottom navigation missing");
+   assert(await page.getByText("주거래은행 · 직접 입력").count()===1,"Bank onboarding state missing");
+   assert(await page.getByText("오늘 쓸 수 있는 돈").count()===1,"Cashflow safety state missing");
    count++;
    await page.screenshot({path:path.join(DIR,"home-"+width+".png"),fullPage:false});
 
