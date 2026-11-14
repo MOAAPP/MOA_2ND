@@ -30,13 +30,32 @@ test('path safety excludes open proxies and traversals', () => {
   assert.equal(safeApiPath(''), null);
 });
 
-test('missing server-only configuration fails closed', async () => {
+test('missing origin with a configured secret fails closed', async () => {
   delete process.env.MOA_FASTAPI_ORIGIN;
-  delete process.env.MOA_PROXY_SHARED_KEY;
+  process.env.MOA_PROXY_SHARED_KEY = 'test-only-random-token';
   const res = response();
   await handler(request('GET', '/api/moa-gateway?path=health', 'health'), res);
   assert.equal(res.code, 503);
   assert.equal(res.payload.detail.code, 'proxy_not_configured');
+});
+
+
+test('legacy compatibility preserves existing finance API until EC2 key is configured', async () => {
+  delete process.env.MOA_PROXY_SHARED_KEY;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    assert.equal(String(url), 'https://moa-finance-api.vercel.app/api/v4/health');
+    assert.equal(init.headers['X-MOA-Gateway-Key'], undefined);
+    return new Response('{"status":"ok"}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  try {
+    const res = response();
+    await handler(request('GET', '/api/moa-gateway?path=health', 'health'), res);
+    assert.equal(res.code, 200);
+    assert.equal(res.headers['x-moa-backend'], 'legacy-compat');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('GET forwards the secret privately and preserves query string', async () => {
