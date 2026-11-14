@@ -31,7 +31,8 @@ const sleep = n=>new Promise(resolve=>setTimeout(resolve,n));
    assert.equal(await page.getByRole('heading',{level:1,name:/오늘은 이걸.*배워봐요/}).count(),1,'Large MOA headline missing');
    assert.equal(await page.locator('header button[aria-label="홈으로"] img[alt="MOA"]').count(),1,'Original MOA logo missing');
    assert.equal(await page.locator('nav a').count(),4,'Original bottom tab links changed');
-   assert.equal(await page.getByRole('button',{name:'기록하기'}).count(),1,'Original record button missing');
+   assert.equal(await page.locator('nav button[aria-label="기록하기"]').count(),1,'Original record button missing');
+   await page.screenshot({path:path.join(out,'moa-brand-home-'+width+'.png'),fullPage:false});
    assert.equal(await page.getByRole('heading',{name:'오늘의 카드뉴스'}).count(),1,'Cardnews not first on home');
    assert.equal(await page.locator('.moa-brand-story').count(),4,'Four real lesson cards expected');
    assert.equal(await page.locator('.moa-brand-story-cover').count(),4,'Brand covers not present');
@@ -43,8 +44,6 @@ const sleep = n=>new Promise(resolve=>setTimeout(resolve,n));
        'Next card should peek into view at edge');
    const hasOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+3);
    assert(!hasOverflow,'Unexpected whole-page horizontal overflow');
-   await page.screenshot({path:path.join(out,'moa-brand-home-'+width+'.png'),fullPage:false});
-
    const track=page.locator('.moa-brand-carousel');
    const before=await track.evaluate(el=>el.scrollLeft);
    await page.getByRole('button',{name:'다음 카드뉴스 보기'}).click();
