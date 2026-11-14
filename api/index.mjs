@@ -27883,6 +27883,8 @@ var init_krx = __esm({
 var llm_exports = {};
 __export(llm_exports, {
   FACTCHAT_DEFAULT_BASE: () => FACTCHAT_DEFAULT_BASE,
+  FACTCHAT_DEFAULT_MODEL: () => FACTCHAT_DEFAULT_MODEL,
+  FACTCHAT_MIN_TOKENS: () => FACTCHAT_MIN_TOKENS,
   llmComplete: () => llmComplete,
   llmModel: () => llmModel,
   llmProvider: () => llmProvider
@@ -27894,7 +27896,7 @@ function llmProvider() {
   return null;
 }
 function llmModel() {
-  return llmProvider() === "factchat" ? process.env.FACTCHAT_MODEL || "claude-sonnet-5" : process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
+  return llmProvider() === "factchat" ? process.env.FACTCHAT_MODEL || FACTCHAT_DEFAULT_MODEL : process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
 }
 async function llmComplete(req, fetcher = fetchWithTimeout) {
   const provider = llmProvider();
@@ -27908,13 +27910,14 @@ async function llmComplete(req, fetcher = fetchWithTimeout) {
       const res2 = await fetcher(`${base2}/chat/completions`, {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${process.env.FACTCHAT_API_KEY}` },
-        body: JSON.stringify({ model, max_tokens: req.maxTokens, messages: [{ role: "system", content: req.system }, { role: "user", content: content2 }] })
+        body: JSON.stringify({ model, max_tokens: Math.max(FACTCHAT_MIN_TOKENS, req.maxTokens), messages: [{ role: "system", content: req.system }, { role: "user", content: content2 }] })
       }, timeout);
       if (!res2.ok) return { ok: false, reason: "http_error", status: res2.status };
       const j2 = await res2.json();
-      const c = j2.choices?.[0]?.message?.content;
-      const text = typeof c === "string" ? c : Array.isArray(c) ? c.map((x) => x.text ?? "").join("") : "";
-      return { ok: true, text, model };
+      const choice = j2.choices?.[0];
+      const c = choice?.message?.content;
+      const text = typeof c === "string" ? c : Array.isArray(c) ? c.filter((x) => x && x.type !== "thinking" && x.type !== "reasoning").map((x) => x.text ?? "").join("") : "";
+      return { ok: true, text, model, truncated: choice?.finish_reason === "length" };
     }
     const content = req.image ? [{ type: "image", source: { type: "base64", media_type: req.image.mediaType, data: req.image.base64 } }, { type: "text", text: req.user }] : req.user;
     const res = await fetcher("https://api.anthropic.com/v1/messages", {
@@ -27929,12 +27932,14 @@ async function llmComplete(req, fetcher = fetchWithTimeout) {
     return { ok: false, reason: "network" };
   }
 }
-var FACTCHAT_DEFAULT_BASE;
+var FACTCHAT_DEFAULT_BASE, FACTCHAT_DEFAULT_MODEL, FACTCHAT_MIN_TOKENS;
 var init_llm = __esm({
   "server/lib/llm.ts"() {
     "use strict";
     init_http();
     FACTCHAT_DEFAULT_BASE = "https://factchat-cloud.mindlogic.ai/v1/gateway";
+    FACTCHAT_DEFAULT_MODEL = "claude-haiku-4-5-20251001";
+    FACTCHAT_MIN_TOKENS = 1024;
   }
 });
 
@@ -28345,6 +28350,7 @@ __export(ai_exports, {
   aiModel: () => aiModel,
   aiStats: () => aiStats,
   aiSummary: () => aiSummary,
+  extractJson: () => extractJson,
   resetAiStats: () => resetAiStats,
   runAiTask: () => runAiTask,
   sanitizeInput: () => sanitizeInput
@@ -28397,6 +28403,35 @@ function aiStats() {
 function resetAiStats() {
   stats.clear();
 }
+function extractJson(text) {
+  if (!text) return void 0;
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidates = fenced ? [fenced[1], text] : [text];
+  for (const src of candidates) {
+    for (let start = src.indexOf("{"); start !== -1; start = src.indexOf("{", start + 1)) {
+      let depth = 0, inStr = false, esc = false;
+      for (let i = start; i < src.length; i++) {
+        const ch = src[i];
+        if (inStr) {
+          if (esc) esc = false;
+          else if (ch === "\\") esc = true;
+          else if (ch === '"') inStr = false;
+          continue;
+        }
+        if (ch === '"') inStr = true;
+        else if (ch === "{") depth++;
+        else if (ch === "}" && --depth === 0) {
+          try {
+            return JSON.parse(src.slice(start, i + 1));
+          } catch {
+            break;
+          }
+        }
+      }
+    }
+  }
+  return void 0;
+}
 async function runAiTask(task, input, fetcher = fetchWithTimeout) {
   const t0 = Date.now();
   const done = (r2) => {
@@ -28407,21 +28442,24 @@ async function runAiTask(task, input, fetcher = fetchWithTimeout) {
   if (!aiConfigured()) return done({ ok: false, reason: "not_configured", ms: 0 });
   const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);
-  const r = await llmComplete({ system: p.system, user: buildUserMessage(task, input), maxTokens: p.maxTokens }, fetcher);
+  const user = buildUserMessage(task, input);
+  const r = await llmComplete({ system: p.system, user, maxTokens: p.maxTokens }, fetcher);
   if (!r.ok) return done({ ok: false, reason: r.reason === "network" ? "network" : "http_error", ms: Date.now() - t0 });
-  const text = r.text;
-  const m = text.match(/\{[\s\S]*\}/);
-  if (!m) return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
-  let raw;
-  try {
-    raw = JSON.parse(m[0]);
-  } catch {
-    return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
+  let model = r.model;
+  let raw = extractJson(r.text);
+  if (raw === void 0) {
+    const again = await llmComplete({ system: `${p.system}
+\uC124\uBA85\uC774\uB098 \uCF54\uB4DC\uBE14\uB85D \uC5C6\uC774 JSON \uAC1D\uCCB4 \uD558\uB098\uB9CC \uC751\uB2F5\uD574\uC694.`, user, maxTokens: p.maxTokens * 4 }, fetcher);
+    if (again.ok) {
+      raw = extractJson(again.text);
+      model = again.model;
+    }
   }
+  if (raw === void 0) return done({ ok: false, reason: "no_json", ms: Date.now() - t0 });
   const checked = checkAiOutput(task, raw);
   if (!checked.ok) return done({ ok: false, reason: "invalid_output", ms: Date.now() - t0, issues: checked.issues });
   if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: "ungrounded", ms: Date.now() - t0 });
-  return done({ ok: true, data: checked.data, model: r.model, ms: Date.now() - t0 });
+  return done({ ok: true, data: checked.data, model, ms: Date.now() - t0 });
 }
 var AI_TASKS, stats, aiModel;
 var init_ai = __esm({
