@@ -1,0 +1,51 @@
+name: Preview MOA brand-first learning home
+on:
+  push:
+    branches:
+      - 'preview/moa-brand-learning-home-v2-20261114'
+    paths:
+      - 'releases/MOA_learning_home_brand_first_preview_20261114.zip'
+      - 'vercel.json'
+      - 'scripts/qa-moa-brand-preview.cjs'
+      - '.github/workflows/preview-moa-brand-home.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unzip the exact Vercel preview source
+        run: |
+          unzip -q releases/MOA_learning_home_brand_first_preview_20261114.zip -d .
+          sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
+      - name: Install app and Chromium
+        working-directory: moa-web
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Build actual app
+        working-directory: moa-web
+        run: |
+          npm run build
+          npm run qa:all
+      - name: Start dev server
+        working-directory: moa-web
+        run: |
+          nohup npm run dev -- --host 127.0.0.1 >/tmp/moa-brand-preview-vite.log 2>&1 &
+      - name: Verify real mobile interaction
+        run: node scripts/qa-moa-brand-preview.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: moa-brand-first-home-preview-screenshots
+          path: e2e-brand-preview/
+          if-no-files-found: warn
