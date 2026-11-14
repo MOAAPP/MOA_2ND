@@ -1,0 +1,25 @@
+name: MOA secure EC2 FastAPI gateway
+on:
+  pull_request:
+    paths:
+      - 'api/moa-gateway.mjs'
+      - 'vercel.json'
+      - 'scripts/test-moa-gateway.mjs'
+      - '.github/workflows/validate-ec2-gateway.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gateway:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/test-moa-gateway.mjs
+      - run: npm run build
