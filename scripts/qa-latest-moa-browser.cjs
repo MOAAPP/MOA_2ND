@@ -33,6 +33,11 @@ const sleep=n=>new Promise(resolve=>setTimeout(resolve,n));
    await sleep(900);
    assert(!(await page.url()).endsWith("onboarding"),"onboarding did not finish");
    count++;
+   // The user requested removal of decorative M/Y text circles, not the real MOA logo.
+   assert.equal(await page.getByText("M",{exact:true}).count(),0,"Decorative M badge still on home");
+   assert.equal(await page.getByText("Y",{exact:true}).count(),0,"Decorative Y badge still on home");
+   assert.equal(await page.getByText("생활비 통장",{exact:true}).count(),1,"Account title changed");
+   assert.equal(await page.getByText("모아 모닝 브리핑",{exact:true}).count(),1,"Briefing title changed");
    const msgs=page.locator("[data-briefing-message]");
    assert.equal(await msgs.count(),3,"Three money insights must remain visible");
    const labels=await page.locator(".scr-home [data-briefing-label]").allTextContents();
