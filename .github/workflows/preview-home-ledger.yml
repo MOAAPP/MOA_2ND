@@ -1,8 +1,15 @@
-name: Preview MOA ledger and parallel-world home browser QA
+name: Preview MOA personalized learning home and ledger browser QA
 on:
+  push:
+    branches: [preview/ledger-world-home-half-ring-20261114]
+    paths:
+      - 'releases/MOA_learning_daily_cards_preview_20261114.zip'
+      - 'scripts/qa-preview-ledger-world.cjs'
+      - '.github/workflows/preview-home-ledger.yml'
+      - 'vercel.json'
   pull_request:
     paths:
-      - 'releases/MOA_home_parallel_ledger_arc_preview_20261114.zip'
+      - 'releases/MOA_learning_daily_cards_preview_20261114.zip'
       - 'scripts/qa-preview-ledger-world.cjs'
       - '.github/workflows/preview-home-ledger.yml'
       - 'vercel.json'
@@ -22,7 +29,7 @@ jobs:
           node-version: '22'
       - name: Extract exactly the preview-deployed source
         run: |
-          unzip -q releases/MOA_home_parallel_ledger_arc_preview_20261114.zip -d .
+          unzip -q releases/MOA_learning_daily_cards_preview_20261114.zip -d .
           sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
       - name: Install frontend and Chromium
         working-directory: moa-web
@@ -33,6 +40,9 @@ jobs:
       - name: Typecheck and build
         working-directory: moa-web
         run: npm run build
+      - name: Verify finance calculations, learning UI, and routes
+        working-directory: moa-web
+        run: npm run qa:all
       - name: Start development server
         working-directory: moa-web
         run: |
@@ -42,6 +52,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: moa-preview-home-ledger-screenshots
+          name: moa-preview-learning-home-screenshots
           path: preview-evidence/
           if-no-files-found: warn
