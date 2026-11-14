@@ -2,14 +2,14 @@ name: QA actual latest MOA frontend ZIP (browser + logic)
 on:
   pull_request:
     paths:
-      - 'releases/MOA_UX_renewal_20261114.zip'
+      - 'releases/MOA_iOS_Native_Home_20261114.zip'
       - 'scripts/qa-latest-moa-browser.cjs'
       - '.github/workflows/validate-latest-moa-web.yml'
       - 'vercel.json'
   push:
     branches: [main]
     paths:
-      - 'releases/MOA_UX_renewal_20261114.zip'
+      - 'releases/MOA_iOS_Native_Home_20261114.zip'
       - 'scripts/qa-latest-moa-browser.cjs'
       - '.github/workflows/validate-latest-moa-web.yml'
       - 'vercel.json'
@@ -29,7 +29,7 @@ jobs:
           node-version: '22'
       - name: Extract current MOA frontend source
         run: |
-          unzip -q releases/MOA_UX_renewal_20261114.zip -d .
+          unzip -q releases/MOA_iOS_Native_Home_20261114.zip -d .
           sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
       - name: Install frontend dependencies and browser
         working-directory: moa-web
