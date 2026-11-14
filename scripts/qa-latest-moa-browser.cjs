@@ -35,6 +35,29 @@ const sleep=n=>new Promise(resolve=>setTimeout(resolve,n));
    count++;
    await page.screenshot({path:path.join(DIR,"home-"+width+".png"),fullPage:false});
 
+   // All four primary tabs must share exactly the same global MOA header.
+   let canonicalHeaderClass=null, canonicalHeaderHeight=null;
+   for(const tab of ["/","/ledger","/world","/lab"]){
+     await goto(tab);
+     const header=page.locator('header:has(button[aria-label="홈으로"])');
+     assert.equal(await header.count(),1,"Missing shared MOA header on "+tab);
+     assert.equal(await header.locator('img[alt="MOA"]').count(),1,"Logo differs on "+tab);
+     assert.equal(await header.getByRole("button",{name:"알림"}).count(),1,"Notification action missing "+tab);
+     assert.equal(await header.getByRole("button",{name:"내 프로필"}).count(),1,"Profile action missing "+tab);
+     const cls=await header.getAttribute("class");
+     const height=await header.evaluate(el=>el.getBoundingClientRect().height);
+     if(canonicalHeaderClass===null){canonicalHeaderClass=cls;canonicalHeaderHeight=height;}
+     else {
+       assert.equal(cls,canonicalHeaderClass,"Header component differs on "+tab);
+       assert(Math.abs(height-canonicalHeaderHeight)<1.1,"Header height mismatch on "+tab);
+     }
+     if(tab==="/lab"){
+       assert.equal(await page.getByText("금융 실험실",{exact:true}).count(),1,"Lab title missing from main content");
+       await page.screenshot({path:path.join(DIR,"lab-shared-header-"+width+".png"),fullPage:false});
+     }
+     count++;
+   }
+
    await goto("/world");
    assert((await page.getByRole("heading",{name:/그때 샀다면/}).count())>0,"world comparison missing");
    const pg=page.getByRole("group",{name:"비교 기간"});
