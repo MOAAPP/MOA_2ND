@@ -27,7 +27,7 @@ fs.mkdirSync(evidence, { recursive:true });
       await page.screenshot({path:path.join(evidence,'learning-home-'+width+'.png'),fullPage:false});
       await page.locator('.moa-learning-cover').click();
       await page.waitForURL(/\/learn\/[^/]+$/,{timeout:15000});
-      assert((await page.locator('body').innerText()).includes('금융 학습'));
+      await page.getByText('금융 학습',{exact:true}).first().waitFor({timeout:15000});
       await page.goto(root+'/',{waitUntil:'networkidle'});
       await page.getByRole('button',{name:/평행통장/}).click();
       await page.waitForURL(/\/world$/,{timeout:15000});
