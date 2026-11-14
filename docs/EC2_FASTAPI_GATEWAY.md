@@ -12,6 +12,10 @@ Browser → 같은 출처 `/api/v4/...` → Vercel Node Function `api/moa-gatewa
 - Vercel의 `VITE_FINANCE_API_BASE`는 **설정하지 않거나 빈 값**이어야 동일 출처 프록시를 사용합니다.
 - 기존 Node API `/api/(.*)`는 종전대로 유지합니다.
 
+## 무중단 이전 안내
+
+EC2 서버의 게이트웨이 토큰이 아직 설정되지 않았다면 프론트는 기존 `moa-finance-api.vercel.app`을 **임시로 계속 사용**합니다. 따라서 새 프론트 코드를 배포해도 기존 금융 API가 즉시 끊기지 않습니다. `MOA_PROXY_SHARED_KEY`를 Vercel에 설정하면 AWS EC2로 전환됩니다. 디버깅 시 응답 헤더 `X-MOA-Backend`가 `legacy-compat`인지 `ec2-gateway`인지 확인할 수 있습니다. 이 임시 모드는 기존 공개 API와 같은 보안 수준이며 최종 보안 설정을 대체하지 않습니다.
+
 ## Vercel 프로젝트 (parallel-bank)
 
 Vercel Dashboard → `parallel-bank` → Settings → Environment Variables에서 두 값을 **Production과 Preview 모두** 등록합니다.
@@ -36,7 +40,7 @@ https://parallel-bank.vercel.app/api/v4/users/S01/home?as_of=2026-11-04
 ```
 
 - 첫 번째는 공개 건강 상태 확인이라 초기 세팅 중에도 작동할 수 있습니다.
-- 나머지는 **AWS의 게이트웨이 토큰 설정 + Vercel 서버 변수 설정**이 모두 끝나야 정상 작동합니다.
+- 나머지는 이전 작업 중에는 기존 백엔드를 통해 작동하고, **AWS 게이트웨이 + Vercel 토큰 설정** 이후 EC2로 호출됩니다.
 - AI는 EC2에 `MOA_AI_API_KEY`를 안전하게 설치해야 비로소 `llm_configured=true`가 됩니다.
 
 ## 주의
