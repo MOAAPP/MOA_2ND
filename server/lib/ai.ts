@@ -73,6 +73,31 @@ export function resetAiStats() { stats.clear(); }
 export const aiModel = () => llmModel();
 
 /**
+ * 모델 응답에서 JSON 객체 하나를 꺼낸다. ```json 코드블록, 앞뒤 설명 문장, 문자열 안의 중괄호를 견딘다.
+ * 찾지 못하면 undefined.
+ */
+export function extractJson(text: string): unknown {
+  if (!text) return undefined;
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidates = fenced ? [fenced[1], text] : [text];
+  for (const src of candidates) {
+    for (let start = src.indexOf('{'); start !== -1; start = src.indexOf('{', start + 1)) {
+      let depth = 0, inStr = false, esc = false;
+      for (let i = start; i < src.length; i++) {
+        const ch = src[i];
+        if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+        if (ch === '"') inStr = true;
+        else if (ch === '{') depth++;
+        else if (ch === '}' && --depth === 0) {
+          try { return JSON.parse(src.slice(start, i + 1)); } catch { break; }
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
  * 작업 하나를 실제 모델로 실행한다. 입력은 라우트에서 checkAiInput을 통과한 값이다.
  * 실패하면 사유를 돌려주고, 클라이언트는 예시 응답으로 바꿔 쓰되 '예시 응답'이라고 표시한다.
  * 성공 조건: JSON 하나 + 작업별 출력 스키마(strict) 통과 + 입력에 없는 금액을 지어내지 않음.
@@ -84,15 +109,19 @@ export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fe
   if (!aiConfigured()) return done({ ok: false, reason: 'not_configured', ms: 0 });
   const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);
-  const r = await llmComplete({ system: p.system, user: buildUserMessage(task, input as never), maxTokens: p.maxTokens }, fetcher);
+  const user = buildUserMessage(task, input as never);
+  const r = await llmComplete({ system: p.system, user, maxTokens: p.maxTokens }, fetcher);
   if (!r.ok) return done({ ok: false, reason: r.reason === 'network' ? 'network' : 'http_error', ms: Date.now() - t0 });
-  const text = r.text;
-  const m = text.match(/\{[\s\S]*\}/);
-  if (!m) return done({ ok: false, reason: 'no_json', ms: Date.now() - t0 });
-  let raw: unknown;
-  try { raw = JSON.parse(m[0]); } catch { return done({ ok: false, reason: 'no_json', ms: Date.now() - t0 }); }
+  let model = r.model;
+  let raw = extractJson(r.text);
+  if (raw === undefined) {
+    // 빈 응답·잘린 JSON·설명이 섞인 응답은 한 번만 더 요청한다(토큰 여유 + JSON만 다시 강조).
+    const again = await llmComplete({ system: `${p.system}\n설명이나 코드블록 없이 JSON 객체 하나만 응답해요.`, user, maxTokens: p.maxTokens * 4 }, fetcher);
+    if (again.ok) { raw = extractJson(again.text); model = again.model; }
+  }
+  if (raw === undefined) return done({ ok: false, reason: 'no_json', ms: Date.now() - t0 });
   const checked = checkAiOutput(task, raw);
   if (!checked.ok) return done({ ok: false, reason: 'invalid_output', ms: Date.now() - t0, issues: checked.issues });
   if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: 'ungrounded', ms: Date.now() - t0 });
-  return done({ ok: true, data: checked.data, model: r.model, ms: Date.now() - t0 });
+  return done({ ok: true, data: checked.data, model, ms: Date.now() - t0 });
 }
