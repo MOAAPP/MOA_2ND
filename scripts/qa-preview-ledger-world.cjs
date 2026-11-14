@@ -1,0 +1,54 @@
+/* Browser smoke for the non-production MOA home + ledger semicircle preview. */
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { chromium } = require(path.resolve(__dirname, '../moa-web/node_modules/playwright'));
+const root = 'http://127.0.0.1:5173';
+const evidence = path.resolve(__dirname, '../preview-evidence');
+fs.mkdirSync(evidence, { recursive:true });
+(async () => {
+  const browser = await chromium.launch({ headless:true, args:['--no-sandbox','--disable-dev-shm-usage'] });
+  try {
+    for (const width of [375,390]) {
+      const page = await browser.newPage({viewport:{width,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+      const errors=[];
+      page.on('pageerror', e => errors.push(String(e)));
+      await page.addInitScript(() => {
+        localStorage.setItem('moa.v1', JSON.stringify({ onboarded:true }));
+      });
+      await page.goto(root+'/',{waitUntil:'networkidle'});
+      await page.getByTestId('moa-learning-home').waitFor();
+      assert.equal(await page.getByRole('heading',{name:'오늘은 이걸 배워봐요'}).count(),1);
+      assert.equal(await page.getByRole('heading',{name:'오늘의 카드뉴스'}).count(),1);
+      assert.equal(await page.locator('section[aria-label="오늘의 맞춤 금융 카드뉴스"]').count(),1);
+      assert.equal(await page.getByRole('progressbar',{name:'이번 달 예산 사용률'}).count(),1);
+      assert.equal(await page.locator('header img[alt="MOA"]').count(),1);
+      assert.equal(await page.getByRole('link',{name:'가계부'}).count(),1);
+      await page.screenshot({path:path.join(evidence,'learning-home-'+width+'.png'),fullPage:false});
+      await page.locator('.moa-learning-cover').click();
+      await page.waitForURL(/\/learn\/[^/]+$/,{timeout:15000});
+      await page.getByText('금융 학습',{exact:true}).first().waitFor({timeout:15000});
+      await page.goto(root+'/',{waitUntil:'networkidle'});
+      await page.getByRole('button',{name:/평행통장/}).click();
+      await page.waitForURL(/\/world$/,{timeout:15000});
+      await page.getByText('구매한 나',{exact:true}).first().waitFor({timeout:15000});
+      await page.goto(root+'/ledger',{waitUntil:'networkidle'});
+      await page.getByRole('heading',{name:'가계부'}).waitFor();
+      const gauge=page.locator('.moa-budget-preview');
+      assert.equal(await gauge.count(),1,'Half ring summary is missing');
+      assert.equal(await gauge.locator('svg path').count(),2,'Half ring paths missing');
+      assert((await gauge.innerText()).includes('월 예산, 얼마나 썼을까?'));
+      assert((await gauge.innerText()).includes('남은 예산'));
+      assert.equal(await page.locator('header img[alt="MOA"]').count(),1);
+      await page.screenshot({path:path.join(evidence,'ledger-'+width+'.png'),fullPage:false});
+      await page.locator('#selected-month-display').evaluate(el=>{el.textContent='2026년 10월';});
+      await page.getByText('10월 예산, 얼마나 썼을까?').waitFor();
+      const altMonth=await gauge.innerText();
+      assert(altMonth.includes('0%'),'Prior month with no demo expenses should be 0%, got '+altMonth.slice(0,180));
+      assert.equal(errors.length,0,'Runtime exceptions: '+errors.join('\n'));
+      console.log('PASS preview width='+width+'px, daily cardnews, personal learning, world, ledger half-arc, month switch');
+      await page.close();
+    }
+    console.log('PREVIEW_LEARNING_HOME_E2E_PASS 2/2');
+  } finally {await browser.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});
