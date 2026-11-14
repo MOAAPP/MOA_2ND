@@ -1,0 +1,59 @@
+name: QA actual latest MOA frontend ZIP (browser + logic)
+on:
+  pull_request:
+    paths:
+      - 'releases/MOA_UX_renewal_20261114.zip'
+      - 'scripts/qa-latest-moa-browser.cjs'
+      - '.github/workflows/validate-latest-moa-web.yml'
+      - 'vercel.json'
+  push:
+    branches: [main]
+    paths:
+      - 'releases/MOA_UX_renewal_20261114.zip'
+      - 'scripts/qa-latest-moa-browser.cjs'
+      - '.github/workflows/validate-latest-moa-web.yml'
+      - 'vercel.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latest-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Extract current MOA frontend source
+        run: |
+          unzip -q releases/MOA_UX_renewal_20261114.zip -d .
+          sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
+      - name: Install frontend dependencies and browser
+        working-directory: moa-web
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Typecheck and build the actual frontend
+        working-directory: moa-web
+        run: npm run build
+      - name: Run logic, UX, render and route tests
+        working-directory: moa-web
+        run: npm run qa:all
+      - name: Start Vite development server
+        working-directory: moa-web
+        run: |
+          nohup npm run dev -- --host 127.0.0.1 > /tmp/moa-web-vite.log 2>&1 &
+      - name: Chromium end-to-end mobile smoke
+        run: node scripts/qa-latest-moa-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: latest-moa-mobile-e2e-evidence
+          path: |
+            e2e-evidence/
+            /tmp/moa-web-vite.log
+          if-no-files-found: warn
