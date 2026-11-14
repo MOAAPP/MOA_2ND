@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "vite build",
-  "outputDirectory": "dist",
+  "buildCommand": "unzip -q releases/MOA_UX_renewal_20261114.zip -d . && cd moa-web && npm ci && npm run build",
+  "outputDirectory": "moa-web/dist",
   "rewrites": [
     {
       "source": "/api/v4/:path*",
@@ -11,6 +11,10 @@
     {
       "source": "/api/(.*)",
       "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "functions": {
