@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'releases/MOA_briefing_minimal_list_20261114.zip'
+      - 'scripts/patch-home-remove-monograms.cjs'
       - 'scripts/qa-latest-moa-browser.cjs'
       - '.github/workflows/validate-latest-moa-web.yml'
       - 'vercel.json'
@@ -31,6 +32,7 @@ jobs:
         run: |
           unzip -q releases/MOA_briefing_minimal_list_20261114.zip -d .
           node scripts/patch-onboarding-primary-bank.cjs
+          node scripts/patch-home-remove-monograms.cjs
           sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
       - name: Install frontend dependencies and browser
         working-directory: moa-web
