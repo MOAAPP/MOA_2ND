@@ -27880,6 +27880,13 @@ var init_krx = __esm({
 });
 
 // server/lib/llm.ts
+var llm_exports = {};
+__export(llm_exports, {
+  FACTCHAT_DEFAULT_BASE: () => FACTCHAT_DEFAULT_BASE,
+  llmComplete: () => llmComplete,
+  llmModel: () => llmModel,
+  llmProvider: () => llmProvider
+});
 function llmProvider() {
   if (/^(off|false|0)$/i.test(process.env.AI_ENABLED ?? "")) return null;
   if (process.env.FACTCHAT_API_KEY) return "factchat";
@@ -28396,6 +28403,7 @@ async function runAiTask(task, input, fetcher = fetchWithTimeout) {
     record2(task, r2);
     return r2;
   };
+  if (task === "parseSpend" || task === "parseSchedule") return done({ ok: false, reason: "rules_only", ms: 0 });
   if (!aiConfigured()) return done({ ok: false, reason: "not_configured", ms: 0 });
   const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);
@@ -54178,6 +54186,19 @@ function marketInfo() {
   const p = primaryProvider2();
   return { setting: providerSetting2(), chain: providerChain2(), primary: p, refreshSec: refreshSeconds2(p), kis: kisConfigured2(), realtime: realtimeStatus2() };
 }
+async function tradeIntro(t) {
+  const fallback = `\uAC00\uC0C1\uC73C\uB85C ${t.name} ${fmtQty(t.shares)}\uC8FC\uB97C ${t.side === "buy" ? "\uC0C0\uC5B4\uC694" : "\uD314\uC558\uC5B4\uC694"}. \uC774 \uAC70\uB798\uB97C \uC774\uD574\uD558\uB294 \uB370 \uD544\uC694\uD55C \uAC83\uB9CC \uC9E7\uAC8C \uC815\uB9AC\uD588\uC5B4\uC694.`;
+  if (!llmProvider2()) return { text: fallback, model: null };
+  const r = await llmComplete2({
+    system: "\uB108\uB294 20\uB300 \uAE08\uC735 \uC785\uBB38\uC790\uB97C \uB3D5\uB294 \uBAA8\uC544\uC758 \uD559\uC2B5 \uCF54\uCE58\uC57C. \uC22B\uC790\uB97C \uC0C8\uB85C \uB9CC\uB4E4\uC9C0 \uB9D0\uACE0, \uD22C\uC790 \uAD8C\uC720\uB098 \uC218\uC775 \uC804\uB9DD\uC744 \uD558\uC9C0 \uB9C8. \uD55C\uAD6D\uC5B4 \uC874\uB313\uB9D0\uB85C 1~2\uBB38\uC7A5, 90\uC790 \uC774\uB0B4.",
+    user: `\uAC00\uC0C1 \uAC70\uB798: ${t.name} ${fmtQty(t.shares)}\uC8FC ${t.side === "buy" ? "\uB9E4\uC218" : "\uB9E4\uB3C4"}. \uD559\uC2B5 \uC8FC\uC81C: ${t.lesson.title}. \uC774 \uAC70\uB798 \uC9C1\uD6C4 \uBC30\uC6B8 \uC810\uC744 \uC18C\uAC1C\uD558\uB294 \uCCAB \uBB38\uC7A5\uC744 \uC368\uC918.`,
+    maxTokens: 160,
+    timeoutMs: 12e3
+  }).catch(() => null);
+  if (!r || !r.ok) return { text: fallback, model: null };
+  const text = r.text.replace(/\s+/g, " ").trim().slice(0, 140);
+  return text ? { text, model: r.model } : { text: fallback, model: null };
+}
 function publicSub(s) {
   if (!s) return null;
   return { enabled: s.enabled, time: s.time, nickname: s.nickname ?? "", includePhotos: s.includePhotos, lastRun: s.lastRun ?? null, nextRunAt: nextRunAt2(s), dueNow: isDue2(s), updatedAt: s.updatedAt };
@@ -54188,7 +54209,7 @@ function ownJob(req) {
   if (!job || job.deviceHash !== hashDevice2(device)) throw new ApiError2(404, "not_found", "\uCE74\uB4DC\uB274\uC2A4\uB97C \uCC3E\uC9C0 \uBABB\uD588\uC5B4\uC694.");
   return job;
 }
-var import_express2, INSTRUMENT_BY_CODE2, ALL_LESSONS2, discordStatus2, sendToDiscord2, DiscordError2, ApiError2, errorHandler2, methodNotAllowed2, route2, sendError2, createJob2, ensureDailyJob2, getJob2, hashDevice2, isRunning2, listJobs2, runGenerate2, sendJob2, isDue2, nextRunAt2, startScheduler2, fetchNews2, photosConfigured2, getGlobal2, getIndex2, getQuote2, getQuotes2, primaryProvider2, providerChain2, providerSetting2, refreshSeconds2, kisConfigured2, realtimeStatus2, aiConfigured2, aiStats2, runAiTask2, AI_TASKS2, checkAiInput2, rateLimit2, purchaseRouter2, naverConfigured2, jobDir2, store2, publicJob2, todayKST2, app, DeviceId, api, aiLimiter, quoteLimiter, slim, streamsByIp, SubSchema, TradeSchema, CreateSchema, dist, port;
+var import_express2, INSTRUMENT_BY_CODE2, ALL_LESSONS2, discordStatus2, sendToDiscord2, DiscordError2, ApiError2, errorHandler2, methodNotAllowed2, route2, sendError2, createJob2, ensureDailyJob2, getJob2, hashDevice2, isRunning2, listJobs2, runGenerate2, sendJob2, isDue2, nextRunAt2, startScheduler2, fetchNews2, photosConfigured2, getGlobal2, getIndex2, getQuote2, getQuotes2, primaryProvider2, providerChain2, providerSetting2, refreshSeconds2, kisConfigured2, realtimeStatus2, aiConfigured2, aiStats2, runAiTask2, AI_TASKS2, checkAiInput2, rateLimit2, llmComplete2, llmProvider2, purchaseRouter2, naverConfigured2, jobDir2, store2, publicJob2, todayKST2, app, DeviceId, api, aiLimiter, quoteLimiter, slim, streamsByIp, TradeCardSchema, sentTrades, won3, fmtQty, SubSchema, TradeSchema, CreateSchema, dist, port;
 var init_index = __esm({
   async "server/index.ts"() {
     "use strict";
@@ -54212,6 +54233,7 @@ var init_index = __esm({
     ({ aiConfigured: aiConfigured2, aiStats: aiStats2, runAiTask: runAiTask2, AI_TASKS: AI_TASKS2 } = await Promise.resolve().then(() => (init_ai(), ai_exports)));
     ({ checkAiInput: checkAiInput2 } = await Promise.resolve().then(() => (init_aiSchemas(), aiSchemas_exports)));
     ({ rateLimit: rateLimit2 } = await Promise.resolve().then(() => (init_rateLimit(), rateLimit_exports)));
+    ({ llmComplete: llmComplete2, llmProvider: llmProvider2 } = await Promise.resolve().then(() => (init_llm(), llm_exports)));
     ({ purchaseRouter: purchaseRouter2, naverConfigured: naverConfigured2 } = await Promise.resolve().then(() => (init_purchase(), purchase_exports)));
     ({ jobDir: jobDir2, store: store2 } = await Promise.resolve().then(() => (init_store(), store_exports)));
     ({ publicJob: publicJob2 } = await Promise.resolve().then(() => (init_types2(), types_exports)));
@@ -54231,6 +54253,9 @@ var init_index = __esm({
       aiLimiter,
       route2(async (req, res) => {
         const task = String(req.params.task);
+        if (task === "parseSpend" || task === "parseSchedule") {
+          throw new ApiError2(410, "rules_only", "\uAE08\uC735 \uBB38\uC790\uC640 \uC77C\uC815\uC740 \uC678\uBD80 AI\uB97C \uC0AC\uC6A9\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uADDC\uCE59 \uBD84\uC11D\uC744 \uC774\uC6A9\uD574 \uC8FC\uC138\uC694.");
+        }
         if (!AI_TASKS2.includes(task)) throw new ApiError2(404, "unknown_task", "\uC54C \uC218 \uC5C6\uB294 AI \uC791\uC5C5\uC774\uC5D0\uC694.");
         const raw = req.body?.input;
         if (!raw || typeof raw !== "object") throw new ApiError2(400, "bad_input", "\uC785\uB825\uC774 \uC5C6\uC5B4\uC694.");
@@ -54329,6 +54354,57 @@ data: ${JSON.stringify({ message: e.message })}
           const msg = e instanceof DiscordError2 ? e.message : "Discord \uC5F0\uACB0 \uD655\uC778\uC5D0 \uC2E4\uD328\uD588\uC5B4\uC694.";
           sendError2(res, 502, "discord_failed", msg, e instanceof DiscordError2 ? e.retryable : true);
         }
+      })
+    ).all(methodNotAllowed2(["POST"]));
+    TradeCardSchema = external_exports.object({
+      tradeId: external_exports.string().min(4).max(80).regex(/^[\w-]+$/),
+      name: external_exports.string().trim().min(1).max(40),
+      side: external_exports.enum(["buy", "sell"]),
+      shares: external_exports.number().positive().max(1e6),
+      price: external_exports.number().positive().max(1e8),
+      cashLeft: external_exports.number().min(0).max(1e10).optional(),
+      lesson: external_exports.object({
+        title: external_exports.string().trim().min(1).max(60),
+        points: external_exports.array(external_exports.string().trim().min(1).max(200)).min(1).max(5),
+        risk: external_exports.string().trim().max(200).optional(),
+        quiz: external_exports.object({ q: external_exports.string().trim().max(160), options: external_exports.array(external_exports.string().trim().max(60)).min(2).max(4) }).optional()
+      }),
+      link: external_exports.string().max(200).optional()
+    });
+    sentTrades = /* @__PURE__ */ new Set();
+    won3 = (n2) => `${Math.round(n2).toLocaleString("ko-KR")}\uC6D0`;
+    fmtQty = (n2) => String(Math.round(n2 * 100) / 100);
+    api.route("/discord/trade-card").post(
+      rateLimit2("discord-trade", 10, 6e4),
+      route2(async (req, res) => {
+        deviceOf(req);
+        const t = TradeCardSchema.parse(req.body);
+        if (sentTrades.has(t.tradeId)) return res.json({ ok: true, duplicate: true });
+        const intro = await tradeIntro(t);
+        const total = t.price * t.shares;
+        const lines = [
+          `\u{1F9FE} **\uBAA8\uC544 \uAC00\uC0C1 \uAC70\uB798 \uCE74\uB4DC\uB274\uC2A4 \xB7 ${t.lesson.title}**`,
+          intro.text,
+          "",
+          `**\u2460 \uBC29\uAE08 \uCCB4\uACB0\uB41C \uAC00\uC0C1 \uC8FC\uBB38**`,
+          `${t.name} ${fmtQty(t.shares)}\uC8FC \xD7 ${won3(t.price)} = **${won3(total)}**${t.cashLeft != null ? ` \xB7 \uB0A8\uC740 \uBC29\uC5B4 \uBA38\uB2C8 ${won3(t.cashLeft)}` : ""}`,
+          "",
+          ...t.lesson.points.slice(0, 3).flatMap((p, i) => [`**${["\u2461", "\u2462", "\u2463"][i]}** ${p}`]),
+          ...t.lesson.risk ? ["", `\u26A0\uFE0F ${t.lesson.risk}`] : [],
+          ...t.lesson.quiz ? ["", `\u2753 **\uD034\uC988** ${t.lesson.quiz.q}`, ...t.lesson.quiz.options.map((o, i) => `${i + 1}) ${o}`)] : [],
+          "",
+          `${t.link ? `\u{1F449} \uC571\uC5D0\uC11C \uC774\uC5B4\uC11C \uD559\uC2B5\uD558\uAE30: ${t.link}` : "\u{1F449} \uBAA8\uC544 \uC571\uC5D0\uC11C \uC774\uC5B4\uC11C \uD559\uC2B5\uD574 \uBCF4\uC138\uC694."}`,
+          `-# \uC2E4\uC81C \uB3C8\uC774 \uC544\uB2CC \uAC00\uC0C1 \uAC70\uB798\uC608\uC694. \uD22C\uC790 \uAD8C\uC720\uAC00 \uC544\uB2C8\uC5D0\uC694.${intro.model ? ` \xB7 \uCCAB \uBB38\uC7A5 AI(${intro.model})` : ""}`
+        ];
+        try {
+          await sendToDiscord2(lines.join("\n").slice(0, 1990));
+        } catch (e) {
+          const msg = e instanceof DiscordError2 ? e.message : "Discord \uC804\uC1A1\uC5D0 \uC2E4\uD328\uD588\uC5B4\uC694.";
+          return sendError2(res, 502, "discord_failed", msg, e instanceof DiscordError2 ? e.retryable : true);
+        }
+        sentTrades.add(t.tradeId);
+        if (sentTrades.size > 500) sentTrades.delete(sentTrades.values().next().value);
+        res.json({ ok: true, ai: !!intro.model, model: intro.model });
       })
     ).all(methodNotAllowed2(["POST"]));
     SubSchema = external_exports.object({
