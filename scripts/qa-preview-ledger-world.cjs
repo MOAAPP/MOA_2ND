@@ -27,7 +27,7 @@ fs.mkdirSync(evidence, { recursive:true });
       await page.screenshot({path:path.join(evidence,'home-'+width+'.png'),fullPage:false});
       await page.getByRole('button',{name:/소비 선택 비교하기/}).click();
       await page.waitForURL(/\/world$/);
-      assert((await page.locator('body').innerText()).includes('구매'));
+      await page.getByText('구매한 나',{exact:true}).first().waitFor({timeout:15000});
       await page.goto(root+'/ledger',{waitUntil:'networkidle'});
       await page.getByRole('heading',{name:'가계부'}).waitFor();
       const gauge=page.locator('.moa-budget-preview');
