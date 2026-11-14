@@ -38,6 +38,13 @@ const sleep=n=>new Promise(resolve=>setTimeout(resolve,n));
    assert.equal(await page.getByText("Y",{exact:true}).count(),0,"Decorative Y badge still on home");
    assert.equal(await page.getByText("생활비 통장",{exact:true}).count(),1,"Account title changed");
    assert.equal(await page.getByText("모아 모닝 브리핑",{exact:true}).count(),1,"Briefing title changed");
+   // The financial lab and purchase-decision quick cards are text-first, not emoji tiles.
+   const labCard=page.getByRole("button",{name:/금융 실험실.*가상 예·적금/});
+   const wishlistCard=page.getByRole("button",{name:/소비 결정 보관함/});
+   assert.equal(await labCard.count(),1,"Financial Lab quick card missing");
+   assert.equal(await wishlistCard.count(),1,"Purchase decision quick card missing");
+   assert.equal(await labCard.getByText("🧪",{exact:true}).count(),0,"Decorative test-tube remains");
+   assert.equal(await wishlistCard.getByText("🛍️",{exact:true}).count(),0,"Decorative shopping bag remains");
    const msgs=page.locator("[data-briefing-message]");
    assert.equal(await msgs.count(),3,"Three money insights must remain visible");
    const labels=await page.locator(".scr-home [data-briefing-label]").allTextContents();
