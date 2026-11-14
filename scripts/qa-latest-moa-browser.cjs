@@ -33,6 +33,13 @@ const sleep=n=>new Promise(resolve=>setTimeout(resolve,n));
    await sleep(900);
    assert(!(await page.url()).endsWith("onboarding"),"onboarding did not finish");
    count++;
+   const msgs=page.locator("[data-briefing-message]");
+   assert.equal(await msgs.count(),3,"Three money insights must remain visible");
+   const labels=await page.locator(".scr-home [data-briefing-label]").allTextContents();
+   assert.equal(labels.length,1,"Payment risk label missing");
+   assert(["결제 주의","결제 일정"].includes(labels[0].trim()),"Unexpected payment label");
+   for(const text of await msgs.allTextContents())assert(text.trim().length>10,"Financial briefing failed to update");
+   assert.equal(await page.locator(".scr-home [data-briefing-message] + span.rounded-full").count(),0,"Glowing decorative bullet remains");
    await page.screenshot({path:path.join(DIR,"home-"+width+".png"),fullPage:false});
 
    // All four primary tabs must share exactly the same global MOA header.
