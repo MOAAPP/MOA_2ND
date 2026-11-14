@@ -23,6 +23,7 @@ const { realtimeStatus } = await import('./lib/providers/kisRealtime');
 const { aiConfigured, aiStats, runAiTask, AI_TASKS } = await import('./lib/ai');
 const { checkAiInput } = await import('../shared/aiSchemas');
 const { rateLimit } = await import('./lib/rateLimit');
+const { llmComplete, llmProvider } = await import('./lib/llm');
 const { purchaseRouter, naverConfigured } = await import('./lib/purchase');
 const { jobDir, store } = await import('./lib/store');
 const { publicJob } = await import('./lib/types');
@@ -189,6 +190,76 @@ api
         const msg = e instanceof DiscordError ? e.message : 'Discord 연결 확인에 실패했어요.';
         sendError(res, 502, 'discord_failed', msg, e instanceof DiscordError ? e.retryable : true);
       }
+    }),
+  )
+  .all(methodNotAllowed(['POST']));
+
+/* ── 가상 거래 체결 → 종목 학습 카드뉴스를 Discord로 (모든 가상 종목·소수점 수량 지원) ── */
+const TradeCardSchema = z.object({
+  tradeId: z.string().min(4).max(80).regex(/^[\w-]+$/),
+  name: z.string().trim().min(1).max(40),
+  side: z.enum(['buy', 'sell']),
+  shares: z.number().positive().max(1_000_000),
+  price: z.number().positive().max(100_000_000),
+  cashLeft: z.number().min(0).max(10_000_000_000).optional(),
+  lesson: z.object({
+    title: z.string().trim().min(1).max(60),
+    points: z.array(z.string().trim().min(1).max(200)).min(1).max(5),
+    risk: z.string().trim().max(200).optional(),
+    quiz: z.object({ q: z.string().trim().max(160), options: z.array(z.string().trim().max(60)).min(2).max(4) }).optional(),
+  }),
+  link: z.string().max(200).optional(),
+});
+const sentTrades = new Set<string>();
+const won = (n: number) => `${Math.round(n).toLocaleString('ko-KR')}원`;
+const fmtQty = (n: number) => String(Math.round(n * 100) / 100);
+
+async function tradeIntro(t: z.infer<typeof TradeCardSchema>): Promise<{ text: string; model: string | null }> {
+  const fallback = `가상으로 ${t.name} ${fmtQty(t.shares)}주를 ${t.side === 'buy' ? '샀어요' : '팔았어요'}. 이 거래를 이해하는 데 필요한 것만 짧게 정리했어요.`;
+  if (!llmProvider()) return { text: fallback, model: null };
+  const r = await llmComplete({
+    system: '너는 20대 금융 입문자를 돕는 모아의 학습 코치야. 숫자를 새로 만들지 말고, 투자 권유나 수익 전망을 하지 마. 한국어 존댓말로 1~2문장, 90자 이내.',
+    user: `가상 거래: ${t.name} ${fmtQty(t.shares)}주 ${t.side === 'buy' ? '매수' : '매도'}. 학습 주제: ${t.lesson.title}. 이 거래 직후 배울 점을 소개하는 첫 문장을 써줘.`,
+    maxTokens: 160, timeoutMs: 12000,
+  }).catch(() => null);
+  if (!r || !r.ok) return { text: fallback, model: null };
+  const text = r.text.replace(/\s+/g, ' ').trim().slice(0, 140);
+  return text ? { text, model: r.model } : { text: fallback, model: null };
+}
+
+api
+  .route('/discord/trade-card')
+  .post(
+    rateLimit('discord-trade', 10, 60_000),
+    route(async (req, res) => {
+      deviceOf(req);
+      const t = TradeCardSchema.parse(req.body);
+      if (sentTrades.has(t.tradeId)) return res.json({ ok: true, duplicate: true });
+      const intro = await tradeIntro(t);
+      const total = t.price * t.shares;
+      const lines = [
+        `🧾 **모아 가상 거래 카드뉴스 · ${t.lesson.title}**`,
+        intro.text,
+        '',
+        `**① 방금 체결된 가상 주문**`,
+        `${t.name} ${fmtQty(t.shares)}주 × ${won(t.price)} = **${won(total)}**${t.cashLeft != null ? ` · 남은 방어 머니 ${won(t.cashLeft)}` : ''}`,
+        '',
+        ...t.lesson.points.slice(0, 3).flatMap((p, i) => [`**${['②', '③', '④'][i]}** ${p}`]),
+        ...(t.lesson.risk ? ['', `⚠️ ${t.lesson.risk}`] : []),
+        ...(t.lesson.quiz ? ['', `❓ **퀴즈** ${t.lesson.quiz.q}`, ...t.lesson.quiz.options.map((o, i) => `${i + 1}) ${o}`)] : []),
+        '',
+        `${t.link ? `👉 앱에서 이어서 학습하기: ${t.link}` : '👉 모아 앱에서 이어서 학습해 보세요.'}`,
+        `-# 실제 돈이 아닌 가상 거래예요. 투자 권유가 아니에요.${intro.model ? ` · 첫 문장 AI(${intro.model})` : ''}`,
+      ];
+      try {
+        await sendToDiscord(lines.join('\n').slice(0, 1990));
+      } catch (e) {
+        const msg = e instanceof DiscordError ? e.message : 'Discord 전송에 실패했어요.';
+        return sendError(res, 502, 'discord_failed', msg, e instanceof DiscordError ? e.retryable : true);
+      }
+      sentTrades.add(t.tradeId);
+      if (sentTrades.size > 500) sentTrades.delete(sentTrades.values().next().value as string);
+      res.json({ ok: true, ai: !!intro.model, model: intro.model });
     }),
   )
   .all(methodNotAllowed(['POST']));
