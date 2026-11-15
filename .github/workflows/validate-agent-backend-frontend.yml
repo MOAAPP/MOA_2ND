@@ -1,0 +1,50 @@
+name: Validate deployed MOA Agent backend wiring
+
+on:
+  push:
+    branches:
+      - feat/world-agent-frontend-integration
+    paths:
+      - 'scripts/patch-agent-backend.mjs'
+      - 'scripts/build-latest-ui.sh'
+      - 'releases/MOA_home_dashboard_ai_20261115.zip'
+      - '.github/workflows/validate-agent-backend-frontend.yml'
+  pull_request:
+    paths:
+      - 'scripts/patch-agent-backend.mjs'
+      - 'scripts/build-latest-ui.sh'
+      - 'releases/MOA_home_dashboard_ai_20261115.zip'
+      - '.github/workflows/validate-agent-backend-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deployed-frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Extract and patch the actual production ZIP
+        run: |
+          unzip -q releases/MOA_home_dashboard_ai_20261115.zip -d .
+          node scripts/patch-agent-backend.mjs
+          # Fail if any static canned Agent answer is still used.
+          ! grep -q "import snapshot from" moa-web/src/pages/Agent.tsx
+          grep -q "max_evaluations: 72" moa-web/src/lib/api.ts
+          # Reapplying must be safe.
+          node scripts/patch-agent-backend.mjs
+          sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
+      - name: Install dependencies
+        working-directory: moa-web
+        run: npm ci
+      - name: Build actual deployed UI
+        working-directory: moa-web
+        run: npm run build
+      - name: Frontend logic and render regression tests
+        working-directory: moa-web
+        run: npm run qa:all
