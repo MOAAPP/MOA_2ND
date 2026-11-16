@@ -2,7 +2,6 @@ name: Inspect actual deploy UI (temporary)
 on:
   push:
     branches: [feat/ux-journey-review-20261117]
-  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -10,22 +9,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read shipped ZIP UI structure
+      - name: Read shipped home and styles
         run: |
           python3 - <<'PY'
           import zipfile,re
-          p='releases/MOA_home_dashboard_ai_20261115.zip'
-          with zipfile.ZipFile(p) as z:
+          with zipfile.ZipFile('releases/MOA_home_dashboard_ai_20261115.zip') as z:
             names=z.namelist()
-            print('FILE OVERVIEW:', [n for n in names if n.endswith(('.css','.tsx','.jsx','.html'))][:150])
-            for pattern in ['src/pages/Home.tsx','src/pages/WorldChoice.tsx','src/pages/Agent.tsx','src/pages/Savings.tsx','src/pages/Lab.tsx','src/screens/World.jsx','src/screens/Invest.jsx','src/screens/Portfolio.jsx','index.html']:
+            for pattern in ['src/screens/Home.jsx','src/screens/Home.css','src/pages/Agent.css','src/screens/World.css','src/pages/Lab.css','src/styles/index.css']:
               found=[n for n in names if n.endswith(pattern)]
               if not found: continue
               s=z.read(found[0]).decode()
-              lines=s.splitlines()
-              print('\\n===== '+pattern+' len '+str(len(s))+' =====')
-              for i,line in enumerate(lines,1):
-                if i<=19 or re.search('return \\(|<h[1-4]|<main|<section|<article|<header|<PageHeader|<PrimaryButton|<button|className=|<nav|<PageShell|<Tab|onClick=|onSubmit=|<Balance|<Chart|<Link|<p ',line):
-                  print(f'{i:03d}: {line[:260]}')
-                  if i>=370: break
+              print('\\n===== '+pattern+' '+str(len(s))+' =====')
+              for i,line in enumerate(s.splitlines(),1):
+                if pattern.endswith('.css'):
+                  if re.search(r'(^|[ }])(?:\\.[a-zA-Z_-]|body|main|header|button|:root|\\[)',line):
+                    print(f'{i:03d}: {line[:250]}')
+                  if i>=550: break
+                elif i<=18 or re.search('<main|<section|<article|<header|<h[1-4]|<button|data-briefing|data-nav=|className=|<p |<span ',line):
+                  print(f'{i:03d}: {line[:290]}')
+                  if i>=440: break
           PY
