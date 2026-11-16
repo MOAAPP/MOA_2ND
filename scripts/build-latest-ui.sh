@@ -15,6 +15,8 @@ node scripts/patch-demo-finance.mjs
 node scripts/patch-world-backend.mjs
 # The existing 3D diagnostic box now uses six-path 90-day FastAPI checks.
 node scripts/patch-world-six-safety.mjs
+# Keep the existing virtual product UI; calculate demo plans with FastAPI.
+node scripts/patch-savings-backend.mjs
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web
