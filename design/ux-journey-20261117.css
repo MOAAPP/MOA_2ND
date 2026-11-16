@@ -170,3 +170,26 @@ section[aria-label="결제 위험 차이"] {border-left:3px solid #6585ef;}
 .scr-invest .stock-card {border:1px solid #e8edf8;border-radius:20px;}
 .scr-invest .stock-card button:focus-visible,
 .scr-world button:focus-visible {outline:3px solid #94a8f3;outline-offset:2px;}
+
+/* Route CSS is imported dynamically by Vite. These scoped selectors outrank
+   the original screen's late-loaded !important background declarations. */
+.mh .mh-main button.mh-world {
+  background:radial-gradient(circle at 110% -10%,rgba(151,196,255,.40),transparent 52%),
+    linear-gradient(135deg,#273c91 0%,#315af0 58%,#6e6be8 100%)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+}
+.mh .mh-main button.mh-world .mh-world-text strong {color:#fff!important;font-size:20px!important;line-height:1.33!important;}
+.mh .mh-main button.mh-world .mh-world-text small {color:#eef3ff!important;background:rgba(255,255,255,.16)!important;}
+.mh .mh-main button.mh-world .mh-world-text em {color:#dce7ff!important;}
+.mh .mh-main section.mh-ai {background:#fff!important;color:#172447!important;
+  border:1px solid #e8eaf4!important;box-shadow:0 5px 18px rgba(25,52,101,.055)!important;}
+.mh .mh-main section.mh-ai .mh-ai-badge {color:#4a52c9!important;background:#eff2ff!important;}
+.mh .mh-main section.mh-ai .mh-ai-src {color:#65718a!important;}
+.mh .mh-main section.mh-ai h2 {color:#1f2b44!important;}
+.mh .mh-main section.mh-ai > p {color:#58677f!important;}
+.mh .mh-main section.mh-ai .mh-ai-cta {background:#eef2ff!important;color:#3154d7!important;}
+.mh .mh-main section.mh-ai .mh-ai-why {color:#465779!important;}
+.mh .mh-main section.mh-ai .mh-ai-facts {background:#f5f7fe!important;}
+.mh .mh-main section.mh-ai .mh-ai-facts li,
+.mh .mh-main section.mh-ai .mh-ai-facts b {color:#34435b!important;}
