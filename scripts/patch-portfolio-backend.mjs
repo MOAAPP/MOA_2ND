@@ -26,7 +26,7 @@ function patchOnce(before, after) {
   source = source.slice(0, index) + after + source.slice(index + before.length);
 }
 
-patchOnce(
+if (!source.includes("import { filledOrderKey, getPortfolioValidation, commitPortfolioValidation, readPortfolioValidation } from './portfolioSimulation';")) patchOnce(
   "import { LESSONS, stockLessonId } from './learning';",
   "import { LESSONS, stockLessonId } from './learning';\nimport { filledOrderKey, getPortfolioValidation, commitPortfolioValidation, readPortfolioValidation } from './portfolioSimulation';",
 );
