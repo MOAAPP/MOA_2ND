@@ -164,3 +164,49 @@ export function getConfirmedSmsLedger(userId: string, signal?: AbortSignal) {
     signal,
   );
 }
+
+/** 날짜별 변동지출 예측 그래프용 시리즈 (GET /users/{id}/forecast-chart). 금액은 원 단위 정수, 날짜는 YYYY-MM-DD. */
+export interface ForecastChartPoint {
+  date: string;
+  phase: 'history' | 'forecast';
+  predicted: number | null;
+  actual: number | null;
+  method: string | null;
+  lightgbm: number | null;
+  baseline_overall: number | null;
+  baseline_recent7: number | null;
+  baseline_weekday: number | null;
+}
+export interface ForecastChartResponse {
+  user_id: string;
+  as_of: string;
+  horizon_days: number;
+  model: 'lightgbm' | 'overall' | 'recent7' | 'weekday';
+  model_version: string;
+  data_quality_status: string;
+  serving_default_model: string | null;
+  series: ForecastChartPoint[];
+  totals: { horizon_days: number; predicted_total: number; actual_total: number | null }[];
+  live_metrics: { model: string; label: string; days_compared: number; mae: number | null; rmse: number | null }[];
+  warnings: string[];
+}
+export function getForecastChart(
+  userId: string,
+  opts: { asOf?: string; horizonDays?: number; model?: ForecastChartResponse['model'] } = {},
+  signal?: AbortSignal,
+) {
+  const q = new URLSearchParams({ horizon_days: String(opts.horizonDays ?? 14), model: opts.model ?? 'lightgbm' });
+  if (opts.asOf) q.set('as_of', opts.asOf);
+  return financeRequest<ForecastChartResponse>(`/users/${encodeURIComponent(userId)}/forecast-chart?${q}`, signal);
+}
+
+/** 오프라인 모델 성능 비교표 + 오류 분석 (GET /ml/evaluation). */
+export interface ModelEvaluation {
+  metadata: Record<string, unknown>;
+  metrics: Record<string, { method: string; label: string; horizon_days: number; cases: number; mae: number | null; rmse: number | null; bias: number | null }[]>;
+  error_analysis: Record<string, unknown>;
+  warnings: string[];
+}
+export function getModelEvaluation(signal?: AbortSignal) {
+  return financeRequest<ModelEvaluation>('/ml/evaluation', signal);
+}

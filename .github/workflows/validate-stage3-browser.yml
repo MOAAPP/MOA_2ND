@@ -39,7 +39,7 @@ jobs:
           import json
           d=json.load(open('app/data/models/evaluation.json'))
           assert d['metadata']['training_samples'] >= 100
-          assert d['metadata']['selected_model'] in ('lightgbm','recent7','weekday')
+          assert d['metadata']['selected_model'] in ('lightgbm','overall','recent7','weekday')
           print('Stage 4 model selected:',d['metadata']['selected_model'])
           PY
       - name: Start FastAPI with canonical ZIP
@@ -55,7 +55,7 @@ jobs:
           python - <<'PY'
           import json
           x=json.load(open('/tmp/stage4-forecast.json'))
-          assert x['model_type'] in ('lightgbm','recent7','weekday')
+          assert x['model_type'] in ('lightgbm','overall','recent7','weekday')
           assert len(x['daily'])==14
           assert all(x['daily'][i]['date'] < x['daily'][i+1]['date'] for i in range(13))
           assert x['candidate_purchases_included'] is False
