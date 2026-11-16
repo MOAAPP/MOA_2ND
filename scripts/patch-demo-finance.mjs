@@ -41,7 +41,7 @@ patch('src/lib/store.ts', [
   ],
   [
     "const DEMO: State = { ...DEFAULT, onboarded: true, learnAlert: { ...DEFAULT.learnAlert, discord: true, discordConsent: true } };",
-    "const DEMO: State = { ...DEFAULT, onboarded: true, demoUserId: 'S01', demoFinanceReady: false,\n  profile: { ...DEFAULT.profile, name: 'S01', monthlyBudget: 0 },\n  finance: { balance: 0, minBalance: 0, salary: 0 },\n  txs: [], bills: [], budgets: Object.fromEntries(Object.keys(DEFAULT_BUDGETS).map(k => [k, 0])),\n  learnAlert: { ...DEFAULT.learnAlert, discord: true, discordConsent: true } };",
+    "const DEMO: State = { ...DEFAULT, onboarded: true, demoUserId: 'S01', demoFinanceReady: false,\n  profile: { ...DEFAULT.profile, name: 'S01', monthlyBudget: 0 },\n  finance: { balance: 0, minBalance: 0, salary: 0 },\n  txs: [], bills: [], savings: [], budgets: Object.fromEntries(Object.keys(DEFAULT_BUDGETS).map(k => [k, 0])),\n  learnAlert: { ...DEFAULT.learnAlert, discord: true, discordConsent: true } };",
   ],
 ]);
 
