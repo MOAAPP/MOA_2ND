@@ -6,6 +6,21 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 unzip -q releases/MOA_home_dashboard_ai_20261115.zip -d .
+# Patch the ZIP source that Vercel actually deploys; root src/ is not built here.
+# Only AI Agent data handling is changed. No JSX or CSS is modified.
+node scripts/patch-agent-backend.mjs
+# Replace only demo finance fixtures with authoritative S01/S08 FastAPI data.
+node scripts/patch-demo-finance.mjs
+# Canonical six-path FastAPI comparison for the existing A/B world graph.
+node scripts/patch-world-backend.mjs
+# The existing 3D diagnostic box now uses six-path 90-day FastAPI checks.
+node scripts/patch-world-six-safety.mjs
+# Keep the existing virtual product UI; calculate demo plans with FastAPI.
+node scripts/patch-savings-backend.mjs
+# Validate locally filled virtual ETF/stock trades with canonical portfolio FastAPI.
+node scripts/patch-portfolio-backend.mjs
+# USER mode: stateless personal-input finance and rules-goal endpoints (no S01/S08 data).
+node scripts/patch-personal-input.mjs
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web
