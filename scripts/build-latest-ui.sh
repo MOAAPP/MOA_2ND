@@ -21,8 +21,12 @@ node scripts/patch-savings-backend.mjs
 node scripts/patch-portfolio-backend.mjs
 # USER mode: stateless personal-input finance and rules-goal endpoints (no S01/S08 data).
 node scripts/patch-personal-input.mjs
+# Review branch ONLY: UI hierarchy and result communication, no API / financial logic changes.
+node scripts/patch-ux-journey.mjs
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web
 npm ci
 npm run build
+# Load review-only stylesheet after Vite-generated CSS so original styles stay intact.
+node ../scripts/patch-ux-journey.mjs --postbuild
