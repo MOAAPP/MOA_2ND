@@ -29,7 +29,7 @@ replaceOne(
   "  skippedTotal, APP_TODAY, TX_LABEL, fmtShares, setTargetWeights,",
   "  skippedTotal, APP_TODAY, MODE, TX_LABEL, fmtShares, setTargetWeights,",
 );
-replaceOne(
+if (!src.includes("import { getSixWorldSafety, SIX_WORLD_IDS } from './worldSixSafety';")) replaceOne(
   "import { LESSONS, stockLessonId } from './learning';",
   "import { LESSONS, stockLessonId } from './learning';\nimport { getSixWorldSafety, SIX_WORLD_IDS } from './worldSixSafety';",
 );
