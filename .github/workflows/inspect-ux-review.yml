@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read shipped home and styles
+      - name: Read home and style classes
         run: |
           python3 - <<'PY'
           import zipfile,re
@@ -20,12 +20,11 @@ jobs:
               if not found: continue
               s=z.read(found[0]).decode()
               print('\\n===== '+pattern+' '+str(len(s))+' =====')
-              for i,line in enumerate(s.splitlines(),1):
-                if pattern.endswith('.css'):
-                  if re.search(r'(^|[ }])(?:\\.[a-zA-Z_-]|body|main|header|button|:root|\\[)',line):
-                    print(f'{i:03d}: {line[:250]}')
-                  if i>=550: break
-                elif i<=18 or re.search('<main|<section|<article|<header|<h[1-4]|<button|data-briefing|data-nav=|className=|<p |<span ',line):
-                  print(f'{i:03d}: {line[:290]}')
-                  if i>=440: break
+              if pattern.endswith('.css'):
+                print('SELECTORS:', sorted(set(re.findall(r'\\.[a-z][a-zA-Z0-9_-]*',s)))[:160])
+                print('BEGIN CSS:',s[:5000])
+              else:
+                for i,line in enumerate(s.splitlines(),1):
+                  if i>45 and i<150:
+                    print(f'{i:03d}: {line[:450]}')
           PY
