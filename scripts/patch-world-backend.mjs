@@ -3,12 +3,17 @@
  * DOM element, CSS class, chart component and screen layout exactly.
  * Only the numbers, their source notice and demo fetch state change.
  */
-import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
-copyFileSync(resolve(root, 'integration/worldComparison.ts'),
-  resolve(root, 'moa-web/src/lib/worldComparison.ts'));
+// Node's strip-types test runner needs .ts; the ZIP's strict tsc expects an
+// extensionless local import. Adapt only the specifier when copying.
+const service = readFileSync(resolve(root, 'integration/worldComparison.ts'), 'utf8');
+const sourceSpecifier = "from './demoFinanceMap.ts'";
+if (!service.includes(sourceSpecifier)) throw new Error('[world backend] mapper import changed');
+writeFileSync(resolve(root, 'moa-web/src/lib/worldComparison.ts'),
+  service.replace(sourceSpecifier, "from './demoFinanceMap'"));
 const path = resolve(root, 'moa-web/src/pages/WorldChoice.tsx');
 let src = readFileSync(path, 'utf8');
 function replace(before, after) {
