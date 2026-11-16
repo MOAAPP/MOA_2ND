@@ -57,6 +57,9 @@ export async function syncDemoFinance(user: DemoUserId = 'S01'): Promise<boolean
       },
       bills: mapped.bills,
       txs: mapped.txs,
+      // Virtual savings are local practice records, not backend cash assets.
+      // Do not carry S01's practice deposits into S08 when personas change.
+      savings: s.demoUserId === user ? s.savings : [],
       budgets: Object.fromEntries(Object.keys(s.budgets).map(key => [key, 0])), // preserve category keys, no canned budget
     }));
     return true;
