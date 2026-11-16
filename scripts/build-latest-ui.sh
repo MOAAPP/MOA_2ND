@@ -19,6 +19,8 @@ node scripts/patch-world-six-safety.mjs
 node scripts/patch-savings-backend.mjs
 # Validate locally filled virtual ETF/stock trades with canonical portfolio FastAPI.
 node scripts/patch-portfolio-backend.mjs
+# USER mode: stateless personal-input finance and rules-goal endpoints (no S01/S08 data).
+node scripts/patch-personal-input.mjs
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web
