@@ -1,4 +1,4 @@
-name: Validate deployed MOA Agent and canonical demo data
+name: Validate MOA frontend demo and six-world backend wiring
 
 on:
   push:
@@ -8,14 +8,14 @@ on:
       - 'scripts/patch-agent-backend.mjs'
       - 'scripts/patch-demo-finance.mjs'
       - 'scripts/patch-world-backend.mjs'
-      - 'integration/worldComparison.ts'
-      - 'tests/world-comparison.test.mjs'
-      - 'scripts/patch-world-backend.mjs'
-      - 'integration/worldComparison.ts'
-      - 'tests/world-comparison.test.mjs'
+      - 'scripts/patch-world-six-safety.mjs'
       - 'integration/demoFinance.ts'
       - 'integration/demoFinanceMap.ts'
+      - 'integration/worldComparison.ts'
+      - 'integration/worldSixSafety.ts'
       - 'tests/demo-finance-map.test.mjs'
+      - 'tests/world-comparison.test.mjs'
+      - 'tests/world-six-safety.test.mjs'
       - 'scripts/build-latest-ui.sh'
       - 'releases/MOA_home_dashboard_ai_20261115.zip'
       - '.github/workflows/validate-agent-backend-frontend.yml'
@@ -23,9 +23,15 @@ on:
     paths:
       - 'scripts/patch-agent-backend.mjs'
       - 'scripts/patch-demo-finance.mjs'
+      - 'scripts/patch-world-backend.mjs'
+      - 'scripts/patch-world-six-safety.mjs'
       - 'integration/demoFinance.ts'
       - 'integration/demoFinanceMap.ts'
+      - 'integration/worldComparison.ts'
+      - 'integration/worldSixSafety.ts'
       - 'tests/demo-finance-map.test.mjs'
+      - 'tests/world-comparison.test.mjs'
+      - 'tests/world-six-safety.test.mjs'
       - 'scripts/build-latest-ui.sh'
       - 'releases/MOA_home_dashboard_ai_20261115.zip'
       - '.github/workflows/validate-agent-backend-frontend.yml'
@@ -43,31 +49,43 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate canonical FastAPI demo mapping
-        run: node --experimental-strip-types --test tests/demo-finance-map.test.mjs tests/world-comparison.test.mjs
+      - name: Validate canonical demo, comparison and six-world safety mapping
+        run: |
+          node --experimental-strip-types --test \
+            tests/demo-finance-map.test.mjs \
+            tests/world-comparison.test.mjs \
+            tests/world-six-safety.test.mjs
       - name: Extract and patch the actual production ZIP
+        shell: bash
         run: |
           unzip -q releases/MOA_home_dashboard_ai_20261115.zip -d .
           node scripts/patch-agent-backend.mjs
           node scripts/patch-demo-finance.mjs
           node scripts/patch-world-backend.mjs
+          node scripts/patch-world-six-safety.mjs
           ! grep -q 'import snapshot from' moa-web/src/pages/Agent.tsx
           grep -q 'max_evaluations: 72' moa-web/src/lib/api.ts
+          grep -q 'getSixWorldSafety' moa-web/src/lib/bridge.js
+          # All patches must be repeatable in the ZIP deployment pipeline.
           node scripts/patch-agent-backend.mjs
           node scripts/patch-demo-finance.mjs
           node scripts/patch-world-backend.mjs
-          # Assert every CSS file remains byte-for-byte identical to source ZIP.
+          node scripts/patch-world-six-safety.mjs
+          # Assert ALL CSS and the original 3D templates stay byte-identical.
           unzip -Z1 releases/MOA_home_dashboard_ai_20261115.zip | grep '\.css$' | while IFS= read -r file; do
+            unzip -p releases/MOA_home_dashboard_ai_20261115.zip "$file" | cmp - "$file"
+          done
+          for file in moa-web/src/screens/World.jsx moa-web/src/screens/World.controller.js moa-web/src/pages/WorldRecords.tsx; do
             unzip -p releases/MOA_home_dashboard_ai_20261115.zip "$file" | cmp - "$file"
           done
           sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
       - name: Install dependencies
         working-directory: moa-web
         run: npm ci
-      - name: Typecheck and build deployed mobile frontend
+      - name: Typecheck and build deployed frontend
         working-directory: moa-web
         run: npm run build
-      # Existing ZIP's qa:logic/qa:render mock harnesses cannot import store.ts.
+      # Existing ZIP's qa:logic/qa:render runner cannot import store.ts.
       - name: Frontend navigation static smoke test
         working-directory: moa-web
         run: npm run qa:routes
