@@ -47,7 +47,7 @@ function atDay(days: number) {
 /** Validate all six paths BEFORE showing any number. Never silently fake an answer. */
 export function mapWorldResponse(
   response: WorldResponse, user: DemoUserId, amount: number, period: 7 | 30 | 90,
-  currentBalance: number,
+  currentBalance: number, paymentMethod: 'debit' | 'transfer' = 'debit',
 ): WorldProjection {
   if (response.user_id !== user || response.as_of !== DEMO_AS_OF ||
       response.source !== 'synthetic_dataset' ||
@@ -99,7 +99,7 @@ export function mapWorldResponse(
       ? bought.first_shortfall_date : null,
     keptRisk: kept.first_shortfall_date && kept.first_shortfall_date <= atDay(period)
       ? kept.first_shortfall_date : null,
-    payment: '체크카드 (즉시 출금)',
+    payment: paymentMethod === 'transfer' ? '계좌이체 (직접 이체)' : '체크카드 (즉시 출금)',
     actual: 'demo',
     isDemo: true,
     origin: 'fastapi_synthetic_finance',
@@ -111,7 +111,7 @@ export function mapWorldResponse(
 /** Abortable live request; never use mock JSON, local projections, or stale data. */
 export async function getWorldProjection(
   user: DemoUserId, amount: number, period: 7 | 30 | 90, currentBalance: number,
-  signal: AbortSignal,
+  signal: AbortSignal, paymentMethod: 'debit' | 'transfer' = 'debit',
 ): Promise<WorldProjection> {
   const response = await fetch('/api/v4/scenarios/compare', {
     method: 'POST',
@@ -122,7 +122,7 @@ export async function getWorldProjection(
       as_of: DEMO_AS_OF,
       horizon_days: Math.max(14, period),
       purchase_amount: amount,
-      payment_method: 'debit',
+      payment_method: paymentMethod,
       minimum_required_balance: 0,
       investment_return_percent: 0,
     }),
@@ -132,5 +132,5 @@ export async function getWorldProjection(
     throw new Error('world_backend_non_json_response');
   }
   return mapWorldResponse(await response.json() as WorldResponse,
-    user, amount, period, currentBalance);
+    user, amount, period, currentBalance, paymentMethod);
 }
