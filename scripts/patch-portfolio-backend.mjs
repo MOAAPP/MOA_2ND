@@ -112,10 +112,8 @@ patchOnce(
 );
 
 patchOnce(
-  `        orig.showToast(`지정가 ${fmt(r.order.limitPrice)}원 주문을 접수했어요. 조건이 맞으면 체결돼요.`);
-        return;`,
-  `        orig.showToast(`지정가 ${fmt(r.order.limitPrice)}원 주문 접수 · 백엔드 현금흐름 검증은 체결 후에 진행돼요.`);
-        return;`,
+  "        orig.showToast(`지정가 ${fmt(r.order.limitPrice)}원 주문을 접수했어요. 조건이 맞으면 체결돼요.`);\n        return;",
+  "        orig.showToast(`지정가 ${fmt(r.order.limitPrice)}원 주문 접수 · 백엔드 현금흐름 검증은 체결 후에 진행돼요.`);\n        return;",
 );
 
 patchOnce(
