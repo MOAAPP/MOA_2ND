@@ -50,22 +50,23 @@ replace(
       return;
     }
     const controller = new AbortController();
+    let active = true;
     const timer = window.setTimeout(() => controller.abort(), 20000);
     setBackend(null); setBackendStatus('loading');
     void getWorldProjection(demoUserId, amount, period, s.finance.balance,
       controller.signal, paymentMethod).then(result => {
-      if (!controller.signal.aborted) {
+      if (active && !controller.signal.aborted) {
         setBackend({ key: backendKey, result });
         setBackendStatus('idle');
       }
     }).catch(() => {
-      if (!controller.signal.aborted) {
+      if (active) {
         setBackend(null);
         setBackendStatus('error');
       }
     }).finally(() => window.clearTimeout(timer));
     return () => {
-      controller.abort(); window.clearTimeout(timer);
+      active = false; controller.abort(); window.clearTimeout(timer);
     };
   }, [backendKey]);
   const liveProjection = backend?.key === backendKey ? backend.result : null;
