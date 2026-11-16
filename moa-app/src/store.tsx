@@ -82,6 +82,26 @@ function useProvideStore() {
     ;(async () => {
       const details = await Promise.all(codes.map((c) => api.quoteDetail(c)))
       if (stop) return
+      const ratio: Record<string, number> = {}
+      details.forEach((d, i) => {
+        if (d?.quote?.price) ratio[codes[i]] = d.quote.price / STOCKS[i].price
+      })
+      // the demo account was written against sample prices: keep its gains realistic on live prices
+      setState((st) => {
+        if (st.mode !== 'demo' || st.rebased || !Object.keys(ratio).length) return st
+        // keep the invested amount about the same: fewer shares when the live price is higher
+        const k = (code: string) => ratio[code] ?? 1
+        const qty = (code: string, q: number) => Math.max(1, Math.round(q / k(code)))
+        return {
+          ...st,
+          rebased: true,
+          invest: {
+            ...st.invest,
+            holdings: st.invest.holdings.map((h) => ({ ...h, qty: qty(h.code, h.qty), avg: Math.round(h.avg * k(h.code)) })),
+          },
+          trades: (st.trades ?? []).map((t) => ({ ...t, qty: qty(t.code, t.qty), price: Math.round(t.price * k(t.code)) })),
+        }
+      })
       setPrices((old) => {
         const next = { ...old }
         details.forEach((d, i) => {

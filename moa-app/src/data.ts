@@ -36,6 +36,8 @@ export type State = {
   later: { id: string; title: string; amount: number; until: string }[]
   trades?: Trade[]
   levelTested?: boolean
+  /** demo holdings re-based onto the first live quotes */
+  rebased?: boolean
 }
 
 export const CATS: Record<Category, { label: string; color: string }> = {
@@ -383,11 +385,10 @@ export function demoState(): State {
     deposits: [{ id: 'dp1', name: '평행 정기예금', principal: 300000, rate: 0.034, months: 12, start: base(1, 5) }],
     challenge: { start: base(1, 6), base: 1000, filled: 6 },
     invest: {
-      cash: 52600,
+      cash: 113600,
       holdings: [
         { code: '360750', qty: 5, avg: 21400 },
         { code: '069500', qty: 2, avg: 35200 },
-        { code: '005930', qty: 1, avg: 61000 },
       ],
     },
     xp: 580,
@@ -397,7 +398,6 @@ export function demoState(): State {
     trades: [
       { id: 't1', date: d(-21), code: '360750', side: 'buy', qty: 5, price: 21400 },
       { id: 't2', date: d(-15), code: '069500', side: 'buy', qty: 2, price: 35200 },
-      { id: 't3', date: d(-9), code: '005930', side: 'buy', qty: 1, price: 61000 },
     ],
     discord: true,
     later: [],
