@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildPersonalSnapshot, mapPersonalComparison, parsePersonalGoal,
-  comparePersonal, analyzePersonalGoal,
+  comparePersonal, analyzePersonalGoal, validatePersonalSixWorlds,
 } from '../integration/personalFinance.ts';
 
 const asOf = '2026-11-16';
@@ -160,5 +160,33 @@ test('goal endpoint requires explicit rules-not-LLM source', async () => {
       }),
     });
     await assert.rejects(analyzePersonalGoal(s, goal, new AbortController().signal), /goal_mismatch/);
+  } finally { globalThis.fetch = original; }
+});
+
+test('3D worlds use Python 90-day cash safety and mark 6-month delay unverified', async () => {
+  const original = globalThis.fetch;
+  const s = buildPersonalSnapshot(mockStore(), asOf);
+  const requests = [];
+  try {
+    globalThis.fetch = async (url, init) => {
+      const body = JSON.parse(init.body);
+      requests.push({ url, body });
+      return {
+        ok:true, headers:{get:()=> 'application/json'},
+        json:async()=>makeResponse(s, 259000, 90),
+      };
+    };
+    const result = await validatePersonalSixWorlds(s, 259000, 6, new AbortController().signal);
+    assert.equal(requests[0].url, '/api/v4/personal/compare');
+    assert.equal(requests[0].body.horizon_days, 90);
+    assert.equal(requests[0].body.purchase_delay_days, 90); // maximum supported
+    assert.equal(result.paths.length, 6);
+    assert.equal(result.paths[2].id, 'purchase_delay');
+    assert.equal(result.paths[2].result, 'out_of_horizon');
+    assert.equal(result.paths[2].minimumBalance, null);
+    assert.equal(result.paths[2].endingCash, null);
+    assert.equal(result.paths[1].result, 'protected');
+    assert.equal(result.paths[4].id, 'virtual_investment');
+    assert.equal(Object.hasOwn(requests[0].body, 'investment_return_percent'), false);
   } finally { globalThis.fetch = original; }
 });
