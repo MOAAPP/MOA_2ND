@@ -231,3 +231,96 @@ patch('pages/Agent.tsx', [
     "<p className=\"ag-foot\">{MODE === 'demo' ? <>가상 사용자의 금융 데이터({Number(DEMO_AS_OF.slice(5, 7))}월 {Number(DEMO_AS_OF.slice(8))}일 기준)로 계산했어요. 수익률이 높다는 이유만으로 안전한 경로로 고르지 않아요.</> : <>내가 직접 입력한 금융 정보 기준의 규칙 기반 30일 가상 검증이에요. 서버는 입력값을 저장하지 않아요. 이 결과는 LLM·ML 분석이나 미래 투자 수익 예측이 아니에요.</>}</p>",
   ],
 ]);
+
+patch('lib/bridge.js', [
+  [
+    "import { filledOrderKey, getPortfolioValidation, commitPortfolioValidation, readPortfolioValidation } from './portfolioSimulation';",
+    "import { filledOrderKey, getPortfolioValidation, commitPortfolioValidation, readPortfolioValidation } from './portfolioSimulation';\\nimport { buildPersonalSnapshot, validatePersonalSixWorlds } from './personalFinance';",
+  ],
+  [
+    "      if (MODE === 'demo') {\\n        ++worldSafetyRequest;\\n        if (activeSafetyAbort) activeSafetyAbort.abort();",
+    "      if (MODE === 'demo' || MODE === 'user') {\\n        ++worldSafetyRequest;\\n        if (activeSafetyAbort) activeSafetyAbort.abort();",
+  ],
+  [
+    "    triggerAiCoaching() {\\n      if (MODE === 'demo') {",
+    `    triggerAiCoaching() {
+      if (MODE !== 'demo') {
+        const btn = document.getElementById('ai-trigger-btn');
+        const box = document.getElementById('ai-insight-box');
+        const target = document.getElementById('ai-insight-text');
+        if (!btn || !box || !target) return;
+        box.classList.remove('hidden');
+        if (!originalSafetyButton) originalSafetyButton = btn.innerHTML;
+        const consentKey = 'moa.personalUploadConsent.v1';
+        let consent = null;
+        try { consent = window.sessionStorage.getItem(consentKey); } catch { /* private mode */ }
+        if (!consent) {
+          consent = window.confirm(
+            '입력한 잔액·월급·결제일·예정 거래 금액만 서버에 보내 90일 가상 검증을 할까요?\\n' +
+            '이름·가맹점·계좌번호는 보내지 않고, 서버는 입력값을 저장하지 않습니다.'
+          ) ? 'yes' : 'no';
+          try { window.sessionStorage.setItem(consentKey, consent); } catch { /* private mode */ }
+        }
+        if (consent !== 'yes') {
+          target.textContent = '서버 전송을 선택하지 않았어요. 90일 금융 검증은 실행하지 않았어요.';
+          return;
+        }
+        let snapshot;
+        try { snapshot = buildPersonalSnapshot(getState(), APP_TODAY); }
+        catch {
+          target.textContent = '직접 입력한 잔액·월급·결제 정보를 확인해 주세요.';
+          return;
+        }
+        const requestId = ++worldSafetyRequest;
+        const amount = Math.round(get.amount());
+        const selected = get.selected();
+        const delay = opt.delayMonths;
+        activeSafetyAbort?.abort();
+        const controller = new AbortController();
+        activeSafetyAbort = controller;
+        const timer = globalThis.setTimeout(() => controller.abort(), 25000);
+        const label = btn.querySelector('span:last-child');
+        btn.disabled = true;
+        if (label) label.textContent = '내 입력값으로 90일 검증 중…';
+        target.textContent = '내 잔액·월급·결제 일정으로 Python 금융 엔진이 여섯 경로를 계산하고 있어요.';
+        const financeKey = JSON.stringify([snapshot, amount, selected, delay]);
+        void validatePersonalSixWorlds(snapshot, amount, delay, controller.signal)
+          .then(report => {
+            if (requestId !== worldSafetyRequest || !c.root?.isConnected) return;
+            let current;
+            try { current = buildPersonalSnapshot(getState(), APP_TODAY); }
+            catch { return; }
+            if (JSON.stringify([current, Math.round(get.amount()), get.selected(), opt.delayMonths]) !== financeKey)
+              return;
+            const chosen = report.paths[selected - 1];
+            if (!chosen) throw Error('personal_selected_world_missing');
+            const states = { protected: '가정상 유지', shortfall: '자금 부족 위험',
+              out_of_horizon: '90일 이후 · 미검증' };
+            const all = report.paths.map((p, i) =>
+              String(i + 1) + '.' + meta[i+1].name + ' ' + states[p.result]).join(' / ');
+            target.textContent =
+              '내 금융 입력값 · ' + report.asOf + ' 기준 · Python 규칙 계산 (ML 예측 아님)\\n' +
+              meta[selected].name + ': ' + states[chosen.result] + ' · 90일 최소 잔액 ' +
+              (chosen.minimumBalance === null ? '검증 범위 밖' : fmt(chosen.minimumBalance) + '원') +
+              ' · 90일 말 잔액 ' +
+              (chosen.endingCash === null ? '검증 범위 밖' : fmt(chosen.endingCash) + '원') +
+              (chosen.firstShortfall ? ' · 처음 미달 가능일 ' + chosen.firstShortfall : '') +
+              '\\n6개 경로: ' + all +
+              '\\n※ 실제 결제 보장이 아닙니다. 1~10년 3D 수익 금액은 별도 가정이며 통장 현금에 포함하지 않습니다.';
+            if (label) label.textContent = '90일 검증 결과';
+          }).catch(() => {
+            if (requestId !== worldSafetyRequest || !c.root?.isConnected) return;
+            target.textContent = '백엔드 금융 검증에 실패했어요. 프론트의 장기 자산 가정을 검증 결과로 대신 사용하지 않았어요.';
+            if (label) label.textContent = '검증 다시 하기';
+          }).finally(() => {
+            globalThis.clearTimeout(timer);
+            if (requestId === worldSafetyRequest && c.root?.isConnected) {
+              btn.disabled = false;
+              activeSafetyAbort = null;
+            }
+          });
+        return;
+      }
+      if (MODE === 'demo') {`,
+  ],
+]);
