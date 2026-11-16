@@ -57,7 +57,7 @@ export async function syncDemoFinance(user: DemoUserId = 'S01'): Promise<boolean
       },
       bills: mapped.bills,
       txs: mapped.txs,
-      budgets: {}, // don't leave the frontend's canned 500,000-KRW budget
+      budgets: Object.fromEntries(Object.keys(s.budgets).map(key => [key, 0])), // preserve category keys, no canned budget
     }));
     return true;
   } catch {
