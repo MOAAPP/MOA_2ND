@@ -70,7 +70,7 @@ jobs:
           cd moa-web
           npm install --no-save --package-lock=false playwright@1.58.2
           npx playwright install --with-deps chromium
-          nohup npm run dev -- --host 127.0.0.1 > /tmp/moa-ux-preview-vite.log 2>&1 &
+          nohup npx vite preview --host 127.0.0.1 --port 5173 > /tmp/moa-ux-preview-vite.log 2>&1 &
           sleep 6
           node --input-type=module <<'NODE'
           import { chromium } from 'playwright';
@@ -111,7 +111,7 @@ jobs:
               } else {
                 await page.goto(origin+item.path,{waitUntil:'domcontentloaded'});
               }
-              await page.waitForTimeout(1300);
+              await page.waitForTimeout(3000);
               const ok=await page.locator(item.selector).count();
               console.log(item.name, 'screen selector found:',ok,'route:',page.url());
               if(!ok){
