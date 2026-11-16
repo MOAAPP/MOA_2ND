@@ -88,6 +88,20 @@ jobs:
           for file in moa-web/src/screens/World.jsx moa-web/src/screens/World.controller.js moa-web/src/pages/WorldRecords.tsx; do
             unzip -p releases/MOA_home_dashboard_ai_20261115.zip "$file" | cmp - "$file"
           done
+          # Savings markup styling, controls, and 3D planet stay unchanged.
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import { readFileSync } from 'node:fs';
+          import assert from 'node:assert/strict';
+          const file = 'moa-web/src/pages/Savings.tsx';
+          const original = execFileSync('unzip', ['-p', 'releases/MOA_home_dashboard_ai_20261115.zip', file], { encoding: 'utf8' });
+          const updated = readFileSync(file, 'utf8');
+          const classes = s => [...s.matchAll(/className=(?:"[^"]*"|\{`[^`]*`\})/g)].map(m => m[0]);
+          assert.deepEqual(classes(updated), classes(original), 'Savings classes changed');
+          for (const marker of ['<PlanetGrowthScene ', '<BottomSheet open={!!sheet}', '<PrimaryButton onClick={join}', '<PageHeader title="가상 예·적금"']) {
+            assert(original.includes(marker) && updated.includes(marker), marker + ' markup changed');
+          }
+          NODE
           sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
       - name: Install dependencies
         working-directory: moa-web
