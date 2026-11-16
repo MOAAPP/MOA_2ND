@@ -7,6 +7,12 @@ on:
     paths:
       - 'scripts/patch-agent-backend.mjs'
       - 'scripts/patch-demo-finance.mjs'
+      - 'scripts/patch-world-backend.mjs'
+      - 'integration/worldComparison.ts'
+      - 'tests/world-comparison.test.mjs'
+      - 'scripts/patch-world-backend.mjs'
+      - 'integration/worldComparison.ts'
+      - 'tests/world-comparison.test.mjs'
       - 'integration/demoFinance.ts'
       - 'integration/demoFinanceMap.ts'
       - 'tests/demo-finance-map.test.mjs'
@@ -38,16 +44,18 @@ jobs:
         with:
           node-version: '22'
       - name: Validate canonical FastAPI demo mapping
-        run: node --experimental-strip-types --test tests/demo-finance-map.test.mjs
+        run: node --experimental-strip-types --test tests/demo-finance-map.test.mjs tests/world-comparison.test.mjs
       - name: Extract and patch the actual production ZIP
         run: |
           unzip -q releases/MOA_home_dashboard_ai_20261115.zip -d .
           node scripts/patch-agent-backend.mjs
           node scripts/patch-demo-finance.mjs
+          node scripts/patch-world-backend.mjs
           ! grep -q 'import snapshot from' moa-web/src/pages/Agent.tsx
           grep -q 'max_evaluations: 72' moa-web/src/lib/api.ts
           node scripts/patch-agent-backend.mjs
           node scripts/patch-demo-finance.mjs
+          node scripts/patch-world-backend.mjs
           # Assert every CSS file remains byte-for-byte identical to source ZIP.
           unzip -Z1 releases/MOA_home_dashboard_ai_20261115.zip | grep '\.css$' | while IFS= read -r file; do
             unzip -p releases/MOA_home_dashboard_ai_20261115.zip "$file" | cmp - "$file"
