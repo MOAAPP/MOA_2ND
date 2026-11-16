@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildPortfolioPayload, mapPortfolioResponse, filledOrderKey,
-  readPortfolioValidation, commitPortfolioValidation,
+  readPortfolioValidation, commitPortfolioValidation, getPortfolioValidation,
 } from '../integration/portfolioSimulation.ts';
 
 const orders = [
@@ -149,4 +149,34 @@ test('validated cache is scoped to exact persona, balance, and filled orders', (
   assert.equal(readPortfolioValidation({ ...input, orders: orders.slice(1) }), null);
   assert.equal(filledOrderKey(input),
     filledOrderKey({ ...input, orders: orders.slice(0,-1) })); // canceled orders ignored
+});
+
+test('HTTP bridge POSTs the canonical 90-day trade plan, never fake results', async () => {
+  const original = globalThis.fetch;
+  let seen = null;
+  try {
+    globalThis.fetch = async (url, options) => {
+      seen = { url, options };
+      return {
+        ok: true, headers: { get: () => 'application/json; charset=utf-8' },
+        json: async () => serverResponse(),
+      };
+    };
+    const report = await getPortfolioValidation(input, new AbortController().signal);
+    assert.equal(report.count, 3);
+    assert.equal(seen.url, '/api/v4/portfolio/simulate');
+    assert.equal(seen.options.method, 'POST');
+    const body = JSON.parse(seen.options.body);
+    assert.equal(body.user_id, 'S01');
+    assert.equal(body.horizon_days, 90);
+    assert.equal(body.trades.length, 3);
+    assert.equal(Object.hasOwn(body, 'forecast_daily_spend_override'), false);
+    globalThis.fetch = async () => ({
+      ok: false, status: 503,
+      headers: { get: () => 'application/json' },
+    });
+    await assert.rejects(getPortfolioValidation(input, new AbortController().signal), /portfolio_http_503/);
+  } finally {
+    globalThis.fetch = original;
+  }
 });
