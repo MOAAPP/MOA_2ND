@@ -9,22 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read home and style classes
+      - name: Read scenario and agent composition
         run: |
           python3 - <<'PY'
-          import zipfile,re
+          import zipfile
           with zipfile.ZipFile('releases/MOA_home_dashboard_ai_20261115.zip') as z:
-            names=z.namelist()
-            for pattern in ['src/screens/Home.jsx','src/screens/Home.css','src/pages/Agent.css','src/screens/World.css','src/pages/Lab.css','src/styles/index.css']:
-              found=[n for n in names if n.endswith(pattern)]
-              if not found: continue
-              s=z.read(found[0]).decode()
-              print('\\n===== '+pattern+' '+str(len(s))+' =====')
-              if pattern.endswith('.css'):
-                print('SELECTORS:', sorted(set(re.findall(r'\\.[a-z][a-zA-Z0-9_-]*',s)))[:160])
-                print('BEGIN CSS:',s[:5000])
-              else:
-                for i,line in enumerate(s.splitlines(),1):
-                  if i>45 and i<150:
-                    print(f'{i:03d}: {line[:450]}')
+            for name,start,end in [('moa-web/src/pages/WorldChoice.tsx',40,192),('moa-web/src/pages/Agent.tsx',70,175),('moa-web/src/screens/Home.css',75,190),('moa-web/src/pages/Agent.css',40,125)]:
+              print('\\n==== '+name+' ====')
+              for i,s in enumerate(z.read(name).decode().splitlines(),1):
+                if start<=i<=end: print(f'{i:03}: {s[:700]}')
           PY
