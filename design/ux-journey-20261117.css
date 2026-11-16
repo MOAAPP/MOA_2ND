@@ -138,3 +138,35 @@ section[aria-label="결제 위험 차이"] {border-left:3px solid #6585ef;}
 @media (prefers-reduced-motion: reduce) {
  .mh-world,.ag-card,.lb-card {transition:none!important;animation:none!important;}
 }
+
+/* 5. Actual default /world 3D explorer: make inputs, comparison and next action
+   distinct. The existing Stitch scene, timeline, six options and handlers remain. */
+.scr-world { background:#f5f7fd!important; }
+.scr-world > div { background:#f5f7fd!important; }
+.scr-world #nav-tabs-container {gap:5px;scroll-padding-inline:12px;}
+.scr-world .nav-tab {min-height:38px;border-radius:12px!important;}
+.scr-world #nav-tabs-container .nav-tab[id^="tab-btn-"] {font-weight:750;}
+.scr-world #view-A>div:first-child {border-color:#dfe7ff!important;
+  box-shadow:0 10px 28px rgba(49,76,147,.10)!important;border-radius:26px!important;}
+.scr-world #view-A>div:nth-child(2) {border:1.5px solid #cbd9ff!important;
+  background:linear-gradient(150deg,#fff 45%,#f7f9ff)!important;
+  box-shadow:0 5px 18px rgba(49,78,147,.08)!important;}
+.scr-world #view-A #item-title-input {font-size:14px!important;min-height:33px;color:#233455!important;}
+.scr-world #view-A #input-amount {color:#2544af!important;font-size:22px!important;
+  min-height:43px;border-bottom:2px solid #c8d6ff!important;border-radius:0!important;}
+.scr-world #view-A #input-amount:focus {outline:0;border-bottom-color:#4166ec!important;}
+.scr-world #view-A #input-amount::-webkit-inner-spin-button,
+.scr-world #view-A #input-amount::-webkit-outer-spin-button {-webkit-appearance:none;margin:0;}
+.scr-world #view-A>div:nth-child(3) {border-color:#e2e8f5!important;}
+.scr-world #view-A .sync-diff-val {font-variant-numeric:tabular-nums;}
+.scr-world #view-B #world-select-grid .world-option-card {border-radius:18px;
+  box-shadow:0 3px 12px rgba(22,48,86,.04);}
+.scr-world #view-B #world-select-grid .world-option-card:focus-visible {outline:3px solid #8d9df3;outline-offset:2px;}
+/* Visual-only virtual trade page: preserve existing order and finance meaning. */
+.scr-invest main>section, .scr-portfolio main>div>section {
+  box-shadow:0 5px 17px rgba(24,46,87,.055)!important;
+  border:1px solid #e8ebf4!important;
+}
+.scr-invest .stock-card {border:1px solid #e8edf8;border-radius:20px;}
+.scr-invest .stock-card button:focus-visible,
+.scr-world button:focus-visible {outline:3px solid #94a8f3;outline-offset:2px;}
