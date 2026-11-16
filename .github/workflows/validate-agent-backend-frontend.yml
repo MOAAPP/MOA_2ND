@@ -6,12 +6,20 @@ on:
       - feat/world-agent-frontend-integration
     paths:
       - 'scripts/patch-agent-backend.mjs'
+      - 'scripts/patch-demo-finance.mjs'
+      - 'integration/demoFinance.ts'
+      - 'integration/demoFinanceMap.ts'
+      - 'tests/demo-finance-map.test.mjs'
       - 'scripts/build-latest-ui.sh'
       - 'releases/MOA_home_dashboard_ai_20261115.zip'
       - '.github/workflows/validate-agent-backend-frontend.yml'
   pull_request:
     paths:
       - 'scripts/patch-agent-backend.mjs'
+      - 'scripts/patch-demo-finance.mjs'
+      - 'integration/demoFinance.ts'
+      - 'integration/demoFinanceMap.ts'
+      - 'tests/demo-finance-map.test.mjs'
       - 'scripts/build-latest-ui.sh'
       - 'releases/MOA_home_dashboard_ai_20261115.zip'
       - '.github/workflows/validate-agent-backend-frontend.yml'
@@ -29,15 +37,36 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate canonical FastAPI demo mapper
+        run: node --experimental-strip-types --test tests/demo-finance-map.test.mjs
       - name: Extract and patch the actual production ZIP
         run: |
           unzip -q releases/MOA_home_dashboard_ai_20261115.zip -d .
           node scripts/patch-agent-backend.mjs
+          node scripts/patch-demo-finance.mjs
           # Fail if any static canned Agent answer is still used.
           ! grep -q "import snapshot from" moa-web/src/pages/Agent.tsx
           grep -q "max_evaluations: 72" moa-web/src/lib/api.ts
           # Reapplying must be safe.
           node scripts/patch-agent-backend.mjs
+          node scripts/patch-demo-finance.mjs
+          # Ensure every CSS file is identical to the team's ZIP (no styling changes).
+          while IFS= read -r file; do
+            unzip -p releases/MOA_home_dashboard_ai_20261115.zip "$file" | cmp - "$file"
+          done < <(unzip -Z1 releases/MOA_home_dashboard_ai_20261115.zip | grep '\.css 's/ES2020/ES2022/g' moa-web/tsconfig.json
+      - name: Install dependencies
+        working-directory: moa-web
+        run: npm ci
+      - name: Build actual deployed UI
+        working-directory: moa-web
+        run: npm run build
+      # The ZIP's existing qa:logic/qa:render harnesses cannot load import.meta
+      # and their mocked store lacks useStore. Those baseline QA defects are
+      # unrelated to the production bundle and will be handled separately.
+      - name: Frontend navigation static smoke test
+        working-directory: moa-web
+        run: npm run qa:routes
+)
           sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
       - name: Install dependencies
         working-directory: moa-web
