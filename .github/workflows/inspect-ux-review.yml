@@ -64,3 +64,67 @@ jobs:
           PY
           cd moa-web
           npm run qa:routes
+      - name: Capture mobile UX snapshots (visual review only)
+        continue-on-error: true
+        run: |
+          cd moa-web
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --with-deps chromium
+          nohup npm run dev -- --host 127.0.0.1 > /tmp/moa-ux-preview-vite.log 2>&1 &
+          sleep 6
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          import { mkdirSync } from 'node:fs';
+          const origin='http://127.0.0.1:5173';
+          const browser=await chromium.launch({headless:true});
+          const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+          mkdirSync('../e2e-evidence',{recursive:true});
+          try {
+            await page.goto(origin+'/demo',{waitUntil:'domcontentloaded',timeout:30000});
+            await page.waitForTimeout(1800);
+            if (await page.locator('.mh').count()===0) {
+              await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
+              const go=page.getByRole('button',{name:'시작하기'}).first();
+              if(await go.count()) {
+                await go.click();
+                const next=page.getByRole('button',{name:'다음',exact:true});
+                for(let i=0;i<4;i++){
+                  if(await next.count()) await next.click().catch(()=>{});
+                  else break;
+                }
+                const fresh=page.getByRole('button',{name:/처음이에요/});
+                if(await fresh.count()) await fresh.click();
+                if(await next.count()) await next.click().catch(()=>{});
+                const start=page.getByRole('button',{name:'시작하기',exact:true});
+                if(await start.count()) await start.last().click().catch(()=>{});
+              }
+            }
+            const screens=[
+              {path:'/',name:'home',selector:'.mh'},
+              {path:'/world',name:'world',selector:'section[aria-label="비교할 소비 선택"]'},
+              {path:'/agent',name:'agent',selector:'.ag'},
+              {path:'/lab',name:'lab',selector:'.lb'},
+            ];
+            for(const item of screens){
+              await page.goto(origin+item.path,{waitUntil:'domcontentloaded'});
+              await page.waitForTimeout(900);
+              const ok=await page.locator(item.selector).count();
+              console.log(item.name, 'screen selector found:',ok);
+              if(!ok)continue;
+              await page.screenshot({path:'../e2e-evidence/ux-'+item.name+'.png',fullPage:false});
+              if(item.name==='world'){
+                await page.locator('.moa-scroller').evaluate(el=>{el.scrollTop=el.scrollHeight}).catch(()=>{});
+                await page.waitForTimeout(250);
+                await page.screenshot({path:'../e2e-evidence/ux-world-bottom.png',fullPage:false});
+              }
+            }
+          } finally {await browser.close()}
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ux-journey-mobile-preview
+          path: |
+            e2e-evidence/
+            /tmp/moa-ux-preview-vite.log
+          if-no-files-found: warn
