@@ -9,6 +9,8 @@ unzip -q releases/MOA_home_dashboard_ai_20261115.zip -d .
 # Patch the ZIP source that Vercel actually deploys; root src/ is not built here.
 # Only AI Agent data handling is changed. No JSX or CSS is modified.
 node scripts/patch-agent-backend.mjs
+# Replace only demo finance fixtures with authoritative S01/S08 FastAPI data.
+node scripts/patch-demo-finance.mjs
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web
