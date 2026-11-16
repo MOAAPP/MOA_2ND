@@ -10,6 +10,9 @@ on:
       - 'scripts/patch-world-backend.mjs'
       - 'scripts/patch-world-six-safety.mjs'
       - 'scripts/patch-savings-backend.mjs'
+      - 'scripts/patch-portfolio-backend.mjs'
+      - 'integration/portfolioSimulation.ts'
+      - 'tests/portfolio-simulation.test.mjs'
       - 'integration/savingsPlan.ts'
       - 'tests/savings-plan.test.mjs'
       - 'integration/demoFinance.ts'
@@ -29,6 +32,9 @@ on:
       - 'scripts/patch-world-backend.mjs'
       - 'scripts/patch-world-six-safety.mjs'
       - 'scripts/patch-savings-backend.mjs'
+      - 'scripts/patch-portfolio-backend.mjs'
+      - 'integration/portfolioSimulation.ts'
+      - 'tests/portfolio-simulation.test.mjs'
       - 'integration/savingsPlan.ts'
       - 'tests/savings-plan.test.mjs'
       - 'integration/demoFinance.ts'
@@ -55,13 +61,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate demo, six worlds and backend savings plan mapping
+      - name: Validate canonical demo, six worlds, savings and portfolio simulation
         run: |
           node --experimental-strip-types --test \
             tests/demo-finance-map.test.mjs \
             tests/world-comparison.test.mjs \
             tests/world-six-safety.test.mjs \
-            tests/savings-plan.test.mjs
+            tests/savings-plan.test.mjs \
+            tests/portfolio-simulation.test.mjs
       - name: Extract and patch the actual production ZIP
         shell: bash
         run: |
@@ -71,21 +78,24 @@ jobs:
           node scripts/patch-world-backend.mjs
           node scripts/patch-world-six-safety.mjs
           node scripts/patch-savings-backend.mjs
+          node scripts/patch-portfolio-backend.mjs
           ! grep -q 'import snapshot from' moa-web/src/pages/Agent.tsx
           grep -q 'max_evaluations: 72' moa-web/src/lib/api.ts
           grep -q 'getSixWorldSafety' moa-web/src/lib/bridge.js
           grep -q 'getSavingsPlan' moa-web/src/pages/Savings.tsx
+          grep -q 'getPortfolioValidation' moa-web/src/lib/bridge.js
           # All patches must be repeatable in the ZIP deployment pipeline.
           node scripts/patch-agent-backend.mjs
           node scripts/patch-demo-finance.mjs
           node scripts/patch-world-backend.mjs
           node scripts/patch-world-six-safety.mjs
           node scripts/patch-savings-backend.mjs
+          node scripts/patch-portfolio-backend.mjs
           # Assert ALL CSS and the original 3D templates stay byte-identical.
           unzip -Z1 releases/MOA_home_dashboard_ai_20261115.zip | grep '\.css$' | while IFS= read -r file; do
             unzip -p releases/MOA_home_dashboard_ai_20261115.zip "$file" | cmp - "$file"
           done
-          for file in moa-web/src/screens/World.jsx moa-web/src/screens/World.controller.js moa-web/src/pages/WorldRecords.tsx; do
+          for file in moa-web/src/screens/World.jsx moa-web/src/screens/World.controller.js moa-web/src/pages/WorldRecords.tsx moa-web/src/screens/Invest.jsx moa-web/src/screens/Portfolio.jsx moa-web/src/screens/Invest.controller.js moa-web/src/screens/Portfolio.controller.js; do
             unzip -p releases/MOA_home_dashboard_ai_20261115.zip "$file" | cmp - "$file"
           done
           # Savings markup styling, controls, and 3D planet stay unchanged.
