@@ -16,6 +16,16 @@ writeFileSync(resolve(root, 'moa-web/src/lib/worldComparison.ts'),
   service.replace(sourceSpecifier, "from './demoFinanceMap'"));
 const path = resolve(root, 'moa-web/src/pages/WorldChoice.tsx');
 let src = readFileSync(path, 'utf8');
+// Personal mode augments the already-patched demo comparison at the END of the
+// build pipeline. In a repeated CI pass, don't replace its full projection
+// expression with the earlier demo-only version.
+if (src.includes('const personalProjection = ')) {
+  if (!src.includes('getWorldProjection') || !src.includes('backendKey')) {
+    throw new Error('[world backend] personal patch exists without demo API wiring');
+  }
+  console.log('[world backend] demo + personal world already patched');
+  process.exit(0);
+}
 function replace(before, after) {
   if (src.includes(after)) return;
   const index = src.indexOf(before);
