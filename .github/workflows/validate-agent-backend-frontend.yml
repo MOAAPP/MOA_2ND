@@ -9,6 +9,9 @@ on:
       - 'scripts/patch-demo-finance.mjs'
       - 'scripts/patch-world-backend.mjs'
       - 'scripts/patch-world-six-safety.mjs'
+      - 'scripts/patch-savings-backend.mjs'
+      - 'integration/savingsPlan.ts'
+      - 'tests/savings-plan.test.mjs'
       - 'integration/demoFinance.ts'
       - 'integration/demoFinanceMap.ts'
       - 'integration/worldComparison.ts'
@@ -25,6 +28,9 @@ on:
       - 'scripts/patch-demo-finance.mjs'
       - 'scripts/patch-world-backend.mjs'
       - 'scripts/patch-world-six-safety.mjs'
+      - 'scripts/patch-savings-backend.mjs'
+      - 'integration/savingsPlan.ts'
+      - 'tests/savings-plan.test.mjs'
       - 'integration/demoFinance.ts'
       - 'integration/demoFinanceMap.ts'
       - 'integration/worldComparison.ts'
@@ -49,12 +55,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate canonical demo, comparison and six-world safety mapping
+      - name: Validate demo, six worlds and backend savings plan mapping
         run: |
           node --experimental-strip-types --test \
             tests/demo-finance-map.test.mjs \
             tests/world-comparison.test.mjs \
-            tests/world-six-safety.test.mjs
+            tests/world-six-safety.test.mjs \
+            tests/savings-plan.test.mjs
       - name: Extract and patch the actual production ZIP
         shell: bash
         run: |
@@ -63,14 +70,17 @@ jobs:
           node scripts/patch-demo-finance.mjs
           node scripts/patch-world-backend.mjs
           node scripts/patch-world-six-safety.mjs
+          node scripts/patch-savings-backend.mjs
           ! grep -q 'import snapshot from' moa-web/src/pages/Agent.tsx
           grep -q 'max_evaluations: 72' moa-web/src/lib/api.ts
           grep -q 'getSixWorldSafety' moa-web/src/lib/bridge.js
+          grep -q 'getSavingsPlan' moa-web/src/pages/Savings.tsx
           # All patches must be repeatable in the ZIP deployment pipeline.
           node scripts/patch-agent-backend.mjs
           node scripts/patch-demo-finance.mjs
           node scripts/patch-world-backend.mjs
           node scripts/patch-world-six-safety.mjs
+          node scripts/patch-savings-backend.mjs
           # Assert ALL CSS and the original 3D templates stay byte-identical.
           unzip -Z1 releases/MOA_home_dashboard_ai_20261115.zip | grep '\.css$' | while IFS= read -r file; do
             unzip -p releases/MOA_home_dashboard_ai_20261115.zip "$file" | cmp - "$file"
