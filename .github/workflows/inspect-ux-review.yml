@@ -1,0 +1,31 @@
+name: Inspect actual deploy UI (temporary)
+on:
+  push:
+    branches: [feat/ux-journey-review-20261117]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read shipped ZIP UI structure
+        run: |
+          python3 - <<'PY'
+          import zipfile,re
+          p='releases/MOA_home_dashboard_ai_20261115.zip'
+          with zipfile.ZipFile(p) as z:
+            names=z.namelist()
+            print('FILE OVERVIEW:', [n for n in names if n.endswith(('.css','.tsx','.jsx','.html'))][:150])
+            for pattern in ['src/pages/Home.tsx','src/pages/WorldChoice.tsx','src/pages/Agent.tsx','src/pages/Savings.tsx','src/pages/Lab.tsx','src/screens/World.jsx','src/screens/Invest.jsx','src/screens/Portfolio.jsx','index.html']:
+              found=[n for n in names if n.endswith(pattern)]
+              if not found: continue
+              s=z.read(found[0]).decode()
+              lines=s.splitlines()
+              print('\\n===== '+pattern+' len '+str(len(s))+' =====')
+              for i,line in enumerate(lines,1):
+                if i<=19 or re.search('return \\(|<h[1-4]|<main|<section|<article|<header|<PageHeader|<PrimaryButton|<button|className=|<nav|<PageShell|<Tab|onClick=|onSubmit=|<Balance|<Chart|<Link|<p ',line):
+                  print(f'{i:03d}: {line[:260]}')
+                  if i>=370: break
+          PY
