@@ -8,7 +8,7 @@
  * FastAPI validates 14..90 days; the existing 7-day button uses day 7 of a
  * 14-day server calculation, not a client-side 7-day extrapolation.
  */
-import { DEMO_AS_OF, type DemoUserId } from './demoFinanceMap';
+import { DEMO_AS_OF, type DemoUserId } from './demoFinanceMap.ts';
 import type { ChoiceProjection } from './choiceComparison';
 
 const ids = ['purchase_now', 'no_purchase', 'purchase_delay',
