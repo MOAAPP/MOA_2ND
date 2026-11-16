@@ -1,21 +1,66 @@
-name: Inspect actual deploy UI (temporary)
+name: Validate isolated UI journey preview
 on:
   push:
     branches: [feat/ux-journey-review-20261117]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  inspect:
+  verify-ui-only:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Read scenario and agent composition
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm design-only files and build script syntax
+        run: |
+          node --check scripts/patch-ux-journey.mjs
+          python3 - <<'PY'
+          import subprocess
+          before='251a592ae4d4f68d0ffcec24f9807d87f1497569'
+          subprocess.run(['git','fetch','--depth=1','origin',before],check=True)
+          allowed={'.github/workflows/inspect-ux-review.yml','design/ux-journey-20261117.css',
+                   'scripts/patch-ux-journey.mjs','scripts/build-latest-ui.sh'}
+          files=set(subprocess.check_output(['git','diff','--name-only',before,'HEAD'],text=True).splitlines())
+          print('Review branch changed files:', sorted(files))
+          assert files<=allowed, 'Non-UI code changed: '+str(sorted(files-allowed))
+          PY
+      - name: Existing finance integrations unchanged (unit tests)
+        run: |
+          node --experimental-strip-types --test \
+            tests/world-comparison.test.mjs \
+            tests/world-six-safety.test.mjs \
+            tests/savings-plan.test.mjs \
+            tests/portfolio-simulation.test.mjs \
+            tests/personal-finance.test.mjs
+      - name: Build actual ZIP with design-only overlay
+        run: bash scripts/build-latest-ui.sh
+      - name: Verify original CSS and feature logic are preserved
         run: |
           python3 - <<'PY'
-          import zipfile
-          with zipfile.ZipFile('releases/MOA_home_dashboard_ai_20261115.zip') as z:
-            for name,start,end in [('moa-web/src/pages/WorldChoice.tsx',40,192),('moa-web/src/pages/Agent.tsx',70,175),('moa-web/src/screens/Home.css',75,190),('moa-web/src/pages/Agent.css',40,125)]:
-              print('\\n==== '+name+' ====')
-              for i,s in enumerate(z.read(name).decode().splitlines(),1):
-                if start<=i<=end: print(f'{i:03}: {s[:700]}')
+          import zipfile,pathlib
+          z=zipfile.ZipFile('releases/MOA_home_dashboard_ai_20261115.zip')
+          # All original CSS stays byte-for-byte the same; new override is separate.
+          for item in z.namelist():
+            if item.endswith('.css'):
+              assert pathlib.Path(item).read_bytes()==z.read(item),item+' changed'
+          base=pathlib.Path('moa-web')
+          home=(base/'src/screens/Home.jsx').read_text()
+          world=(base/'src/pages/WorldChoice.tsx').read_text()
+          idx=(base/'dist/index.html').read_text()
+          assert home.index('{/* 2. 결제일 안전')<home.index('{/* 4. 같은 돈')
+          assert home.index('{/* 4. 같은 돈')<home.index('{/* 1. AI 브리핑')
+          assert home.index('{/* 1. AI 브리핑')<home.index('{/* 5. AI에게 묻기')
+          assert 'ux-home-lead' in home and 'ux-decision-summary' in world
+          assert 'href="/ux-journey-20261117.css"' in idx
+          assert (base/'dist/ux-journey-20261117.css').is_file()
+          for file in ['src/lib/api.ts','src/lib/bridge.js','src/lib/store.ts']:
+            assert (base/file).is_file()
+          print('PASS: original CSS untouched, UX markup inserted, CSS in dist, existing API files exist.')
           PY
+          cd moa-web
+          npm run qa:routes
