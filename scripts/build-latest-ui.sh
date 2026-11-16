@@ -17,6 +17,8 @@ node scripts/patch-world-backend.mjs
 node scripts/patch-world-six-safety.mjs
 # Keep the existing virtual product UI; calculate demo plans with FastAPI.
 node scripts/patch-savings-backend.mjs
+# Validate locally filled virtual ETF/stock trades with canonical portfolio FastAPI.
+node scripts/patch-portfolio-backend.mjs
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web
