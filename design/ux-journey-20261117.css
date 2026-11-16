@@ -1,0 +1,140 @@
+/* MOA UX journey review — visual-only layer for the shipped 2026-11-15 frontend.
+   Intentionally scoped to existing pages. No endpoints, state, handlers or API flags. */
+:root { --ux-navy:#172447; --ux-blue:#315df5; --ux-indigo:#5850d9; --ux-sky:#eaf0ff; --ux-line:#e7eaf2; }
+
+/* 1. Home: make the primary choice discoverable between financial context and AI. */
+.mh { background:linear-gradient(180deg,#f6f8ff 0%,#f3f5fb 290px,#f5f6f9 100%); }
+.mh-main { gap:14px; }
+.mh-title { padding:18px 4px 6px; }
+.mh-title h1 { font-size:26px; color:var(--ux-navy); }
+.mh-title .ux-home-lead { margin:8px 0 0; font-size:13px;line-height:1.55;color:#66738c;word-break:keep-all; }
+.mh-money { border:1px solid #e7ecf8!important; box-shadow:0 4px 16px rgba(25,52,101,.035)!important; }
+.mh-money-label { color:#61718a; }
+.mh-money-num { color:#172447; }
+.mh-world {
+  position:relative; display:flex!important; align-items:flex-start!important;
+  min-height:177px; padding:22px 19px 54px!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  border-radius:26px!important; overflow:hidden;
+  background:radial-gradient(circle at 110% -10%,rgba(151,196,255,.39),transparent 52%),
+    linear-gradient(135deg,#273c91 0%,#315af0 58%,#6e6be8 100%)!important;
+  box-shadow:0 16px 26px rgba(44,78,186,.20)!important;
+  color:#fff!important;
+}
+.mh-world:before { content:'';position:absolute;width:155px;height:155px;right:-58px;top:-72px;
+  border-radius:50%;border:1px solid rgba(255,255,255,.22);pointer-events:none; }
+.mh-world:after { content:'미래 비교하기  →';position:absolute;bottom:16px;left:19px;
+  padding:8px 13px;border-radius:100px;background:#fff;color:#294ad6;
+  font-size:12.5px;line-height:1.25;font-weight:800;letter-spacing:-.02em; }
+.mh-world-text { position:relative;z-index:1;gap:7px;max-width:72%; }
+.mh-world-text small { width:max-content;padding:5px 9px;border-radius:100px;
+  background:rgba(255,255,255,.17);color:#eef3ff;font-size:11.5px;font-weight:800; }
+.mh-world-text strong { margin:2px 0 0;font-size:20px;line-height:1.33;font-weight:800;
+  color:#fff;letter-spacing:-.04em;word-break:keep-all; }
+.mh-world-text em { color:#dce7ff;line-height:1.45;font-size:12.5px;font-style:normal;word-break:keep-all; }
+.mh-world .mh-minilines { position:absolute;right:10px;top:46px;width:103px;height:67px;opacity:.91; }
+.mh-world .mh-minilines path { stroke:#d4e3ff; }
+.mh-world:active { transform:scale(.99); }
+.mh-ai { background:#fff; color:#172447;border:1px solid #e8eaf4;
+  box-shadow:0 5px 18px rgba(25,52,101,.055);padding:19px 18px 17px; }
+.mh-ai:after { background:radial-gradient(circle at 50% 50%,rgba(106,139,249,.10),transparent 70%); }
+.mh-ai-badge { background:#eff2ff;color:#4a52c9; }
+.mh-ai-src { color:#65718a; }
+.mh-ai h2 { color:#1f2b44;font-size:18.5px; }
+.mh-ai>p { color:#58677f; }
+.mh-ai-cta { background:#eef2ff!important;color:#3154d7!important; }
+.mh-ai-why { color:#465779!important; }
+.mh-ai-facts { background:#f5f7fe; }
+.mh-ai-facts li,.mh-ai-facts b { color:#34435b; }
+.mh-ai-facts .mh-ai-note { color:#64718a; }
+.mh-ask { border:1px solid #dfe3fb!important;background:#f0efff!important;border-radius:20px!important;
+  box-shadow:0 4px 12px rgba(67,64,163,.05); }
+.mh-ask b { color:#5146d4; }
+.mh-today { border:1px solid #edf0f6!important; }
+
+/* 2. World comparison: a single useful takeaway appears before the charts. */
+.ux-compare-steps { display:flex;align-items:center;gap:6px;padding:9px 4px 2px; }
+.ux-compare-steps span { display:inline-flex;align-items:center;gap:5px;font-size:11px;
+  font-weight:750;color:#7b879b;white-space:nowrap; }
+.ux-compare-steps span b { font-size:10px;font-weight:900;color:#8290ae;background:#eef1fa;
+  border-radius:50%;width:23px;height:23px;display:grid;place-items:center; }
+.ux-compare-steps span:first-child,.ux-compare-steps span:nth-child(2) {color:#344ec2;}
+.ux-compare-steps span:first-child b,.ux-compare-steps span:nth-child(2) b {
+  background:#dce5ff;color:#3458ce; }
+.ux-compare-steps i {flex:1;height:1px;min-width:8px;background:#dfe4f0; }
+.ux-decision-summary { padding:19px 18px 17px;border-radius:24px;
+  color:#fff;background:radial-gradient(circle at 110% -20%,rgba(137,174,255,.31),transparent 56%),
+  linear-gradient(140deg,#1f315e,#314fa2 62%,#5769d7);box-shadow:0 11px 28px rgba(40,64,143,.17); }
+.ux-decision-kicker {display:flex;align-items:center;gap:7px;letter-spacing:.075em;
+  color:#cbd9ff;font-size:10px;font-weight:850; }
+.ux-pulse-dot {display:inline-block;width:7px;height:7px;background:#84e2c2;border-radius:50%; }
+.ux-decision-summary h2 {font-size:19px;line-height:1.34;letter-spacing:-.045em;
+  font-weight:850;margin:11px 0 0;word-break:keep-all; }
+.ux-decision-summary>p {font-size:12.5px;line-height:1.55;color:#dce5ff;margin:7px 0 0; }
+.ux-decision-metrics {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;margin-top:16px; }
+.ux-decision-metrics>div {border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.10);border-radius:14px;padding:12px 11px;min-width:0; }
+.ux-decision-metrics small {display:block;color:#d2ddfc;font-size:11px; }
+.ux-decision-metrics strong {display:block;margin-top:7px;font-size:12px;line-height:1.35;
+  font-weight:850;word-break:keep-all; }
+.ux-decision-metrics .ux-warn {color:#ffd6cf;}
+.ux-decision-metrics .ux-safe {color:#bdf8e5;}
+.ux-decision-summary .ux-decision-note {font-size:10.5px;color:#cbd7f6;margin-top:10px;}
+section[aria-label="비교할 소비 선택"],
+section[aria-label="미래 현금흐름 비교"],
+section[aria-label="결제 위험 차이"] {border:1px solid #e8ebf3;box-shadow:0 4px 16px rgba(25,52,101,.035);}
+section[aria-label="비교할 소비 선택"] select,
+section[aria-label="비교할 소비 선택"] input {min-height:44px;}
+section[aria-label="구매 여부에 따른 두 세계"]>div {border-radius:21px;box-shadow:0 3px 13px rgba(25,52,101,.045);}
+section[aria-label="미래 현금흐름 비교"] [aria-label="비교 기간"] button[aria-pressed="true"] { color:#2f54d9; }
+section[aria-label="결제 위험 차이"] {border-left:3px solid #6585ef;}
+
+/* 3. Agent: make recommendation and constraints feel like a verified decision. */
+.ag { background:linear-gradient(180deg,#f6f7ff 0%,#f5f6fa 360px,#f3f5f9 100%); }
+.ag-main {gap:14px;padding-top:16px;}
+.ag-intro {padding:14px 8px 7px;}
+.ag-intro h1 {font-size:24px;line-height:1.3;color:#202d48;}
+.ag-intro p {font-size:13.5px;color:#61718a;}
+.ag-badge { background:#eae9ff;color:#5143c3; }
+.ag-persona button {box-shadow:0 2px 12px rgba(39,46,84,.035); }
+.ag-persona button.on {background:#f7f5ff!important;border-color:#7165e8!important;}
+.ag-input {border:1.5px solid #dcdef5;box-shadow:0 6px 18px rgba(69,67,144,.07);}
+.ag-input:focus-within {border-color:#8274eb;box-shadow:0 0 0 3px rgba(107,98,232,.11);}
+.ag-chips button {border-color:#e1e3f2!important;background:#fff!important;line-height:1.4;}
+.ag-card {border:1px solid #e8ebf4;box-shadow:0 4px 14px rgba(27,45,84,.035);}
+.ag-card-head h2 {color:#263653;}
+.ag-result {border:1.5px solid #ded9ff;background:linear-gradient(180deg,#fbfaff 0,#fff 170px);}
+.ag-sum {background:#f1f0ff;border-radius:17px;padding:14px 0;}
+.ag-route {border-radius:17px;background:#fff;}
+.ag-route:first-child {border:1.5px solid #bdb4ff;background:#f7f5ff;}
+.ag-route-top b {color:#27354e;}
+.ag-checks span {padding:5px 8px;border-radius:9px;}
+.ag-more {background:#ecedff!important;color:#4d49bf!important;}
+
+/* 4. Lab: turn distinct tools into a coherent next-step surface, not a separate app. */
+.lb {background:#f5f7fb;}
+.lb-title h1 {color:#1f2c49;}
+.lb-title p {line-height:1.55;}
+.lb-seg {background:#e8ecf5;border-radius:14px;padding:4px;}
+.lb-seg-thumb {border-radius:11px;top:4px;bottom:4px;left:4px;}
+.lb-card {border:1px solid #e9ecf4;box-shadow:0 4px 16px rgba(28,44,79,.035);}
+.lb-sum {background:linear-gradient(155deg,#fff 25%,#f4f6ff 100%);padding:21px;}
+.lb-sum-num {color:#243c88;}
+.lb-link {color:#3659db!important;font-weight:800;padding:15px 0!important;}
+.lb-put {background:#e9efff!important;color:#3356d6!important;}
+.lb-list {border:1px solid #edf0f6;}
+
+/* Interaction / accessibility — no control positions or click handlers changed. */
+.mh button:focus-visible, .ag button:focus-visible,.lb button:focus-visible,
+.ux-decision-summary:focus-visible {outline:3px solid #8d9df3;outline-offset:3px;}
+@media (max-width:355px) {
+  .mh-world-text {max-width:78%;}
+  .mh-world-text strong {font-size:18px;}
+  .mh-world .mh-minilines {width:78px;right:5px;}
+  .ux-decision-summary h2 {font-size:17px;}
+  .ux-compare-steps span {font-size:10px;}
+}
+@media (prefers-reduced-motion: reduce) {
+ .mh-world,.ag-card,.lb-card {transition:none!important;animation:none!important;}
+}
