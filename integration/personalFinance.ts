@@ -237,3 +237,46 @@ export async function analyzePersonalGoal(
     throw new Error('personal_backend_goal_mismatch');
   return raw;
 }
+
+export type PersonalSixSafety = {
+  asOf: string;
+  horizonDays: 90;
+  paths: Array<{
+    id: PersonalPath['scenario_id'];
+    result: 'protected' | 'shortfall' | 'out_of_horizon';
+    minimumBalance: number | null;
+    endingCash: number | null;
+    firstShortfall: string | null;
+  }>;
+};
+
+/** 3D world safety: only the first 90 days, never its 1-10 year asset graph. */
+export async function validatePersonalSixWorlds(
+  snapshot: PersonalSnapshot, amount: number, delayMonths: number,
+  signal: AbortSignal,
+): Promise<PersonalSixSafety> {
+  if (![0.25, 1, 3, 6].includes(delayMonths))
+    throw new Error('personal_world_invalid_delay');
+  const delayDays = delayMonths === 0.25 ? 7 :
+    delayMonths === 1 ? 30 : delayMonths === 3 ? 90 : 180;
+  const raw = await post<PersonalResponse>('compare', {
+    snapshot, purchase_amount: amount, horizon_days: 90,
+    payment_method: 'debit', purchase_delay_days: Math.min(90, delayDays),
+  }, signal);
+  // Full six-path & daily timeline validation, never partial or fallback.
+  mapPersonalComparison(raw, snapshot, amount, 90);
+  return {
+    asOf: snapshot.as_of, horizonDays: 90,
+    paths: raw.paths.map(p => {
+      const beyond = p.scenario_id === 'purchase_delay' && delayDays > 90;
+      return {
+        id: p.scenario_id,
+        result: beyond ? 'out_of_horizon'
+          : (p.minimum_balance_met && p.essential_payments_covered ? 'protected' : 'shortfall'),
+        minimumBalance: beyond ? null : p.minimum_balance,
+        endingCash: beyond ? null : p.ending_balance,
+        firstShortfall: beyond ? null : p.first_shortfall_date,
+      };
+    }),
+  };
+}
