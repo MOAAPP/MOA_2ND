@@ -60,6 +60,12 @@ export async function syncDemoFinance(user: DemoUserId = 'S01'): Promise<boolean
       // Virtual savings are local practice records, not backend cash assets.
       // Do not carry S01's practice deposits into S08 when personas change.
       savings: s.demoUserId === user ? s.savings : [],
+      // No preloaded fractional ETF positions: they aren't funded by backend S01/S08.
+      // Never carry any practice trades across persona switches or old mock migrations.
+      demoInvestInitialized: true,
+      invest: s.demoInvestInitialized && s.demoUserId === user ? s.invest : {
+        cash: 1000000, holdings: {}, avgPrice: {}, orders: [], target: s.invest.target,
+      },
       budgets: Object.fromEntries(Object.keys(s.budgets).map(key => [key, 0])), // preserve category keys, no canned budget
     }));
     return true;
