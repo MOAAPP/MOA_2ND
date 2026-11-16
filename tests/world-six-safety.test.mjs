@@ -35,7 +35,7 @@ function response() {
   };
 }
 
-test('construct one canonical 90-day backend request with correct allocation', () => {
+test('construct 90-day request without an unaffordable explicit allocation', () => {
   const body = buildSixWorldPayload(input);
   assert.equal(body.user_id, 'S01');
   assert.equal(body.as_of, '2026-11-04');
@@ -43,8 +43,12 @@ test('construct one canonical 90-day backend request with correct allocation', (
   assert.equal(body.purchase_delay_days, 7);
   assert.equal(body.savings_annual_rate, 0.038);
   assert.equal(body.investment_return_percent, 0);
-  assert.equal(Object.values(body.allocation).reduce((a, b) => a + b, 0), input.amount);
   assert.equal(body.minimum_required_balance, 0);
+  // Sending this allocation on a 27,800 KRW account would make FastAPI
+  // reject the entire six-world compare request with HTTP 422.
+  assert.equal(Object.hasOwn(body, 'allocation'), false);
+  const affordable = buildSixWorldPayload({ ...input, currentBalance: 350000 });
+  assert.equal(Object.values(affordable.allocation).reduce((a, b) => a + b, 0), input.amount);
 });
 
 test('respect selection options and explicitly mark out-of-horizon delays', () => {
@@ -52,7 +56,7 @@ test('respect selection options and explicitly mark out-of-horizon delays', () =
   assert.equal(delayInHorizon(1), true);
   assert.equal(delayInHorizon(3), false);
   assert.equal(delayInHorizon(6), false);
-  const twoWay = buildSixWorldPayload({ ...input, delayMonths: 6, mix: [0, 1, 1] });
+  const twoWay = buildSixWorldPayload({ ...input, currentBalance: 350000, delayMonths: 6, mix: [0, 1, 1] });
   assert.equal(twoWay.purchase_delay_days, 90);
   assert.equal(twoWay.allocation.purchase, 0);
   assert.equal(twoWay.allocation.savings + twoWay.allocation.investment, input.amount);
