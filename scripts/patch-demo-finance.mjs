@@ -33,7 +33,7 @@ patch('src/lib/store.ts', [
   ],
   [
     'type State = {\n  onboarded: boolean;',
-    "type State = {\n  demoUserId?: 'S01' | 'S08'; demoFinanceReady?: boolean;\n  onboarded: boolean;",
+    "type State = {\n  demoUserId?: 'S01' | 'S08'; demoFinanceReady?: boolean; demoInvestInitialized?: boolean;\n  onboarded: boolean;",
   ],
   [
     "export const APP_TODAY = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();",
@@ -41,7 +41,7 @@ patch('src/lib/store.ts', [
   ],
   [
     "const DEMO: State = { ...DEFAULT, onboarded: true, learnAlert: { ...DEFAULT.learnAlert, discord: true, discordConsent: true } };",
-    "const DEMO: State = { ...DEFAULT, onboarded: true, demoUserId: 'S01', demoFinanceReady: false,\n  profile: { ...DEFAULT.profile, name: 'S01', monthlyBudget: 0 },\n  finance: { balance: 0, minBalance: 0, salary: 0 },\n  txs: [], bills: [], savings: [], budgets: Object.fromEntries(Object.keys(DEFAULT_BUDGETS).map(k => [k, 0])),\n  learnAlert: { ...DEFAULT.learnAlert, discord: true, discordConsent: true } };",
+    "const DEMO: State = { ...DEFAULT, onboarded: true, demoUserId: 'S01', demoFinanceReady: false, demoInvestInitialized: false,\n  profile: { ...DEFAULT.profile, name: 'S01', monthlyBudget: 0 },\n  finance: { balance: 0, minBalance: 0, salary: 0 },\n  txs: [], bills: [], savings: [],\n  // This 1M KRW is a separate practice wallet, never backed by the user's payment account.\n  invest: { cash: 1000000, holdings: {}, avgPrice: {}, orders: [], target: DEFAULT.invest.target },\n  budgets: Object.fromEntries(Object.keys(DEFAULT_BUDGETS).map(k => [k, 0])),\n  learnAlert: { ...DEFAULT.learnAlert, discord: true, discordConsent: true } };",
   ],
 ]);
 
