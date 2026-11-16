@@ -235,14 +235,14 @@ patch('pages/Agent.tsx', [
 patch('lib/bridge.js', [
   [
     "import { filledOrderKey, getPortfolioValidation, commitPortfolioValidation, readPortfolioValidation } from './portfolioSimulation';",
-    "import { filledOrderKey, getPortfolioValidation, commitPortfolioValidation, readPortfolioValidation } from './portfolioSimulation';\\nimport { buildPersonalSnapshot, validatePersonalSixWorlds } from './personalFinance';",
+    "import { filledOrderKey, getPortfolioValidation, commitPortfolioValidation, readPortfolioValidation } from './portfolioSimulation';\nimport { buildPersonalSnapshot, validatePersonalSixWorlds } from './personalFinance';",
   ],
   [
-    "      if (MODE === 'demo') {\\n        ++worldSafetyRequest;\\n        if (activeSafetyAbort) activeSafetyAbort.abort();",
-    "      if (MODE === 'demo' || MODE === 'user') {\\n        ++worldSafetyRequest;\\n        if (activeSafetyAbort) activeSafetyAbort.abort();",
+    "      if (MODE === 'demo') {\n        ++worldSafetyRequest;\n        if (activeSafetyAbort) activeSafetyAbort.abort();",
+    "      if (MODE === 'demo' || MODE === 'user') {\n        ++worldSafetyRequest;\n        if (activeSafetyAbort) activeSafetyAbort.abort();",
   ],
   [
-    "    triggerAiCoaching() {\\n      if (MODE === 'demo') {",
+    "    triggerAiCoaching() {\n      if (MODE === 'demo') {",
     `    triggerAiCoaching() {
       if (MODE !== 'demo') {
         const btn = document.getElementById('ai-trigger-btn');
