@@ -16,6 +16,13 @@ writeFileSync(resolve(root, 'moa-web/src/lib/worldSixSafety.ts'),
 
 const path = resolve(root, 'moa-web/src/lib/bridge.js');
 let src = readFileSync(path, 'utf8');
+// Personal user-mode adds its own stateless checks AFTER demo wiring.
+// On a second CI pass, retain that augmented behavior intact.
+if (src.includes('validatePersonalSixWorlds')) {
+  if (!src.includes('getSixWorldSafety')) throw new Error('[six worlds] demo check missing');
+  console.log('[six worlds] demo + personal 3D wiring already patched');
+  process.exit(0);
+}
 function replaceOne(before, after) {
   if (src.includes(after)) return;
   const index = src.indexOf(before);
