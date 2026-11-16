@@ -61,12 +61,13 @@ const injected = `    triggerAiCoaching() {
       if (MODE === 'demo') {
         const btn = document.getElementById('ai-trigger-btn');
         const box = document.getElementById('ai-insight-box');
-        if (!btn || !box) return;
+        const textTarget = document.getElementById('ai-insight-text');
+        if (!btn || !box || !textTarget) return;
         if (!originalSafetyButton) originalSafetyButton = btn.innerHTML;
         const current = getState();
         box.classList.remove('hidden');
         if (!current.demoFinanceReady || !['S01', 'S08'].includes(current.demoUserId)) {
-          box.textContent = '백엔드의 가상 금융 데이터를 불러온 후 90일 결제 안정성을 검증할 수 있어요.';
+          textTarget.textContent = '백엔드의 가상 금융 데이터를 불러온 후 90일 결제 안정성을 검증할 수 있어요.';
           return;
         }
         const selected = get.selected(), amount = Math.round(get.amount());
@@ -81,8 +82,9 @@ const injected = `    triggerAiCoaching() {
         activeSafetyAbort = controller;
         const timer = window.setTimeout(() => controller.abort(), 25000);
         btn.disabled = true;
-        btn.textContent = '백엔드 90일 금융 안전성 검사 중…';
-        box.textContent = 'MOA 금융 엔진이 월급·필수 결제·예측 변동 지출을 반영해 여섯 경로를 계산하고 있어요.';
+        const buttonLabel = btn.querySelector('span:last-child');
+        if (buttonLabel) buttonLabel.textContent = '백엔드 90일 금융 안전성 검사 중…';
+        textTarget.textContent = 'MOA 금융 엔진이 월급·필수 결제·예측 변동 지출을 반영해 여섯 경로를 계산하고 있어요.';
         const labels = {
           protected: '가정상 유지', shortfall: '자금 부족 위험',
           needs_confirmation: '확인 필요', invalid: '계산 불가',
@@ -109,7 +111,7 @@ const injected = `    triggerAiCoaching() {
             : path.result === 'protected' ? ' · 필수 결제 가정상 충족' : '';
           const all = report.paths.map((p, i) =>
             (i + 1) + '.' + safe(meta[i + 1].name) + ' ' + safe(labels[p.result])).join(' / ');
-          box.innerHTML = [
+          textTarget.innerHTML = [
             '<strong class="text-white">MOA 금융 엔진 · ' + safe(report.user) + ' · 2026-11-04 기준</strong><br/>',
             '<strong class="text-blue-300">' + safe(meta[selected].name) + '</strong>: ',
             '<strong class="text-amber-300">' + statusText + '</strong><br/>',
@@ -117,13 +119,13 @@ const injected = `    triggerAiCoaching() {
             '<span class="text-slate-300">6개 선택: ' + all + '</span><br/>',
             '<span class="text-slate-300">※ 위 안전성은 합성 금융 데이터의 90일 시뮬레이션입니다. 화면의 1~10년 자산 금액은 별도 연 수익률 가정이며, 가상 투자 자산을 실제 통장에 합산하지 않습니다.</span>',
           ].join('');
-          btn.textContent = '90일 검증 결과';
+          if (buttonLabel) buttonLabel.textContent = '90일 검증 결과';
         }).catch(() => {
           if (requestId !== worldSafetyRequest || !c.root.isConnected) return;
-          box.textContent = controller.signal.aborted
+          textTarget.textContent = controller.signal.aborted
             ? '90일 금융 검증 시간이 초과됐어요. 계산 결과를 대신 만들어 표시하지 않았어요.'
             : '백엔드 90일 금융 검증에 연결할 수 없어요. 이전 결과나 프론트 예시를 대신 표시하지 않았어요.';
-          btn.textContent = '90일 검증 다시 하기';
+          if (buttonLabel) buttonLabel.textContent = '90일 검증 다시 하기';
         }).finally(() => {
           window.clearTimeout(timer);
           if (requestId === worldSafetyRequest && c.root.isConnected) {
