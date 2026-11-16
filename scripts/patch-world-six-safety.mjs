@@ -105,17 +105,18 @@ const injected = `    triggerAiCoaching() {
           const min = path.minimumBalance === null ? '검증 범위 밖' : fmt(path.minimumBalance) + '원';
           const end = path.endingCash === null ? '검증 범위 밖' : fmt(path.endingCash) + '원';
           const risk = path.firstShortfall
-            ? ` · 첫 부족 가능일 ${safe(path.firstShortfall)}`
+            ? ' · 첫 부족 가능일 ' + safe(path.firstShortfall)
             : path.result === 'protected' ? ' · 필수 결제 가정상 충족' : '';
           const all = report.paths.map((p, i) =>
-            `${i + 1}.${safe(meta[i + 1].name)} ${safe(labels[p.result])}`).join(' / ');
-          box.innerHTML = `
-            <strong class="text-white">MOA 금융 엔진 · ${safe(report.user)} · 2026-11-04 기준</strong><br/>
-            <strong class="text-blue-300">${safe(meta[selected].name)}</strong>:
-            <strong class="text-amber-300">${statusText}</strong><br/>
-            90일 최소 결제계좌 잔액 ${min} · 90일 말 결제계좌 잔액 ${end}${risk}<br/>
-            <span class="text-slate-300">6개 선택: ${all}</span><br/>
-            <span class="text-slate-300">※ 위 안전성은 합성 금융 데이터의 90일 시뮬레이션입니다. 화면의 1~10년 자산 금액은 별도 연 수익률 가정이며, 가상 투자 자산을 실제 통장에 합산하지 않습니다.</span>`;
+            (i + 1) + '.' + safe(meta[i + 1].name) + ' ' + safe(labels[p.result])).join(' / ');
+          box.innerHTML = [
+            '<strong class="text-white">MOA 금융 엔진 · ' + safe(report.user) + ' · 2026-11-04 기준</strong><br/>',
+            '<strong class="text-blue-300">' + safe(meta[selected].name) + '</strong>: ',
+            '<strong class="text-amber-300">' + statusText + '</strong><br/>',
+            '90일 최소 결제계좌 잔액 ' + min + ' · 90일 말 결제계좌 잔액 ' + end + risk + '<br/>',
+            '<span class="text-slate-300">6개 선택: ' + all + '</span><br/>',
+            '<span class="text-slate-300">※ 위 안전성은 합성 금융 데이터의 90일 시뮬레이션입니다. 화면의 1~10년 자산 금액은 별도 연 수익률 가정이며, 가상 투자 자산을 실제 통장에 합산하지 않습니다.</span>',
+          ].join('');
           btn.textContent = '90일 검증 결과';
         }).catch(() => {
           if (requestId !== worldSafetyRequest || !c.root.isConnected) return;
