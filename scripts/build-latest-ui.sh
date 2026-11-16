@@ -13,6 +13,8 @@ node scripts/patch-agent-backend.mjs
 node scripts/patch-demo-finance.mjs
 # Canonical six-path FastAPI comparison for the existing A/B world graph.
 node scripts/patch-world-backend.mjs
+# The existing 3D diagnostic box now uses six-path 90-day FastAPI checks.
+node scripts/patch-world-six-safety.mjs
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web
