@@ -80,7 +80,7 @@ export function buildSixWorldPayload(input: SixWorldInput) {
   const purchase = Math.floor(input.amount * p / total);
   const savings = Math.floor(input.amount * s / total);
   const investment = Math.floor(input.amount * i / total);
-  return {
+  const body = {
     user_id: input.user,
     as_of: DEMO_AS_OF,
     horizon_days: 90,
@@ -97,6 +97,13 @@ export function buildSixWorldPayload(input: SixWorldInput) {
     // Cashflow safety does not require any hypothetical investment appreciation.
     investment_return_percent: 0,
     minimum_required_balance: input.minimumBalance,
+  };
+  // Explicit allocations above AVAILABLE payment cash cause FastAPI to reject
+  // the ENTIRE six-path comparison (422). Keep the other five cashflow paths
+  // measurable, and let the backend mark the implicit mixed path invalid.
+  if (input.amount > input.currentBalance) return body;
+  return {
+    ...body,
     allocation: {
       purchase, savings, investment,
       cash: input.amount - purchase - savings - investment,
