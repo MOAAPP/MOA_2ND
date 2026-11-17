@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUp, CalendarClock, Check, ChevronRight, Clock, PiggyBank, Sparkles, TrendingUp } from 'lucide-react'
+import { ArrowUp, CalendarClock, Check, ChevronRight, Clock, PiggyBank, Sparkles, Trash2, TrendingUp } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import * as api from './api'
 import { ForecastChart } from './charts'
@@ -17,11 +17,13 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   const [wish, setWish] = useState<Wish | null>(null)
   const [delayDate, setDelayDate] = useState('')
   const [reopenDate, setReopenDate] = useState<string | null>(null)
+  const [reopenId, setReopenId] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setDelayDate('')
       setReopenDate(null)
+      setReopenId(null)
       if (preset) {
         setWish(preset)
         setStep('compare')
@@ -47,10 +49,11 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
           {step === 'input' && (
             <InputStep
               onClose={onClose}
-              onPick={(w, savedDate) => {
+              onPick={(w, savedDate, savedId) => {
                 setWish(w)
                 setReopenDate(savedDate ?? null)
-                setStep(savedDate ? 'delay' : 'compare')
+                setReopenId(savedId ?? null)
+                setStep(savedId ? 'delay' : 'compare')
               }}
             />
           )}
@@ -63,6 +66,7 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
               onClose={onClose}
               onBack={() => setStep('compare')}
               initialDate={reopenDate}
+              initialPlanId={reopenId}
               onSaved={(date) => { setDelayDate(date); setStep('delayDone') }}
             />
           )}
@@ -85,8 +89,8 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   )
 }
 
-function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string) => void; onClose: () => void }) {
-  const { notify, state } = useStore()
+function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, savedId?: string) => void; onClose: () => void }) {
+  const { notify, removeLater, state } = useStore()
   const [text, setText] = useState('')
   const submit = () => {
     const p = parseWish(text)
@@ -152,18 +156,27 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string) 
         <>
           <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">구매를 미뤄둔 것</p>
           {state.later.map((l) => (
-            <button
-              key={l.id}
-              onClick={() => onPick({ title: l.title, amount: l.amount, category: guessCategory(l.title) }, l.until)}
-              className="mb-2 flex w-full items-center gap-3 rounded-2xl border border-line p-3 text-left"
-            >
-              <Clock size={18} className="text-blue" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[14px] font-semibold">{l.title}</div>
-                <div className="text-[12px] text-sub">{mdDot(parseISO(l.until))} 구매 예정</div>
-              </div>
-              <div className="text-[13px] text-sub">{won(l.amount)}원</div>
-            </button>
+            <div key={l.id} className="mb-2 flex items-center gap-1 rounded-2xl border border-line p-2">
+              <button
+                onClick={() => onPick({ title: l.title, amount: l.amount, category: guessCategory(l.title) }, l.until, l.id)}
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1.5 text-left"
+                aria-label={l.title + ' 구매 날짜 다시 비교하기'}
+              >
+                <Clock size={18} className="shrink-0 text-blue" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[14px] font-semibold">{l.title}</div>
+                  <div className="text-[12px] text-sub">{mdDot(parseISO(l.until))} 예정 · {won(l.amount)}원</div>
+                </div>
+                <ChevronRight size={16} className="shrink-0 text-mute" />
+              </button>
+              <button
+                onClick={() => { removeLater(l.id); notify('구매 계획을 삭제했어요') }}
+                className="grid size-10 shrink-0 place-items-center rounded-xl text-mute"
+                aria-label={l.title + ' 구매 계획 삭제'}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           ))}
         </>
       )}
@@ -371,8 +384,8 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
             <CalendarClock size={22} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[14px] font-bold text-[#403582]">세 번째 선택 · 구매 연기</div>
-            <div className="mt-1 text-[12.5px] leading-relaxed text-[#786EAB]">나중에 사면 어떨까요? 날짜를 바꿔 잔액을 비교해요</div>
+            <div className="text-[14px] font-bold text-[#403582]">지금 말고 나중에 산다면?</div>
+            <div className="mt-1 text-[12.5px] leading-relaxed text-[#786EAB]">구매 날짜에 따라 생활비 부담이 달라지는지 확인해요</div>
           </div>
           <ChevronRight size={19} className="shrink-0 text-[#8879C8]" />
         </motion.button>
@@ -432,12 +445,7 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
             참고 평행세계로
           </Btn>
         </div>
-        <button
-          onClick={onDelay}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 py-1 text-[13.5px] font-semibold text-[#7062C4]"
-        >
-          <CalendarClock size={15} /> 구매 날짜를 바꿔 비교하기 <ChevronRight size={15} />
-        </button>
+
       </div>
     </div>
   )
