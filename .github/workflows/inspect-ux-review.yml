@@ -107,7 +107,7 @@ jobs:
             }
             const screens=[
               {path:'/',name:'home',selector:'.mh'},
-              {path:'/world',name:'world',selector:'section[aria-label="비교할 소비 선택"]'},
+              {path:'/world/compare',name:'world',selector:'section[aria-label="비교할 소비 선택"]'},
               {path:'/agent',name:'agent',selector:'.ag'},
               {path:'/lab',name:'lab',selector:'.lb'},
             ];
