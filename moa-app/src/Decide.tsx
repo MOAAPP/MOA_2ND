@@ -134,24 +134,6 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, 
         </motion.button>
       </div>
 
-      <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">자주 고민하는 것</p>
-      <div className="grid grid-cols-2 gap-2">
-        {QUICK.map((q) => (
-          <motion.button
-            key={q.title}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => onPick(q)}
-            className="flex items-center gap-3 rounded-2xl bg-[#F4F5F8] p-3 text-left"
-          >
-            <CatIcon c={q.category} size={36} />
-            <div className="min-w-0">
-              <div className="truncate text-[14px] font-semibold">{q.title}</div>
-              <div className="text-[12.5px] text-sub">{won(q.amount)}원</div>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-
       {state.later.length > 0 && (
         <>
           <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">구매를 미뤄둔 것</p>
@@ -179,7 +161,27 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, 
             </div>
           ))}
         </>
-      )}
+      )
+
+      <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">자주 고민하는 것</p>
+      <div className="grid grid-cols-2 gap-2">
+        {QUICK.map((q) => (
+          <motion.button
+            key={q.title}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => onPick(q)}
+            className="flex items-center gap-3 rounded-2xl bg-[#F4F5F8] p-3 text-left"
+          >
+            <CatIcon c={q.category} size={36} />
+            <div className="min-w-0">
+              <div className="truncate text-[14px] font-semibold">{q.title}</div>
+              <div className="text-[12.5px] text-sub">{won(q.amount)}원</div>
+            </div>
+          </motion.button>
+        ))}
+      </div>
+
+}
     </div>
   )
 }
