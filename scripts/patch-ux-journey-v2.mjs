@@ -63,6 +63,9 @@ function home(s){
   return s.slice(0,pos[0])+[1,0,3,2,4].map(i=>blocks[i]).join('')+s.slice(end);
 }
 function world(s){
+  // 화면 이름도 기능명이 아닌 사용자 언어로 통일해 신뢰감을 높인다.
+  s=once(s,'<PageHeader title="산 나 vs 안 산 나" />',
+    '<PageHeader title="소비의 두 미래" />','평행세계 화면 제목');
   s=once(s,`        <div className="px-1">
           <span className="inline-flex items-center text-[11px] font-bold text-toss-blue bg-[#E8F3FF] rounded-full px-2.5 py-1">MOA · 선택의 다른 미래</span>
           <h1 className="text-[24px] font-extrabold text-toss-gray900 leading-snug tracking-tight mt-2">그때 샀다면,<br />사지 않았다면?</h1>
