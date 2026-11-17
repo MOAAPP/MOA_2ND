@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import * as api from './api'
 import { ForecastChart } from './charts'
 import { CATS, LESSONS, type Category } from './data'
-import { iso, md, mdDot, mdw, today, won, wonShort } from './lib'
+import { iso, md, mdDot, mdw, parseISO, today, won, wonShort } from './lib'
 import { useStore } from './store'
 import { AIBadge, CatIcon, Num, Planet, Stars } from './ui'
 
@@ -43,8 +43,8 @@ export function Home({
   const { state } = s
   const dark = world === 'parallel'
   const nextLesson = LESSONS.find((l) => !state.lessonsDone.includes(l.id)) ?? LESSONS[0]
-  const nextPurchasePlan = [...state.later].filter((item) => item.until >= iso(today()))
-    .sort((a, b) => a.until.localeCompare(b.until))[0]
+  const upcomingPurchasePlans = state.later.filter((item) => item.until >= iso(today()))
+  const nextPurchasePlan = [...upcomingPurchasePlans].sort((a, b) => a.until.localeCompare(b.until))[0]
 
   const [brief, setBrief] = useState<api.BriefOut | null>(null)
   useEffect(() => {
@@ -281,9 +281,9 @@ export function Home({
           >
             <CalendarClock size={19} className={dark ? 'text-[#B7ABFF]' : 'text-[#7664D9]'} />
             <div className="min-w-0 flex-1">
-              <div className="text-[12px] font-semibold opacity-60">미뤄둔 구매 · {state.later.length}건</div>
+              <div className="text-[12px] font-semibold opacity-60">미뤄둔 구매 · {upcomingPurchasePlans.length}건</div>
               <div className="truncate text-[13px] font-semibold">
-                {mdDot(new Date(nextPurchasePlan.until + 'T12:00:00'))} · {nextPurchasePlan.title}
+                {mdDot(parseISO(nextPurchasePlan.until))} · {nextPurchasePlan.title}
               </div>
             </div>
             <span className="text-[12px] font-semibold opacity-70">다시 비교</span>
