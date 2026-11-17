@@ -62,7 +62,7 @@ export function politeOutput(task: AiTask, output: unknown): boolean {
     [v.answer, ...(Array.isArray(v.followUps) ? v.followUps : [])];
   if (!sentences.length || sentences.some(x => typeof x !== 'string' || !x.trim())) return false;
   return sentences.every(x => {
-    const parts = (x as string).trim().split(/[.!?。]\s*/u).map(y => y.trim()).filter(Boolean);
+    const parts = (x as string).trim().replace(/(\d)\.(\d)/gu, '$1·$2').split(/[.!?。]\s*/u).map(y => y.trim()).filter(Boolean);
     return parts.length > 0 && parts.every(y =>
       !/(?:^|\s)(?:너는|네가|니가)(?:\s|$)/u.test(y) &&
       /(?:요|니다|니까|세요|십시오|죠|까요)$/u.test(y),
