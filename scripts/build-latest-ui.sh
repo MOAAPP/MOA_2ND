@@ -23,6 +23,8 @@ node scripts/patch-portfolio-backend.mjs
 node scripts/patch-personal-input.mjs
 # Review branch ONLY: UI hierarchy and result communication, no API / financial logic changes.
 node scripts/patch-ux-journey.mjs
+# 별도 검토 브랜치: 2차 사용자 경험 리디자인 (기능 및 API 변경 없음)
+node scripts/patch-ux-journey-v2.mjs
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web
@@ -30,3 +32,4 @@ npm ci
 npm run build
 # Load review-only stylesheet after Vite-generated CSS so original styles stay intact.
 node ../scripts/patch-ux-journey.mjs --postbuild
+node ../scripts/patch-ux-journey-v2.mjs --postbuild
