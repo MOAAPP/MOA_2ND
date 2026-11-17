@@ -1,22 +1,25 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUp, Check, Clock, PiggyBank, Sparkles, TrendingUp } from 'lucide-react'
+import { ArrowUp, CalendarClock, Check, ChevronRight, Clock, PiggyBank, Sparkles, TrendingUp } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import * as api from './api'
 import { ForecastChart } from './charts'
+import { DelayStep } from './DelayStep'
 import { CATS, QUICK, guessCategory, levelOf, type Category, type Dest } from './data'
 import { addDays, afterTax, forecast, iso, mdDot, parseISO, parseWish, today, won, wonShort, type ForecastPoint } from './lib'
 import { useStore } from './store'
 import { AIBadge, Btn, CatIcon, CloseBtn, Num, Planet, Sheet, Stars } from './ui'
 
-type Step = 'input' | 'compare' | 'dest' | 'skipDone' | 'spendDone'
+type Step = 'input' | 'compare' | 'delay' | 'delayDone' | 'dest' | 'skipDone' | 'spendDone'
 type Wish = { title: string; amount: number; category: Category }
 
 export function Decide({ open, onClose, preset, goParallel }: { open: boolean; onClose: () => void; preset?: Wish | null; goParallel: () => void }) {
   const [step, setStep] = useState<Step>('input')
   const [wish, setWish] = useState<Wish | null>(null)
+  const [delayDate, setDelayDate] = useState('')
 
   useEffect(() => {
     if (open) {
+      setDelayDate('')
       if (preset) {
         setWish(preset)
         setStep('compare')
@@ -49,8 +52,17 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
             />
           )}
           {step === 'compare' && wish && (
-            <CompareStep wish={wish} onClose={onClose} onSkip={() => setStep('dest')} onSpend={() => setStep('spendDone')} />
+            <CompareStep wish={wish} onClose={onClose} onSkip={() => setStep('dest')} onSpend={() => setStep('spendDone')} onDelay={() => setStep('delay')} />
           )}
+          {step === 'delay' && wish && (
+            <DelayStep
+              wish={wish}
+              onClose={onClose}
+              onBack={() => setStep('compare')}
+              onSaved={(date) => { setDelayDate(date); setStep('delayDone') }}
+            />
+          )}
+          {step === 'delayDone' && wish && <DelayDone wish={wish} date={delayDate} onClose={onClose} />}
           {step === 'dest' && wish && <DestStep wish={wish} onClose={onClose} onDone={() => setStep('skipDone')} />}
           {step === 'skipDone' && wish && (
             <SkipDone
@@ -134,7 +146,7 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish) => void; onClose: ()
 
       {state.later.length > 0 && (
         <>
-          <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">월급 후로 미뤄둔 것</p>
+          <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">구매를 미뤄둔 것</p>
           {state.later.map((l) => (
             <button
               key={l.id}
@@ -142,7 +154,10 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish) => void; onClose: ()
               className="mb-2 flex w-full items-center gap-3 rounded-2xl border border-line p-3 text-left"
             >
               <Clock size={18} className="text-blue" />
-              <div className="flex-1 text-[14px] font-semibold">{l.title}</div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14px] font-semibold">{l.title}</div>
+                <div className="text-[12px] text-sub">{mdDot(parseISO(l.until))} 구매 예정</div>
+              </div>
               <div className="text-[13px] text-sub">{won(l.amount)}원</div>
             </button>
           ))}
@@ -152,7 +167,7 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish) => void; onClose: ()
   )
 }
 
-function CompareStep({ wish, onClose, onSkip, onSpend }: { wish: Wish; onClose: () => void; onSkip: () => void; onSpend: () => void }) {
+function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; onClose: () => void; onSkip: () => void; onSpend: () => void; onDelay: () => void }) {
   const s = useStore()
   const { state, available, perDay, fc, parallelTotal, level } = s
   const after = useMemo(
@@ -343,6 +358,21 @@ function CompareStep({ wish, onClose, onSkip, onSpend }: { wish: Wish; onClose: 
           </motion.div>
         </div>
 
+        <motion.button
+          whileTap={{ scale: 0.985 }}
+          onClick={onDelay}
+          className="mt-3 flex w-full items-center gap-3 rounded-[22px] border border-[#E0DAFF] bg-[#F8F7FF] p-4 text-left"
+        >
+          <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#EDE9FF] text-[#6D5BEF]">
+            <CalendarClock size={22} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[14px] font-bold text-[#403582]">세 번째 선택 · 구매 연기</div>
+            <div className="mt-1 text-[12.5px] leading-relaxed text-[#786EAB]">나중에 사면 어떨까요? 날짜를 바꿔 잔액을 비교해요</div>
+          </div>
+          <ChevronRight size={19} className="shrink-0 text-[#8879C8]" />
+        </motion.button>
+
         <div className="mt-3 rounded-[22px] bg-[#F7F8FA] p-4">
           <div className="mb-1 flex items-center justify-between">
             <span className="text-[13px] font-semibold">사면 이렇게 줄어요</span>
@@ -398,18 +428,12 @@ function CompareStep({ wish, onClose, onSkip, onSpend }: { wish: Wish; onClose: 
             참고 평행세계로
           </Btn>
         </div>
-        {status !== 'ok' && (
-          <button
-            onClick={() => {
-              s.later(wish.title, wish.amount)
-              s.notify(`${mdDot(fc.end)} 월급 후에 다시 알려드릴게요`)
-              onClose()
-            }}
-            className="mt-3 flex w-full items-center justify-center gap-1 text-[13.5px] font-medium text-sub"
-          >
-            <Clock size={14} /> 월급 후로 미루기
-          </button>
-        )}
+        <button
+          onClick={onDelay}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 py-1 text-[13.5px] font-semibold text-[#7062C4]"
+        >
+          <CalendarClock size={15} /> 구매 날짜를 바꿔 비교하기 <ChevronRight size={15} />
+        </button>
       </div>
     </div>
   )
@@ -595,6 +619,37 @@ function SpendDone({ wish, onClose }: { wish: Wish; onClose: () => void }) {
       <div className="px-5 pb-6">
         <Btn onClick={onClose}>확인</Btn>
       </div>
+    </div>
+  )
+}
+
+function DelayDone({ wish, date, onClose }: { wish: Wish; date: string; onClose: () => void }) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <motion.div
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', damping: 16 }}
+          className="grid size-16 place-items-center rounded-full bg-[#ECE8FF] text-[#725EEA]"
+        >
+          <CalendarClock size={30} />
+        </motion.div>
+        <h2 className="mt-5 text-[23px] font-bold">구매 계획을 저장했어요</h2>
+        <p className="mt-2 text-[14px] leading-relaxed text-sub">
+          지금 구매하지 않고, 선택한 날짜에 다시 고민해 볼 수 있어요.
+        </p>
+        <div className="mt-7 w-full rounded-[22px] bg-[#F7F6FF] p-5 text-left">
+          <div className="text-[12px] font-semibold text-[#7466B6]">구매 예정</div>
+          <div className="mt-2 text-[16px] font-bold">{wish.title}</div>
+          <div className="mt-1 text-[14px] text-sub">{won(wish.amount)}원 · {mdDot(parseISO(date))}</div>
+        </div>
+        <p className="mt-4 text-[12.5px] leading-relaxed text-sub">
+          구매 계획만 저장했어요. 실제 돈이 빠져나가지 않고, 자동 결제나 알림도 발송되지 않아요.
+          다음에 소비 비교를 열면 미뤄둔 목록에서 다시 확인할 수 있어요.
+        </p>
+      </div>
+      <div className="px-5 pb-6"><Btn onClick={onClose}>확인</Btn></div>
     </div>
   )
 }
