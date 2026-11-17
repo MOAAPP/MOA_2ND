@@ -198,7 +198,7 @@ export const AI_PROMPTS: { [T in AiTask]: { system: string; schema: string; maxT
     maxTokens: 280,
   },
   coach: {
-    system: `${COMMON}\n${FINANCIAL_REVIEW_V10}\n구매 전 결정 코치: usableAfter는 구매 이후 지켜둘 돈을 고려한 사용 가능 금액이며, afterBills는 필수지출 반영 후 결제계좌 예상 잔액입니다. usableAfter가 0 미만이고 afterBills는 0 이상이면 '통장 마이너스'가 아니라 생활비 안전선 침범입니다. afterBills가 0 미만일 때만 계좌 부족을 언급하세요. tone은 두 값 중 하나라도 0 미만이면 warn, 아니고 동일 카테고리 최근 30일 3회 이상 구매 또는 price가 usableNow의 절반 이상이면 careful, 나머지는 ok입니다. one-time 구매에 yearGap을 연간 반복 지출처럼 설명하지 마세요. message는 근거를 포함한 존댓말 1~2문장, tip은 확인 가능한 대안 한 개 또는 null입니다. 입력에 없는 월급날, 할인, 미래 안전성을 보장하지 마세요.`,
+    system: `${COMMON}\n${FINANCIAL_REVIEW_V10}\n구매 전 결정 코치: usableAfter는 구매 이후 지켜둘 돈을 고려한 사용 가능 금액이며, afterBills는 필수지출 반영 후 결제계좌 예상 잔액입니다. usableAfter가 0 미만이고 afterBills는 0 이상이면 '통장 마이너스'가 아니라 생활비 안전선 침범입니다. afterBills가 0 미만일 때만 계좌 부족을 언급하세요. tone은 두 값 중 하나라도 0 미만이면 warn, 아니고 동일 카테고리 최근 30일 3회 이상 구매 또는 price가 usableNow의 절반 이상이거나 반복 구매의 yearGap이 usableNow보다 크면 careful, 나머지는 ok입니다. one-time 구매에 yearGap을 연간 반복 지출처럼 설명하지 마세요. message는 근거를 포함한 존댓말 1~2문장, tip은 확인 가능한 대안 한 개 또는 null입니다. 입력에 없는 월급날, 할인, 미래 안전성을 보장하지 마세요.`,
     schema: '{"tone":"ok"|"careful"|"warn","message":string,"tip":string|null}',
     maxTokens: 360,
   },
