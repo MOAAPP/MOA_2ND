@@ -78,11 +78,13 @@ export function DelayStep({
   onClose,
   onBack,
   onSaved,
+  initialDate,
 }: {
   wish: Wish
   onClose: () => void
   onBack: () => void
   onSaved: (date: string) => void
+  initialDate?: string | null
 }) {
   const s = useStore()
   const { state, fc } = s
@@ -90,7 +92,9 @@ export function DelayStep({
   const earliest = iso(addDays(start, 1))
   const latest = iso(addDays(start, MAX_DELAY_DAYS))
   const paydayNextDay = iso(addDays(fc.end, 1))
-  const [purchaseDate, setPurchaseDate] = useState(paydayNextDay)
+  const [purchaseDate, setPurchaseDate] = useState(() =>
+    initialDate && initialDate >= earliest && initialDate <= latest ? initialDate : paydayNextDay,
+  )
   const [engine, setEngine] = useState<api.PersonalCompare | null>(null)
   const [loading, setLoading] = useState(true)
   const [retry, setRetry] = useState(0)
