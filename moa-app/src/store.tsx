@@ -253,10 +253,11 @@ function useProvideStore() {
   const skip = (title: string, amount: number, category: Category, dest: Dest) =>
     addTx({ title, amount, category, kind: 'skip', dest })
 
-  const later = (title: string, amount: number) =>
+  // 구매 예정일만 기록합니다. 실제 잔액/지출 기록은 변경하지 않습니다.
+  const later = (title: string, amount: number, until?: string) =>
     setState((s) => ({
       ...s,
-      later: [{ id: Math.random().toString(36).slice(2), title, amount, until: iso(addDays(derived.fc.end, 1)) }, ...s.later],
+      later: [{ id: Math.random().toString(36).slice(2), title, amount, until: until ?? iso(addDays(derived.fc.end, 1)) }, ...s.later],
     }))
 
   const removeLater = (id: string) => setState((s) => ({ ...s, later: s.later.filter((l) => l.id !== id) }))
