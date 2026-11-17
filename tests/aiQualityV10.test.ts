@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AI_PROMPTS, FINANCIAL_REVIEW_V10, numbersGrounded } from '../shared/aiPrompts';
-import { aiStats, politeOutput, resetAiStats, runAiTask } from '../server/lib/ai';
+import { aiStats, coachRiskAligned, politeOutput, resetAiStats, runAiTask } from '../server/lib/ai';
 import type { CoachIn } from '../shared/aiPrompts';
 
 const coachInput: CoachIn = {
@@ -35,6 +35,12 @@ describe('금융 AI v10 품질 게이트 (실제 API 호출 없는 합성 테스
     expect(politeOutput(task, output)).toBe(expected);
   });
 
+  it('모델이 위험 등급을 안전으로 잘못 분류하면 거부한다', () => {
+    expect(coachRiskAligned('coach', { ...coachInput, afterBills: -20000, usableAfter: -50000 }, { tone: 'ok', message: '구매해도 괜찮아요.' })).toBe(false);
+    expect(coachRiskAligned('coach', { ...coachInput, afterBills: -20000, usableAfter: -50000 }, { tone: 'warn', message: '결제 전에 현금 부족 위험을 확인해 주세요.' })).toBe(true);
+    expect(coachRiskAligned('coach', { ...coachInput, usableAfter: -10000, afterBills: 10000 }, { tone: 'warn', message: '통장이 마이너스가 됩니다.' })).toBe(false);
+  });
+
   it('금융 액수를 새로 만들어 낸 답변은 거부한다', () => {
     expect(numbersGrounded('coach', coachInput, { tone: 'ok', message: '999,999원 남아요.', tip: null })).toBe(false);
     expect(numbersGrounded('coach', coachInput, { tone: 'ok', message: '50,000원 남아요.', tip: null })).toBe(true);
@@ -43,8 +49,8 @@ describe('금융 AI v10 품질 게이트 (실제 API 호출 없는 합성 테스
   it('반말 응답은 한 번 다시 생성하고, 존댓말이 검증되어야 성공한다', async () => {
     vi.stubEnv('FACTCHAT_API_KEY', 'synthetic-test-key');
     const responses = [
-      { tone: 'ok', message: '그냥 사도 돼.', tip: null },
-      { tone: 'ok', message: '필수지출을 확인해 보세요.', tip: '구매 전 잔액을 비교해 보세요.' },
+      { tone: 'careful', message: '그냥 사도 돼.', tip: null },
+      { tone: 'careful', message: '필수지출을 확인해 보세요.', tip: '구매 전 잔액을 비교해 보세요.' },
     ];
     const mockFetcher = vi.fn(async () => new Response(JSON.stringify({
       choices: [{ message: { content: JSON.stringify(responses.shift()) }, finish_reason: 'stop' }],
