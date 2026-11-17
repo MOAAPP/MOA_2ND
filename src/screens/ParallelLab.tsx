@@ -6,7 +6,6 @@ import { TopBar } from '../components/ui';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
 import {
-  WORLD_SAFETY_BUFFER,
   etfValue, transactWorldWallet,
   type WorldDecision, type WorldWalletAction,
 } from '../lib/worldWallet';
@@ -15,6 +14,7 @@ import type { Quote } from '../../shared/market';
 import { useWallet } from '../state/wallet';
 import { useLiveQuotes } from '../state/market';
 import { BetterPrice } from '../components/BetterPrice';
+import { josa } from '../lib/ai/example';
 
 const MOMENTS = [
   { name:'운동화', amount:129000, alternative:59000, subtitle:'다음 주 달리기 모임', dilemma:'새 운동화가 갖고 싶지만, 월세가 먼저예요.', alternativeText:'5만 9천 원 운동화', value:'새로운 취미를 시작하는 기쁨', delay:'다음 달에 다시 결정' },
@@ -53,8 +53,8 @@ function BalancePanel({compact=false}:{compact?:boolean}) {
     <div className="v7-money-label">이번 달 <strong>쓸 수 있는 돈</strong></div>
     <div className={`v7-money-big ${w.monthlyUsable<0?'short':''}`}>{won(w.monthlyUsable)}</div>
     {w.monthlyUsable<0 && <p className="v7-money-alert">지켜두기로 한 돈에서 {won(-w.monthlyUsable)}이 부족해요.</p>}
-    <div className="v7-segments" aria-hidden="true"><span style={{flex:w.protectedBills,background:'#bdc7d9'}}/><span style={{flex:WORLD_SAFETY_BUFFER,background:'#7895e9'}}/><span style={{flex:Math.max(0,w.monthlyUsable),background:'#3d68f4'}}/><span style={{flex:w.savings,background:'#57b3a3'}}/><span style={{flex:w.stockValue||0.01,background:'#a18ae9'}}/></div>
-    <div className="v7-money-legend"><span><i className="gray"/>필수지출 {won(w.protectedBills)}</span><span><i className="light"/>지켜둘 돈 {won(WORLD_SAFETY_BUFFER)}</span></div>
+    <div className="v7-segments" aria-hidden="true"><span style={{flex:w.protectedBills,background:'#bdc7d9'}}/><span style={{flex:w.protectedBuffer,background:'#7895e9'}}/><span style={{flex:Math.max(0,w.monthlyUsable),background:'#3d68f4'}}/><span style={{flex:w.savings,background:'#57b3a3'}}/><span style={{flex:w.stockValue||0.01,background:'#a18ae9'}}/></div>
+    <div className="v7-money-legend"><span><i className="gray"/>필수지출 {won(w.protectedBills)}</span><span><i className="light"/>지켜둘 돈 {won(w.protectedBuffer)}</span></div>
     <div className="v7-money-columns">
       <div><span>저축해 둔 돈</span><b>{won(w.savings)}</b></div>
       <div><span>ETF 평가금</span><b>{won(w.stockValue)}</b></div>
@@ -92,7 +92,7 @@ function WorldCompare({amount,choice,alternative,baseline,title}:{amount:number;
       <div className="t-split-end a"><span><i>A</i>지금 사는 나</span><b className={`num ${now<0?'neg':''}`}>{sign(now)}</b><small>{now<0?'지켜둘 생활비를 써야 해요':'이번 달 남는 여유'}</small></div>
       <div className="t-split-end b"><span><i>B</i>{bLabel}</span><b className={`num ${alternate<0?'neg':''}`}>{sign(alternate)}</b><small>{alternate<0?'지켜둘 생활비를 써야 해요':'이번 달 남는 여유'}</small></div>
     </div>
-    <p className="t-split-note">{choice==='buy'?`지금 ${title}을(를) 누릴 수 있어요. 다르게 골랐다면 그만큼 현금이 더 남아요.`:choice==='alternative'?`더 저렴한 선택으로 ${won(amount-alternative)}을 남기면서 경험도 일부 가져가요.`:'이번 달엔 돈을 남기지만, 원하는 경험은 다음으로 넘겨요.'}</p>
+    <p className="t-split-note">{choice==='buy'?`지금 ${title}${josa(title,'을','를')} 누릴 수 있어요. 다르게 골랐다면 그만큼 현금이 더 남아요.`:choice==='alternative'?`더 저렴한 선택으로 ${won(amount-alternative)}을 남기면서 경험도 일부 가져가요.`:'이번 달엔 돈을 남기지만, 원하는 경험은 다음으로 넘겨요.'}</p>
   </section>;
 }
 
@@ -121,7 +121,7 @@ export function ParallelLab({initialMode='future',embedded=false}:{initialMode?:
   const commit=()=>{
     if(!title.trim()||!Number.isSafeInteger(price)||price<=0||alternative>price)return;
     const d:WorldDecision={id:`world-${Date.now()}`,title,price,paid:spend,choice,at:appNow(state),note:custom?'내가 입력한 소비':moment.subtitle,simulatedOnly:state.demo};
-    act({type:'spend',decision:d},`${title}: ${choice==='wait'?'미루기':choice==='alternative'?'대안 선택':'구매'}를 가상 세계에 반영했어요.`);
+    act({type:'spend',decision:d},`${title}: ${choice==='wait'?'미루기':choice==='alternative'?'대안 선택':'구매'}${josa(choice==='wait'?'미루기':choice==='alternative'?'대안 선택':'구매','을','를')} 가상 세계에 반영했어요.`);
   };
   return <div className={`page no-nav v7-page ${embedded?'v7-embedded':''}`}>
     <TopBar title="평행세계" onBack={embedded?undefined:nav.pop} center/>

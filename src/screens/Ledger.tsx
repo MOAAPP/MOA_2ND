@@ -206,13 +206,21 @@ function ReportView({ items, byCat, total, prevTotal, openCat }: { items: SpendE
     return { w, avg: days ? sum(items.filter((e) => weekdayOf(e.date) === w)) / days : 0 };
   });
   const maxWd = Math.max(1, ...byWd.map((x) => x.avg));
+  // 카테고리 비율은 반올림 오차로 합이 100%에서 어긋나지 않도록 '최대 잔여' 방식으로 나눈다.
+  const pct = (() => {
+    const raw = byCat.map(([, v]) => (100 * v) / Math.max(1, total));
+    const floor = raw.map(Math.floor);
+    let left = 100 - floor.reduce((x, y) => x + y, 0);
+    raw.map((r, i) => [r - floor[i], i] as const).sort((x, y) => y[0] - x[0]).forEach(([, i]) => { if (left > 0) { floor[i] += 1; left -= 1; } });
+    return floor;
+  })();
   const top = [...items].sort((a, b) => b.amount - a.amount).slice(0, 3);
   const mainCategory = byCat[0];
   return (
     <>
       <section className="t-card lg-record-insights" aria-label="지출 기록 요약">
         <div className="t-card-head"><h2>이번 달 한눈에</h2></div>
-        {mainCategory && <p>가장 많이 기록된 항목은 <b>{mainCategory[0]}</b>예요 · {fmt(mainCategory[1])} ({Math.round(mainCategory[1] / total * 100)}%)</p>}
+        {mainCategory && <p>가장 많이 기록된 항목은 <b>{mainCategory[0]}</b>예요 · {fmt(mainCategory[1])} ({pct[0]}%)</p>}
         <p>{prevTotal === null
           ? '지난달 같은 기간의 기록이 있으면 지출 변화를 비교할 수 있어요.'
           : total === prevTotal
@@ -225,10 +233,10 @@ function ReportView({ items, byCat, total, prevTotal, openCat }: { items: SpendE
         <div className="t-card-head"><h2>어디에 많이 썼을까</h2></div>
         <div className="lg-stack" role="img" aria-label={byCat.map(([c, v]) => `${c} ${fmt(v)}`).join(', ')}>{byCat.map(([c, v]) => <span key={c} style={{ width: `${(100 * v) / total}%`, background: categoryColor(c) }} />)}</div>
         <div className="t-list">
-          {byCat.map(([c, v]) => (
+          {byCat.map(([c, v], i) => (
             <button key={c} className="t-row" onClick={() => openCat(c)}>
               <CategoryIcon category={c} size={40} />
-              <span className="t-row-main"><b>{c}</b><small>{Math.round((100 * v) / total)}%</small></span>
+              <span className="t-row-main"><b>{c}</b><small>{pct[i]}%</small></span>
               <span className="t-row-amt num">{fmt(v)}</span>
             </button>
           ))}

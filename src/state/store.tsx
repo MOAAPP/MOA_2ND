@@ -248,6 +248,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(state);
   stateRef.current = state;
 
+  // 직접 가입한 사용자의 '필수지출·지켜둘 돈'은 예시 상수가 아니라 본인이 등록한 일정·입력값에서 가져온다.
+  const protection = useMemo(() => (state.demo ? null : userProtection(state)), [state]);
+  useEffect(() => {
+    if (!protection) return;
+    setState((s) => (s.demo || (s.worldWallet.fixedBills === protection.fixedBills && s.worldWallet.safetyBuffer === protection.safetyBuffer)
+      ? s : { ...s, worldWallet: { ...s.worldWallet, ...protection } }));
+  }, [protection]);
+
   const update = useCallback((fn: (s: AppState) => AppState) => setState((s) => fn(s)), []);
   const value = useMemo(() => ({ state, update, storageError }), [state, update, storageError]);
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
@@ -263,6 +271,27 @@ export function useStore() {
 export function withEvent(s: AppState, body: ResearchEventBody, now = Date.now()): AppState {
   const research = appendEvent(s.research, body, { now, demo: s.demo });
   return research === s.research ? s : { ...s, research };
+}
+
+/** 사용자가 등록한 데이터만으로 계산한 '이번 달 필수지출'과 '지켜둘 돈'. 예시 계정에는 쓰지 않는다. */
+export function userProtection(s: Pick<AppState, 'moa' | 'profile'>, today = todayKST()): { fixedBills: number; safetyBuffer: number } {
+  const month = today.slice(0, 7);
+  const fixedBills = s.moa.schedule
+    .filter((x) => x.direction === 'out' && x.essential && (x.recurrence === 'monthly' || x.date?.startsWith(month)))
+    .reduce((sum, x) => sum + x.amount, 0);
+  return { fixedBills, safetyBuffer: Math.max(0, s.profile?.minBalance ?? 0) };
+}
+
+/**
+ * 시연용 '현재 계정 초기화'. 지금 보고 있는 계정(예시 계정이면 예시, 직접 가입 계정이면 그 계정)의
+ * 기록·선택·가상 자산·상태만 처음으로 되돌린다. 설정·연구 동의·알림 설정과 원본 예시 데이터(JSON)는 건드리지 않는다.
+ */
+export function resetCurrentAccount(s: AppState): AppState {
+  const keep = { settings: s.settings, research: s.research, daily: s.daily };
+  if (s.demo) {
+    return { ...seedDemoState({ ...initialState(), ...keep }), ...keep };
+  }
+  return { ...initialState(), ...keep, introSeen: true };
 }
 
 export function resetScope(s: AppState, scope: 'finance' | 'invest' | 'all'): AppState {

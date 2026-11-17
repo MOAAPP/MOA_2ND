@@ -47,7 +47,7 @@ export function worldHistory(wallet:WorldWallet,days=30,now=Date.now()):WorldHis
   const anchor = koreaDay(now);
   const endDate = Date.parse(`${anchor}T00:00:00.000Z`);
   const dates=Array.from({length:days},(_,i)=>new Date(endDate-(days-i-1)*86400000).toISOString().slice(0,10));
-  const protectedCash=(wallet.fixedBills??WORLD_FIXED_BILLS)+WORLD_SAFETY_BUFFER;
+  const protectedCash=(wallet.fixedBills??WORLD_FIXED_BILLS)+(wallet.safetyBuffer??WORLD_SAFETY_BUFFER);
   let cursor=0, actual=opening+adjustment-protectedCash,alternative=actual;
   return dates.map(date=>{
     const todays:WorldHistoryEvent[]=[];

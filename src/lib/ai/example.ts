@@ -63,7 +63,11 @@ const TIPS: Record<string, string> = {
 export function exampleCoach(i: CoachIn): CoachOut {
   const tip = TIPS[i.category] ?? null;
   if (i.usableAfter < 0) {
-    return { tone: 'warn', message: `사면 이번 달 쓸 수 있는 돈이 ${won(i.usableAfter)} 모자라요. 지켜둘 생활비를 꺼내 쓰게 돼요.`, tip: tip ?? '다음 달 1일 월급 뒤로 미루면 안전선을 지킬 수 있어요.' };
+    // 화면과 같은 값(usableAfter·afterBills)만 쓴다. 통장이 실제로 모자란 경우와 '지켜둘 돈'만 깨지는 경우를 구분한다.
+    const message = i.afterBills < 0
+      ? `사면 필수지출을 낸 뒤 결제계좌가 ${won(-i.afterBills)} 모자라요. 통장이 마이너스가 돼요.`
+      : `사도 통장은 마이너스가 아니에요. 다만 지켜둘 돈을 ${won(-i.usableAfter)} 건드려요.`;
+    return { tone: 'warn', message, tip: tip ?? '다음 달 1일 월급 뒤로 미루면 안전선을 지킬 수 있어요.' };
   }
   if (i.categoryCount30 >= 3 && i.categorySpentThisMonth > 0) {
     return { tone: 'careful', message: `최근 30일 동안 ${i.category}에 ${i.categoryCount30}번 결제했어요. 이번 달만 ${won(i.categorySpentThisMonth)}이에요.`, tip };

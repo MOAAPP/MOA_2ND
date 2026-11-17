@@ -44,7 +44,7 @@ export function WorldReport() {
   const { state } = useStore();
   const nav = useNav();
   const toast = useToast();
-  const sample = isEmptyWorld(state.worldWallet);
+  const sample = state.demo && isEmptyWorld(state.worldWallet);
   const decisions = useMemo(() => (sample ? demoWorldWallet() : state.worldWallet).decisions, [sample, state.worldWallet]);
   const today = state.demo ? appDay(state) : appToday(state.bank);
   const r = useMemo(() => worldReport(decisions, today), [decisions, today]);

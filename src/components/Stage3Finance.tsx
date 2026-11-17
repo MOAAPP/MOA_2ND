@@ -14,6 +14,8 @@ import {
 import { getMorningBriefing, getSavedPlans, getAssetNews, getSavedPlanTracking,
   type MorningBriefing, type SavedPlan, type PlanTracking } from '../lib/stage6Api';
 
+import { josa } from '../lib/ai/example';
+
 /* ───────────────────────── 표시 형식 ───────────────────────── */
 
 /** 금액 문자열. 음수는 타이포그래피 마이너스(−)를 쓴다. */
@@ -409,7 +411,7 @@ export function Stage3DevPanel() {
         <button type="button" aria-label="하루 뒤" disabled={!viewDay || viewDay >= previewEnd} onClick={() => selectDay(shiftDate(viewDay, 1))}>›</button>
       </div>
     </fieldset>
-    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}은 원본 관측 종료일 이후예요. 확인된 새 거래가 있으면 부분 잔액을, 없으면 마지막 관측일을 기준으로 한 예측을 보여줘요.</p>}
+    {viewDay > dateEnd && <p className="st3-dev-projection" role="note">{mdw(viewDay)}{josa(mdw(viewDay), '은', '는')} 원본 관측 종료일 이후예요. 확인된 새 거래가 있으면 부분 잔액을, 없으면 마지막 관측일을 기준으로 한 예측을 보여줘요.</p>}
     {nav.tab === 'forks' && <WorldDevControls />}
     <dl className="st3-dev-meta">
       <div><dt>데이터</dt><dd>합성 데이터셋 · 실제 계좌 아님</dd></div>
@@ -668,8 +670,8 @@ export function Stage3Home() {
     <HomeAiSpotlight />
     {viewDay > home.observation_end && <p className="st3-note warn" role="note">
       {viewDay !== day
-        ? <>{mdw(viewDay)}은 아직 관측된 거래가 없는 미래 예상일이에요. {mdw(home.observation_end)}의 관측 잔액과 예정된 현금흐름을 기준으로 추정한 예상 마감 잔액: <Money as="span" value={home.daily_cashflow.find(d => d.date === viewDay)?.closing_balance} /></>
-        : <>{mdw(viewDay)}은 원본 관측 종료일 이후예요. 직접 확인한 거래만 반영한 부분 잔액이며 미기록 소비가 있을 수 있어요. 확인된 항목 기준 잔액: <Money as="span" value={home.available_cash} /></>}
+        ? <>{mdw(viewDay)}{josa(mdw(viewDay), '은', '는')} 아직 관측된 거래가 없는 미래 예상일이에요. {mdw(home.observation_end)}의 관측 잔액과 예정된 현금흐름을 기준으로 추정한 예상 마감 잔액: <Money as="span" value={home.daily_cashflow.find(d => d.date === viewDay)?.closing_balance} /></>
+        : <>{mdw(viewDay)}{josa(mdw(viewDay), '은', '는')} 원본 관측 종료일 이후예요. 직접 확인한 거래만 반영한 부분 잔액이며 미기록 소비가 있을 수 있어요. 확인된 항목 기준 잔액: <Money as="span" value={home.available_cash} /></>}
     </p>}
 
     

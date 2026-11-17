@@ -14,7 +14,8 @@ import { emptyInvestJournal } from '../lib/fundedInvest';
 import { emptyBank } from '../lib/bank/engine';
 import type { Profile } from '../lib/types';
 import { useNav } from '../state/nav';
-import { resetScope, useStore } from '../state/store';
+import { resetCurrentAccount, resetScope, useStore } from '../state/store';
+import { josa } from '../lib/ai/example';
 
 const SCOPES = {
   finance: { title: '생활비 정보와 기록', body: '잔고·수입·지출·목표와 가계부·선택 기록이 지워지고 생활비 설정부터 다시 시작해요. 가상 투자 자산도 그대로예요.' },
@@ -27,6 +28,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
   const nav = useNav();
   const toast = useToast();
   const [reset, setReset] = useState<keyof typeof SCOPES | null>(null);
+  const [resetAccount, setResetAccount] = useState(false);
   const [refreshDemo, setRefreshDemo] = useState(false);
   const [switchToPersonal, setSwitchToPersonal] = useState(false);
   const p = state.profile;
@@ -94,7 +96,30 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
         </div>
       </section>
 
+      <section className="section">
+        <div className="section-head"><h2>시연·개발용</h2></div>
+        <button className="list-item" onClick={() => setResetAccount(true)}>
+          <div className="grow"><div className="t">현재 계정 초기화</div><div className="s">지금 계정의 기록·선택·가상 자산만 처음으로 돌려요. 다른 계정과 원본 예시 데이터는 그대로예요.</div></div>
+        </button>
+      </section>
+
       <p className="small muted" style={{ textAlign: 'center', margin: '20px 0 32px' }}>모아 · 결제일 예측과 평행세계</p>
+
+      {resetAccount && (
+        <ConfirmSheet
+          title="현재 계정을 초기화할까요?"
+          body={state.demo ? '지금 예시 계정에 추가한 지출·참음·가상 저축·투자 기록이 지워지고 처음 예시 상태로 돌아가요.' : '지금 계정의 잔액·일정·가계부·선택 기록이 지워지고 처음 입력 화면으로 돌아가요.'}
+          confirm="초기화"
+          danger
+          onClose={() => setResetAccount(false)}
+          onConfirm={() => {
+            setResetAccount(false);
+            update((s) => resetCurrentAccount(s));
+            toast('현재 계정을 초기화했어요');
+            nav.reset();
+          }}
+        />
+      )}
 
       {switchToPersonal && (
         <ConfirmSheet
@@ -131,7 +156,7 @@ export function Settings({ onReplayIntro }: { onReplayIntro: () => void }) {
       )}
       {reset && (
         <ConfirmSheet
-          title={`${SCOPES[reset].title}를 지울까요?`}
+          title={`${SCOPES[reset].title}${josa(SCOPES[reset].title, '을', '를')} 지울까요?`}
           body={SCOPES[reset].body}
           confirm="지우기"
           danger
