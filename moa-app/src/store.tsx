@@ -255,20 +255,24 @@ function useProvideStore() {
 
   // 구매 계획은 별도 저장하고, 기존 계획을 다시 열면 중복 생성 없이 날짜만 수정합니다.
   // 실제 가계부 잔액과 지출 기록은 구매 여부를 확정하기 전까지 변경하지 않습니다.
-  const later = (title: string, amount: number, until?: string, existingId?: string | null) =>
+  const later = (
+    title: string, amount: number, until?: string, existingId?: string | null,
+    goal?: { monthlySaving: number; savingsDay: number },
+  ) =>
     setState((s) => {
       const date = until ?? iso(addDays(derived.fc.end, 1))
+      const goalFields = goal ? { monthlySaving: goal.monthlySaving, savingsDay: goal.savingsDay } : {}
       if (existingId && s.later.some((item) => item.id === existingId)) {
         return {
           ...s,
           later: s.later.map((item) =>
-            item.id === existingId ? { ...item, title, amount, until: date } : item,
+            item.id === existingId ? { ...item, title, amount, until: date, ...goalFields } : item,
           ),
         }
       }
       return {
         ...s,
-        later: [{ id: Math.random().toString(36).slice(2), title, amount, until: date }, ...s.later],
+        later: [{ id: Math.random().toString(36).slice(2), title, amount, until: date, ...goalFields }, ...s.later],
       }
     })
 
