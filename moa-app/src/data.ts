@@ -33,7 +33,7 @@ export type State = {
   streak: number
   lessonsDone: string[]
   discord: boolean
-  later: { id: string; title: string; amount: number; until: string; monthlySaving?: number; savingsDay?: number }[]
+  later: { id: string; title: string; amount: number; until: string }[]
   trades?: Trade[]
   levelTested?: boolean
   /** demo holdings re-based onto the first live quotes */
