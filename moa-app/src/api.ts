@@ -178,7 +178,7 @@ export const aiLedgerSummary = (input: {
 
 /** 같은 입력이면 하루 동안 다시 부르지 않는다 (AI 크레딧 절약) */
 export async function cached<T>(key: string, fn: () => Promise<T | null>): Promise<T | null> {
-  const k = 'moa.ai.' + new Date().toISOString().slice(0, 10) + '.' + key
+  const k = 'moa.ai.v10.' + new Date().toISOString().slice(0, 10) + '.' + key
   try {
     const hit = localStorage.getItem(k)
     if (hit) return JSON.parse(hit) as T

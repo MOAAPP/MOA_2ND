@@ -231,10 +231,10 @@ function CompareStep({ wish, onClose, onSkip, onSpend }: { wish: Wish; onClose: 
 
   const fallbackAi =
     status === 'short'
-      ? `지금 사면 ${mdDot(shortDate)}에 지켜둘 돈보다 ${won(Math.max(0, short))}원 모자라요. ${mdDot(fc.end)} 월급 이후로 미루면 같은 물건을 부담 없이 살 수 있어요.`
+      ? `지금 구매하면 ${mdDot(shortDate)}에 생활비 안전선보다 ${won(Math.max(0, short))}원 부족해질 수 있어요. 필수 결제 일정과 구매를 보류했을 때의 잔액을 먼저 비교해 보세요.`
       : status === 'tight'
-        ? `살 수는 있지만 월급날까지 하루 ${won(perDayAfter)}원으로 지내야 해요. 이번 주 배달을 한 번 줄이면 비슷하게 맞춰져요.`
-        : `여유 안에서 살 수 있어요. 대신 이 돈을 참으면 평행세계의 나는 ${wonShort(nextTotal)}원이 돼요.`
+        ? `구매 후 월급날까지 계산된 하루 사용 여유는 약 ${won(perDayAfter)}원입니다. 예정된 필수지출을 다시 확인해 주세요.`
+        : `현재 계산상 생활비 안전선 이내의 소비입니다. 구매를 보류한다면 평행세계 시뮬레이션에 ${won(wish.amount)}원을 더 배분할 수 있어요.`
 
   // ── AI 코치(Node /api/ai/coach): 엔진 결과를 받아 문장만 다듬음 ──
   const [coach, setCoach] = useState<api.CoachOut | null>(null)
@@ -262,7 +262,7 @@ function CompareStep({ wish, onClose, onSkip, onSpend }: { wish: Wish; onClose: 
     }
   }, [engineDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const ai = coach ? coach.message + (coach.tip ? ' ' + coach.tip : '') : fallbackAi
+  const ai = coach?.message ?? fallbackAi
 
   return (
     <div className="flex h-full flex-col">
@@ -371,6 +371,7 @@ function CompareStep({ wish, onClose, onSkip, onSpend }: { wish: Wish; onClose: 
             <motion.p key={ai} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[14px] leading-relaxed text-[#2E2A5A]">
               {ai}
             </motion.p>
+            {coach?.tip && <p className="mt-2 text-[13px] leading-relaxed text-[#514A87]">확인하면 좋은 점: {coach.tip}</p>}
             {serverNow && (
               <p className="mt-2 text-[11.5px] text-[#6B6A8E]">
                 예정 결제·지켜둘 돈·하루 지출 {won(state.profile.daily)}원을 넣어 {engine?.horizon_days}일 동안 날마다 계산했어요
