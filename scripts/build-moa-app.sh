@@ -9,3 +9,6 @@ set -euo pipefail
 cd "$(dirname "$0")/../moa-app"
 npm ci --no-audit --no-fund
 npm run build
+# 같은 배포에서 Node AI 프롬프트/검증기가 이전 번들에 고정되지 않도록 갱신합니다.
+cd ..
+npm run bundle:api
