@@ -30,7 +30,7 @@ function home(s){
         <p className="ux-home-lead">소비하기 전에, 내 돈으로 가능한 내일을 확인해요.</p>
       </header>`, '홈 타이틀');
   s=between(s,`      <button type="button" className="mh-card mh-world"`, `      {/* 1. AI 브리핑 — 한 문장 + 한 가지 행동 */}`,
-`      <button type="button" className="mh-card mh-world ux-v2-hero" onClick={() => navigate('/world')}>
+`      <button type="button" className="mh-card mh-world ux-v2-hero" onClick={() => navigate('/world/compare')}>
         <span className="ux-v2-hero-kicker"><span>✦</span> THE OTHER FUTURE <i>01 / 03</i></span>
         <span className="ux-v2-hero-heading">살까, 말까?<br /><em>미래를 먼저 만나봐.</em></span>
         <span className="ux-v2-hero-description">하나의 소비가 바꾸는 결제일과 잔액.<br />지금의 선택을 두 세계로 비교해요.</span>
