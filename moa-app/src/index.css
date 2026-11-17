@@ -1,0 +1,129 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --color-ink: #191F28;
+  --color-sub: #6B7684;
+  --color-mute: #A3ACB8;
+  --color-line: #EEF0F3;
+  --color-bg: #F4F5F8;
+  --color-blue: #2563EB;
+  --color-blue-soft: #EBF1FF;
+  --color-red: #F04452;
+  --color-up: #F04452;
+  --color-down: #3182F6;
+  --color-violet: #7C6CFF;
+  --color-night: #070B22;
+}
+
+html,
+body {
+  background: #e9ebf0;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: -0.01em;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  overscroll-behavior-y: none;
+}
+
+button {
+  cursor: pointer;
+  user-select: none;
+}
+
+input {
+  outline: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.twinkle {
+  animation: twinkle 3.2s ease-in-out infinite;
+}
+
+@keyframes orbit {
+  from {
+    transform: rotateX(70deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(70deg) rotateZ(360deg);
+  }
+}
+.orbit {
+  animation: orbit linear infinite;
+  transform-style: preserve-3d;
+}
+.orbit > span {
+  transform: translate(-50%, -50%) rotateX(-70deg);
+}
+
+@keyframes bands {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.planet-bands {
+  animation: bands 28s linear infinite;
+}
+
+@keyframes blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(12%, -8%) scale(1.1);
+  }
+  66% {
+    transform: translate(-10%, 6%) scale(0.95);
+  }
+}
+.blob {
+  animation: blob 14s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.shimmer-text {
+  background: linear-gradient(90deg, #8b93ff, #c084fc, #67e8f9, #8b93ff);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 96px);
+}

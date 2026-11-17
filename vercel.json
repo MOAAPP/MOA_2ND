@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "bash scripts/build-latest-ui.sh",
-  "outputDirectory": "moa-web/dist",
+  "buildCommand": "bash scripts/build-moa-app.sh",
+  "outputDirectory": "moa-app/dist",
   "rewrites": [
     {
       "source": "/api/v4/:path*",
