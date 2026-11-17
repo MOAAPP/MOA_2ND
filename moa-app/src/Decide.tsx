@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUp, CalendarClock, Check, ChevronRight, Clock, PiggyBank, Sparkles, Trash2, TrendingUp } from 'lucide-react'
+import { ArrowUp, CalendarClock, Check, ChevronRight, Clock, PiggyBank, Sparkles, TrendingUp } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import * as api from './api'
 import { ForecastChart } from './charts'
@@ -16,20 +16,12 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   const [step, setStep] = useState<Step>('input')
   const [wish, setWish] = useState<Wish | null>(null)
   const [delayDate, setDelayDate] = useState('')
-  const [delayMonthlySaving, setDelayMonthlySaving] = useState(0)
   const [reopenDate, setReopenDate] = useState<string | null>(null)
-  const [reopenId, setReopenId] = useState<string | null>(null)
-  const [reopenMonthlySaving, setReopenMonthlySaving] = useState<number | undefined>()
-  const [reopenSavingsDay, setReopenSavingsDay] = useState<number | undefined>()
 
   useEffect(() => {
     if (open) {
       setDelayDate('')
-      setDelayMonthlySaving(0)
       setReopenDate(null)
-      setReopenId(null)
-      setReopenMonthlySaving(undefined)
-      setReopenSavingsDay(undefined)
       if (preset) {
         setWish(preset)
         setStep('compare')
@@ -55,13 +47,10 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
           {step === 'input' && (
             <InputStep
               onClose={onClose}
-              onPick={(w, savedDate, savedId, savedMonthlySaving, savedSavingsDay) => {
+              onPick={(w, savedDate) => {
                 setWish(w)
                 setReopenDate(savedDate ?? null)
-                setReopenId(savedId ?? null)
-                setReopenMonthlySaving(savedMonthlySaving)
-                setReopenSavingsDay(savedSavingsDay)
-                setStep(savedId ? 'delay' : 'compare')
+                setStep(savedDate ? 'delay' : 'compare')
               }}
             />
           )}
@@ -74,13 +63,10 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
               onClose={onClose}
               onBack={() => setStep('compare')}
               initialDate={reopenDate}
-              initialPlanId={reopenId}
-              initialSavingsMonthly={reopenMonthlySaving}
-              initialSavingsDay={reopenSavingsDay}
-              onSaved={(date, saving) => { setDelayDate(date); setDelayMonthlySaving(saving); setStep('delayDone') }}
+              onSaved={(date) => { setDelayDate(date); setStep('delayDone') }}
             />
           )}
-          {step === 'delayDone' && wish && <DelayDone wish={wish} date={delayDate} monthlySaving={delayMonthlySaving} onClose={onClose} />}
+          {step === 'delayDone' && wish && <DelayDone wish={wish} date={delayDate} onClose={onClose} />}
           {step === 'dest' && wish && <DestStep wish={wish} onClose={onClose} onDone={() => setStep('skipDone')} />}
           {step === 'skipDone' && wish && (
             <SkipDone
@@ -99,8 +85,8 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   )
 }
 
-function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, savedId?: string, savedMonthlySaving?: number, savedSavingsDay?: number) => void; onClose: () => void }) {
-  const { notify, removeLater, state } = useStore()
+function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string) => void; onClose: () => void }) {
+  const { notify, state } = useStore()
   const [text, setText] = useState('')
   const submit = () => {
     const p = parseWish(text)
@@ -144,36 +130,6 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, 
         </motion.button>
       </div>
 
-      {state.later.length > 0 && (
-        <>
-          <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">구매를 미뤄둔 것</p>
-          {state.later.map((l) => (
-            <div key={l.id} className="mb-2 flex items-center gap-1 rounded-2xl border border-line bg-white p-2">
-              <button
-                onClick={() => onPick({ title: l.title, amount: l.amount, category: guessCategory(l.title) }, l.until, l.id, l.monthlySaving, l.savingsDay)}
-                className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1.5 text-left"
-                aria-label={l.title + ' 구매 계획 다시 비교하기'}
-              >
-                <Clock size={18} className="shrink-0 text-blue" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-semibold">{l.title}</div>
-                  <div className="text-[12px] text-sub">{mdDot(parseISO(l.until))} 구매 예정 · {won(l.amount)}원</div>
-                  {!!l.monthlySaving && <div className="text-[11.5px] text-[#7466B6]">매월 저축 {won(l.monthlySaving)}원 보호</div>}
-                </div>
-                <ChevronRight size={17} className="shrink-0 text-mute" />
-              </button>
-              <button
-                onClick={() => { removeLater(l.id); notify('구매 계획을 삭제했어요') }}
-                className="grid size-10 shrink-0 place-items-center rounded-xl text-mute hover:bg-[#F6F7F9]"
-                aria-label={l.title + ' 구매 계획 삭제'}
-              >
-                <Trash2 size={17} />
-              </button>
-            </div>
-          ))}
-        </>
-      )}
-
       <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">자주 고민하는 것</p>
       <div className="grid grid-cols-2 gap-2">
         {QUICK.map((q) => (
@@ -191,6 +147,26 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, 
           </motion.button>
         ))}
       </div>
+
+      {state.later.length > 0 && (
+        <>
+          <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">구매를 미뤄둔 것</p>
+          {state.later.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => onPick({ title: l.title, amount: l.amount, category: guessCategory(l.title) }, l.until)}
+              className="mb-2 flex w-full items-center gap-3 rounded-2xl border border-line p-3 text-left"
+            >
+              <Clock size={18} className="text-blue" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14px] font-semibold">{l.title}</div>
+                <div className="text-[12px] text-sub">{mdDot(parseISO(l.until))} 구매 예정</div>
+              </div>
+              <div className="text-[13px] text-sub">{won(l.amount)}원</div>
+            </button>
+          ))}
+        </>
+      )}
     </div>
   )
 }
@@ -395,10 +371,8 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
             <CalendarClock size={22} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[14px] font-bold text-[#403582]">지금 말고, 나중에 사면?</div>
-            <div className="mt-1 text-[12.5px] leading-relaxed text-[#786EAB]">
-              {status === 'short' ? '지금은 부족 위험이 있어요. 날짜를 바꾸면 달라질까요?' : '꼭 지금 사야 할까요? 구매 시점별 생활비를 비교해요.'}
-            </div>
+            <div className="text-[14px] font-bold text-[#403582]">세 번째 선택 · 구매 연기</div>
+            <div className="mt-1 text-[12.5px] leading-relaxed text-[#786EAB]">나중에 사면 어떨까요? 날짜를 바꿔 잔액을 비교해요</div>
           </div>
           <ChevronRight size={19} className="shrink-0 text-[#8879C8]" />
         </motion.button>
@@ -458,7 +432,12 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
             참고 평행세계로
           </Btn>
         </div>
-
+        <button
+          onClick={onDelay}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 py-1 text-[13.5px] font-semibold text-[#7062C4]"
+        >
+          <CalendarClock size={15} /> 구매 날짜를 바꿔 비교하기 <ChevronRight size={15} />
+        </button>
       </div>
     </div>
   )
@@ -648,7 +627,7 @@ function SpendDone({ wish, onClose }: { wish: Wish; onClose: () => void }) {
   )
 }
 
-function DelayDone({ wish, date, monthlySaving, onClose }: { wish: Wish; date: string; monthlySaving: number; onClose: () => void }) {
+function DelayDone({ wish, date, onClose }: { wish: Wish; date: string; onClose: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
@@ -668,7 +647,6 @@ function DelayDone({ wish, date, monthlySaving, onClose }: { wish: Wish; date: s
           <div className="text-[12px] font-semibold text-[#7466B6]">구매 예정</div>
           <div className="mt-2 text-[16px] font-bold">{wish.title}</div>
           <div className="mt-1 text-[14px] text-sub">{won(wish.amount)}원 · {mdDot(parseISO(date))}</div>
-          {monthlySaving > 0 && <div className="mt-2 text-[12.5px] font-semibold text-[#6552D9]">매월 저축 {won(monthlySaving)}원을 지키는 조건으로 검토했어요.</div>}
         </div>
         <p className="mt-4 text-[12.5px] leading-relaxed text-sub">
           구매 계획만 저장했어요. 실제 돈이 빠져나가지 않고, 자동 결제나 알림도 발송되지 않아요.
