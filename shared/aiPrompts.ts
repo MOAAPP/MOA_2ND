@@ -275,7 +275,55 @@ export function extractionGrounded(task: AiTask, input: unknown, output: unknown
   return items.every((it) => (it.amount == null || known.has(Math.round(it.amount))) && (it.balanceAfter == null || known.has(Math.round(it.balanceAfter))));
 }
 
-/** 응답에 나온 금액(원)이 입력에 있던 숫자인지 확인 — 지어낸 숫자를 막는다. parseSpend는 글에서 읽으므로 제외. */
+/** Korean financial amounts in model text, converted to absolute integer KRW.
+ * Unlike the old expression, this checks 30만원, 300만 원, 1.2만원,
+ * 1억 2천만원, -5,000원, etc. independently of spacing after 원.
+ */
+export function mentionedWonAmounts(text: string): number[] {
+  const unit: Record<string, number> = {
+    억: 100_000_000, 천만: 10_000_000, 백만: 1_000_000,
+    십만: 100_000, 만: 10_000, 천: 1_000, 백: 100, 십: 10,
+  };
+  const regex = /(-?)((?:\d[\d,]*(?:\.\d+)?\s*(?:천만|백만|십만|억|만|천|백|십)\s*)*\d[\d,]*(?:\.\d+)?\s*(?:천만|백만|십만|억|만|천|백|십)?)\s*(?:원|KRW)/gu;
+  const amounts = [...text.matchAll(regex)].map((match) => {
+    const parts = match[2].matchAll(/(\d[\d,]*(?:\.\d+)?)\s*(천만|백만|십만|억|만|천|백|십)?/gu);
+    const sum = [...parts].reduce((total, part) =>
+      total + Number(part[1].replace(/,/g, '')) * (unit[part[2]] ?? 1), 0);
+    return Math.abs(Math.round(sum * (match[1] === '-' ? -1 : 1)));
+  });
+  for (const match of text.matchAll(/₩\s*(-?\d[\d,]*(?:\.\d+)?)/gu)) {
+    amounts.push(Math.abs(Math.round(Number(match[1].replace(/,/g, '')))));
+  }
+  return amounts;
+}
+
+/** The brief cannot infer a bill category from nextBill {date, amount},
+ * equate "not supplied" with "no upcoming bill", or calculate percentages.
+ */
+export function briefEvidenceAligned(input: unknown, output: unknown): boolean {
+  if (!input || typeof input !== 'object' || !output || typeof output !== 'object') return false;
+  const i = input as BriefIn;
+  const o = output as BriefOut;
+  if (typeof o.headline !== 'string' || typeof o.body !== 'string') return false;
+  const visible = [o.headline, o.body, o.action?.label ?? ''].join(' ');
+  // Neither the incoming schema nor the model has evidence of the bill type.
+  if (/(?:월세|임대료|카드\s*대금|카드값|관리비|보험료|공과금|통신비|청구서)/u.test(visible)) return false;
+  if (/\d+(?:\.\d+)?\s*%/u.test(visible)) return false;
+  if (/(?:다음\s*달|다다음\s*달|내년|내일|모레)/u.test(visible)) return false;
+  if (i.lastMonthSameDay == null && /(?:지난\s*달|전월)/u.test(visible)) return false;
+  if (i.nextBill == null &&
+      /(?:(?:필수|예정된)\s*결제.{0,20}(?:없|안전|문제없)|결제\s*(?:위험|부족).{0,14}없)/u.test(visible)) return false;
+  const dates = [...visible.matchAll(/(\d{1,2})월\s*(\d{1,2})일/gu)];
+  if (dates.some((m) => !i.nextBill ||
+      Number(m[1]) !== Number(i.nextBill.date.slice(5, 7)) ||
+      Number(m[2]) !== Number(i.nextBill.date.slice(8, 10)))) return false;
+  return true;
+}
+
+/** Verify every model-mentioned won amount (including Korean multipliers).
+ * On the home brief, only exact input amounts are allowed. Other tasks retain
+ * the existing explicit input sum/difference allowance for comparisons.
+ */
 export function numbersGrounded(task: AiTask, input: unknown, output: unknown): boolean {
   if (task === 'parseSpend' || task === 'parseSchedule' || task === 'categorize') return true;
   const known = new Set<number>();
@@ -286,11 +334,13 @@ export function numbersGrounded(task: AiTask, input: unknown, output: unknown): 
   };
   walk(input);
   const text = JSON.stringify(output);
-  const found = text.match(/\d{1,3}(,\d{3})+(?=원)|\d{4,}(?=원)/g) ?? [];
-  return found.every((s) => {
-    const n = Number(s.replace(/,/g, ''));
-    // 입력 숫자 그대로이거나, 입력 숫자끼리의 차이·합(지난달 대비 등)까지는 허용
+  // Do not silently accept Korean-spelled monetary numbers not parsed above.
+  if (task === 'brief' && /[영공일이삼사오육칠팔구십백천만억]{2,}\s*원/u.test(text)) return false;
+  const found = mentionedWonAmounts(text);
+  return found.every((n) => {
+    if (!Number.isSafeInteger(n)) return false;
     if (known.has(n)) return true;
+    if (task === 'brief') return false;
     const ks = [...known];
     return ks.some((a) => ks.some((b) => Math.abs(a - b) === n || a + b === n));
   });
