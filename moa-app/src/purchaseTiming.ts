@@ -30,7 +30,7 @@ export function candidateDates(from: Date, paydayNextDay: string, selectedDate: 
   const offsets = [7, 14, 21, 30, 45, 60, MAX_RECOMMEND_DAYS]
   const dates = [...offsets.map((days) => iso(addDays(from, days))), paydayNextDay, selectedDate]
   return Array.from(new Set(dates))
-    .filter((d) => /^\\d{4}-\\d{2}-\\d{2}$/.test(d) && iso(parseISO(d)) === d)
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && iso(parseISO(d)) === d)
     .filter((d) => {
       const n = daysBetween(from, parseISO(d))
       return n >= 1 && n <= MAX_RECOMMEND_DAYS
