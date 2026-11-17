@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, ChevronRight, Flame, Globe2, Orbit, Sparkles } from 'lucide-react'
+import { Bell, CalendarClock, ChevronRight, Flame, Globe2, Orbit, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import * as api from './api'
 import { ForecastChart } from './charts'
@@ -43,6 +43,8 @@ export function Home({
   const { state } = s
   const dark = world === 'parallel'
   const nextLesson = LESSONS.find((l) => !state.lessonsDone.includes(l.id)) ?? LESSONS[0]
+  const nextPurchasePlan = [...state.later].filter((item) => item.until >= iso(today()))
+    .sort((a, b) => a.until.localeCompare(b.until))[0]
 
   const [brief, setBrief] = useState<api.BriefOut | null>(null)
   useEffect(() => {
@@ -270,6 +272,24 @@ export function Home({
             <ChevronRight size={20} className={dark ? 'text-white/40' : 'text-mute'} />
           </div>
         </motion.button>
+
+        {/* saved purchase plans: a gentle re-entry into the comparison flow */}
+        {nextPurchasePlan && (
+          <button
+            onClick={openDecide}
+            className={'mt-2.5 flex w-full items-center gap-3 rounded-[19px] px-4 py-3 text-left ' + (dark ? 'bg-white/[.06] text-white' : 'bg-[#F1F0FF] text-[#403582]')}
+          >
+            <CalendarClock size={19} className={dark ? 'text-[#B7ABFF]' : 'text-[#7664D9]'} />
+            <div className="min-w-0 flex-1">
+              <div className="text-[12px] font-semibold opacity-60">미뤄둔 구매 · {state.later.length}건</div>
+              <div className="truncate text-[13px] font-semibold">
+                {mdDot(new Date(nextPurchasePlan.until + 'T12:00:00'))} · {nextPurchasePlan.title}
+              </div>
+            </div>
+            <span className="text-[12px] font-semibold opacity-70">다시 비교</span>
+            <ChevronRight size={15} className="opacity-50" />
+          </button>
+        )}
 
         {/* AI briefing */}
         <div className="mt-8 mb-3 flex items-center justify-between px-1">
