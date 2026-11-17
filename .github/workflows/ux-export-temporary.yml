@@ -1,0 +1,42 @@
+name: 임시 디자인 소스 내보내기
+on:
+  push:
+    branches: [feat/ux-journey-review-20261117]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          unzip -q releases/MOA_home_dashboard_ai_20261115.zip -d .
+          node scripts/patch-agent-backend.mjs
+          node scripts/patch-demo-finance.mjs
+          node scripts/patch-world-backend.mjs
+          node scripts/patch-world-six-safety.mjs
+          node scripts/patch-savings-backend.mjs
+          node scripts/patch-portfolio-backend.mjs
+          node scripts/patch-personal-input.mjs
+          node scripts/patch-ux-journey.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-snapshot-for-ux-review
+          path: |
+            moa-web/src/screens/Home.jsx
+            moa-web/src/screens/Home.css
+            moa-web/src/screens/World.jsx
+            moa-web/src/pages/WorldChoice.tsx
+            moa-web/src/pages/Agent.tsx
+            moa-web/src/pages/Agent.css
+            moa-web/src/pages/Lab.tsx
+            moa-web/src/pages/Lab.css
+            moa-web/src/pages/Savings.tsx
+            moa-web/src/styles/index.css
+            moa-web/src/components/TabBar.tsx
+            moa-web/src/App.tsx
+            design/ux-journey-20261117.css
+            scripts/patch-ux-journey.mjs
+            scripts/build-latest-ui.sh
+          if-no-files-found: error
