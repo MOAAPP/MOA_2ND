@@ -161,7 +161,7 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, 
             </div>
           ))}
         </>
-      )
+      )}
 
       <p className="mt-7 mb-3 text-[13px] font-semibold text-sub">자주 고민하는 것</p>
       <div className="grid grid-cols-2 gap-2">
@@ -180,8 +180,6 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, 
           </motion.button>
         ))}
       </div>
-
-}
     </div>
   )
 }
