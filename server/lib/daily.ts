@@ -78,7 +78,8 @@ export async function runDaily(sub: Subscription, now = new Date()): Promise<Car
   }
   job = getJob(job.id)!;
   const ok = job.sends.some((x) => x.ok);
-  setRun(sub.deviceHash, { status: ok ? 'ok' : 'failed', error: ok ? undefined : job.error ?? '알 수 없는 오류' });
+  setRun(sub.deviceHash, { status: ok ? 'ok' : 'failed', error: ok ? undefined : job.error ?? '알 수 없는 오류',
+    attempts: !ok && job.status === 'failed' && !job.retryable ? MAX_ATTEMPTS : attempts });
   return job;
 }
 

@@ -1,16 +1,26 @@
 import { fetchWithTimeout } from './http';
 import { llmComplete, llmModel, llmProvider } from './llm';
 import type { Explanation } from './explain';
+import { learningJson } from './learningBackend';
+let lastSummaryModel: string | null = null;
+export const summaryModel = () => lastSummaryModel || llmModel();
 
 /**
  * 선택 기능: ANTHROPIC_API_KEY가 있으면 분석 엔진이 찾은 사실만 근거로 2~3문장 설명을 다듬는다.
  * 숫자 계산·원인 판단은 코드가 하고, AI는 문장 정리만 한다. 실패하면 null → 규칙 기반 문장을 쓴다.
  */
 export function aiConfigured() {
-  return llmProvider() !== null;
+  return llmProvider() !== null || process.env.MOA_LEARNING_AI === 'on';
 }
 
 export async function aiSummary(name: string, e: Explanation, level: 1 | 2 | 3): Promise<string | null> {
+  if (llmProvider() === null && process.env.MOA_LEARNING_AI === 'on') {
+    try {
+      const response = await learningJson<{text:string|null;model:string|null;source:string}>('/learning/card-explanation','POST',{name,explanation:e,level});
+      lastSummaryModel = response.model;
+      return response.source === 'llm' ? response.text : null;
+    } catch { return null; }
+  }
   if (!aiConfigured() || e.direction === 'unknown') return null;
   const system = [
     '당신은 대학생을 위한 금융 학습 앱의 시장 해설가입니다.',

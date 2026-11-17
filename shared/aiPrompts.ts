@@ -176,7 +176,7 @@ const COMMON = [
 
 export const AI_PROMPTS: { [T in AiTask]: { system: string; schema: string; maxTokens: number } } = {
   brief: {
-    system: `${COMMON}\n홈 화면 맨 위에 보일 오늘의 한 줄 브리핑을 써요. headline 25자 이내, body 70자 이내. 가장 도움이 되는 행동 하나를 action으로 고르거나 없으면 null.`,
+    system: `${COMMON}\n홈 화면 맨 위에 보일 오늘의 한 줄 브리핑을 써요. headline 25자 이내, body 70자 이내. 기록에 없는 소비와 미래 변동을 알 수 없으므로 안전·여유·소비 가능을 보장하지 마세요. usable은 필수결제와 최소잔액을 뺀 추가 여유이므로 nextBill.amount와 다시 비교해 이중 차감하지 마세요. 관측 근거가 없으면 소비가 안정적이라고 단정하지 마세요. 가장 도움이 되는 행동 하나를 action으로 고르거나 없으면 null.`,
     schema: '{"headline":string,"body":string,"action":{"label":string,"to":"choose"|"ledger"|"save"|"forks"}|null}',
     maxTokens: 200,
   },

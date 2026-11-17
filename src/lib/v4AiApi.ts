@@ -2,29 +2,8 @@
 const configured = (import.meta.env.VITE_FINANCE_API_BASE ?? '').replace(/\/$/, '');
 const root = configured ? configured + (configured.endsWith('/api/v4') ? '' : '/api/v4') : '/api/v4';
 
-async function json<T>(path: string, options: RequestInit = {}): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(root + path, {
-      ...options, headers: {
-        Accept: 'application/json',
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        ...options.headers,
-      },
-    });
-  } catch {
-    throw new Error('금융 AI 서버에 연결하지 못했어요. FastAPI 실행 상태를 확인해주세요.');
-  }
-  const data = await response.json().catch(() => null) as {
-    detail?: { message?: string; code?: string } | string; [key: string]: unknown
-  } | null;
-  if (!response.ok) {
-    const message = typeof data?.detail === 'string' ? data.detail :
-      typeof data?.detail === 'object' ? data.detail.message : undefined;
-    throw new Error(message ?? `요청 실패 (HTTP ${response.status}). API 키와 모델 설정을 확인해 주세요.`);
-  }
-  return data as T;
-}
+import { learningRequest } from '../../shared/learningClient';
+const json = <T>(path:string, options:RequestInit={}) => learningRequest<T>(root,path,options);
 
 export interface AiStatus {
   llm_configured: boolean;
@@ -52,11 +31,18 @@ export interface AgentResponse {
   estimated_cost_usd: number | null;
 }
 export interface DailyQuiz {
+  hint?: string;
   id: string; user_id: string; date: string; topic: string;
   selection_reason: string; source: 'llm' | 'rule_based'; model: string | null;
   question: string; options: string[]; answer_record: { choice: number; correct: boolean } | null;
   correct_answer: number | null; explanation: string | null;
+  answer_feedback?: { text: string; source: 'llm' | 'quiz_explanation'; model: string | null; status: string } | null;
 }
+export type LearningTopic = 'cashflow'|'credit'|'saving'|'investing'|'forecast';
+export interface LearningHistory { attempt_count:number;correct_count:number;wrong_count:number;items:DailyQuiz[] }
+export const getLearningInterests=(user:string,day:string)=>json<{topics:LearningTopic[]}>(`/users/${encodeURIComponent(user)}/learning-interests?day=${encodeURIComponent(day)}`);
+export const saveLearningInterests=(user:string,day:string,topics:LearningTopic[])=>json<{topics:LearningTopic[]}>(`/users/${encodeURIComponent(user)}/learning-interests?day=${encodeURIComponent(day)}`,{method:'POST',body:JSON.stringify({topics})});
+export const getLearningHistory=(user:string,day:string)=>json<LearningHistory>(`/users/${encodeURIComponent(user)}/learning-history?day=${encodeURIComponent(day)}`);
 export const getAiStatus = (signal?: AbortSignal) => json<AiStatus>('/ai/status', { signal });
 export const askFinanceAgent = (user: string, day: string, goal: string) =>
   json<AgentResponse>('/agent/analyze', {

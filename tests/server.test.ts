@@ -41,9 +41,9 @@ beforeAll(async () => {
 });
 afterAll(() => server.close());
 
-async function waitFor(id: string, pred: (j: { status: string }) => boolean) {
+async function waitFor(id: string, pred: (j: { status: string }) => boolean, headers = H) {
   for (let i = 0; i < 100; i++) {
-    const r = await realFetch(`${base}/api/cardnews/${id}`, { headers: H });
+    const r = await realFetch(`${base}/api/cardnews/${id}`, { headers });
     const j = (await r.json()).job;
     if (pred(j)) return j;
     await new Promise((r) => setTimeout(r, 100));
@@ -181,7 +181,7 @@ describe('데일리 카드뉴스', () => {
     expect(job.images).toHaveLength(4);
     expect(discordCalls).toHaveLength(1);
     const payload = JSON.parse(String(discordCalls[0].form.get('payload_json')));
-    expect(payload.content).toContain('모아 데일리');
+    expect(payload.content).toContain('평행통장 데일리');
     expect(payload.content).toContain('3일 연속');
     expect(payload.attachments).toHaveLength(4);
     expect(isDue(store.get().subscriptions[sub.deviceHash])).toBe(false);
@@ -209,4 +209,72 @@ describe('기사 RSS 파싱', () => {
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ title: '삼성전자 신제품 공개', source: '연합뉴스' });
   });
+});
+
+
+describe('app-only daily learning without Discord', () => {
+  it('generates four cards without creating or enabling a subscription', async () => {
+    const device = '91f5aa04-928d-4a04-a0ae-123456789abc';
+    const headers = {...H,'x-device-id':device};
+    const before = discordCalls.length;
+    const existingWebhook = process.env.DISCORD_WEBHOOK_URL;
+    delete process.env.DISCORD_WEBHOOK_URL;
+    try {
+      const initial = await realFetch(`${base}/api/daily/subscription`, {headers});
+      expect((await initial.json()).subscription).toBeNull();
+      const preview = await realFetch(`${base}/api/daily/preview`, {method:'POST',headers,body:JSON.stringify({level:2,learningUserId:'S08',watchlist:['005930']})});
+      expect(preview.status).toBe(202);
+      const {job} = await preview.json();
+      const completed = await waitFor(job.id,j=>j.status==='generated',headers);
+      expect(completed.images).toHaveLength(4);
+      expect(completed.autoSend).toBe(false);
+      expect(completed.sends).toHaveLength(0);
+      const again = await realFetch(`${base}/api/daily/preview`, {method:'POST',headers,body:'{}'});
+      expect((await again.json()).job.id).toBe(job.id);
+      const subscription = await realFetch(`${base}/api/daily/subscription`,{headers});
+      expect((await subscription.json()).subscription).toBeNull();
+      expect(discordCalls).toHaveLength(before);
+    } finally { if(existingWebhook) process.env.DISCORD_WEBHOOK_URL=existingWebhook; }
+  });
+});
+
+
+it('finishes Vercel SSE normally before the function deadline', async () => {
+  const originalTimeout = globalThis.setTimeout;
+  const previous = process.env.VERCEL;
+  process.env.VERCEL='1';
+  const timeout = vi.spyOn(globalThis,'setTimeout').mockImplementation(((fn: (...args: any[])=>void, ms?:number,...args:any[])=>originalTimeout(fn,ms===240_000?100:ms,...args)) as typeof setTimeout);
+  try {
+    const response = await realFetch(`${base}/api/stream?codes=005930`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/event-stream');
+    const events = await response.text();
+    expect(events).toContain('event: quotes');
+  } finally { timeout.mockRestore(); if(previous===undefined) delete process.env.VERCEL;else process.env.VERCEL=previous; }
+});
+
+
+describe('latest dashboard trade adapter keeps four-image delivery',()=>{
+  it('renders a fractional virtual ETF fill, sends four PNGs once and deduplicates',async()=>{
+    const previous=process.env.PEXELS_API_KEY;delete process.env.PEXELS_API_KEY;
+    const count=discordCalls.length;
+    const body={tradeId:'new-dashboard-trade-01',name:'TIGER 미국S&P500',side:'buy',shares:0.5,price:62100,filledAt:Date.now(),autoSend:true,holdingQty:0.5,holdingAvg:62100,weightPct:3.2,lesson:{title:'ETF 알아보기',points:['여러 종목에 나누어 투자해요']}};
+    try{
+      const res=await realFetch(base+'/api/discord/trade-card',{method:'POST',headers:H,body:JSON.stringify(body)});
+      expect(res.status).toBe(200);
+      const data=await res.json();expect(data.ok).toBe(true);expect(data.job.status).toBe('sent');expect(data.job.images).toHaveLength(4);expect(data.job.quoteMeta.source).toBe('demo');
+      expect(discordCalls).toHaveLength(count+1);
+      const form=discordCalls[count].form;
+      expect(JSON.parse(String(form.get('payload_json'))).attachments).toHaveLength(4);
+      for(let i=0;i<4;i++)expect(form.get('files['+i+']')).toBeInstanceOf(Blob);
+      const again=await realFetch(base+'/api/discord/trade-card',{method:'POST',headers:H,body:JSON.stringify(body)});const repeat=await again.json();expect(repeat.duplicate).toBe(true);expect(repeat.job.id).toBe(data.job.id);expect(discordCalls).toHaveLength(count+1);
+    }finally{if(previous)process.env.PEXELS_API_KEY=previous;}
+  });
+});
+
+it('keeps the user-specified connection confirmation wording',async()=>{
+  const result=await realFetch(base+'/api/discord/test',{method:'POST',headers:H});
+  expect(result.status).toBe(200);
+  const payload=JSON.parse(String(discordCalls.at(-1)!.form.get('payload_json')));
+  expect(payload.content).toBe('✅ 평행통장 연결 확인 메시지예요. 데일리 카드뉴스와 모의투자 카드뉴스가 이 채널로 전송됩니다.');
 });

@@ -20,7 +20,7 @@ export function discordStatus() {
     lastSuccessAt: d.lastSuccessAt,
     lastErrorAt: d.lastErrorAt,
     lastError: d.lastError,
-    destination: '모아 Discord 서버의 카드뉴스 채널',
+    destination: '평행통장 Discord 서버의 카드뉴스 채널',
   };
 }
 
@@ -70,9 +70,11 @@ export async function sendToDiscord(content: string, files: DiscordFile[] = []):
     try {
       res = await fetchWithTimeout(`${url}?wait=true`, { method: 'POST', body: build() }, 30000);
     } catch {
-      const msg = 'Discord에 연결하지 못했어요. 네트워크를 확인한 뒤 다시 보내 주세요.';
+      // The request may have reached Discord even when its response was lost.
+      // Automatic retry could post the same cards twice.
+      const msg = 'Discord 응답을 확인하지 못했어요. 채널에서 전송 여부를 먼저 확인해 주세요.';
       record(false, msg);
-      throw new DiscordError(msg);
+      throw new DiscordError(msg, false);
     }
     if (res.ok) {
       record(true);

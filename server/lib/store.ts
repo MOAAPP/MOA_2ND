@@ -46,6 +46,7 @@ function persist() {
 
 export const store = {
   get: () => state,
+  replace(next: StoreShape) { state = next; },
   update(fn: (s: StoreShape) => void) {
     fn(state);
     persist();

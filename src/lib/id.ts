@@ -10,7 +10,8 @@ export function getDeviceId(): string {
   try {
     let id = localStorage.getItem(DEVICE_KEY);
     if (!id || !/^[0-9a-f-]{20,64}$/i.test(id)) {
-      id = uid();
+      const existing = localStorage.getItem('moa.device');
+      id = existing && /^[0-9a-f-]{20,64}$/i.test(existing) ? existing : uid();
       localStorage.setItem(DEVICE_KEY, id);
     }
     return id;

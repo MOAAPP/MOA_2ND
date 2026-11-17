@@ -20,17 +20,27 @@ function tag(xml: string, name: string): string | null {
 export function parseNewsRss(xml: string, now: number, maxAgeDays = 7): NewsItem[] {
   const items = xml.split('<item>').slice(1).map((chunk) => chunk.split('</item>')[0]);
   const out: NewsItem[] = [];
+  const seenLinks = new Set<string>();
+  const seenTitles = new Set<string>();
   for (const it of items) {
     const rawTitle = tag(it, 'title');
     const link = tag(it, 'link');
     const pub = tag(it, 'pubDate');
     const source = tag(it, 'source');
-    if (!rawTitle || !link || !pub) continue;
+    if (!rawTitle || !link || !pub || !source || source === '출처 미상') continue;
     const publishedAt = Date.parse(pub);
-    if (!Number.isFinite(publishedAt) || now - publishedAt > maxAgeDays * 86400000) continue;
+    if (!Number.isFinite(publishedAt) || publishedAt > now || now - publishedAt > maxAgeDays * 86400000) continue;
+    try {
+      const parsed = new URL(link);
+      if (parsed.protocol !== 'https:' || parsed.username || parsed.password) continue;
+    } catch { continue; }
     // 제목 끝의 " - 언론사" 제거
     const title = source && rawTitle.endsWith(` - ${source}`) ? rawTitle.slice(0, -(source.length + 3)) : rawTitle;
-    out.push({ title, source: source ?? '출처 미상', publishedAt, link });
+    const titleKey = title.toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+    if (!titleKey || seenLinks.has(link) || seenTitles.has(titleKey)) continue;
+    seenLinks.add(link);
+    seenTitles.add(titleKey);
+    out.push({ title, source, publishedAt, link });
   }
   out.sort((a, b) => b.publishedAt - a.publishedAt);
   return out;

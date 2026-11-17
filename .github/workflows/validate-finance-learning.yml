@@ -1,0 +1,26 @@
+name: Financial learning and shipped frontend integration
+on:
+  pull_request:
+    paths:
+      - 'integration/finance-learning/**'
+      - 'scripts/patch-finance-learning.mjs'
+      - 'scripts/build-latest-ui.sh'
+      - 'server/**'
+      - 'shared/**'
+      - 'src/lib/v4AiApi.ts'
+      - '.github/workflows/validate-finance-learning.yml'
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: bash scripts/build-latest-ui.sh
+      - name: Verify learning patch is idempotent
+        run: node scripts/patch-finance-learning.mjs
