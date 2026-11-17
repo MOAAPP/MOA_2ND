@@ -16,6 +16,7 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   const [step, setStep] = useState<Step>('input')
   const [wish, setWish] = useState<Wish | null>(null)
   const [delayDate, setDelayDate] = useState('')
+  const [delayMonthlySaving, setDelayMonthlySaving] = useState(0)
   const [reopenDate, setReopenDate] = useState<string | null>(null)
   const [reopenId, setReopenId] = useState<string | null>(null)
   const [reopenMonthlySaving, setReopenMonthlySaving] = useState<number | undefined>()
@@ -24,6 +25,7 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   useEffect(() => {
     if (open) {
       setDelayDate('')
+      setDelayMonthlySaving(0)
       setReopenDate(null)
       setReopenId(null)
       setReopenMonthlySaving(undefined)
@@ -75,10 +77,10 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
               initialPlanId={reopenId}
               initialSavingsMonthly={reopenMonthlySaving}
               initialSavingsDay={reopenSavingsDay}
-              onSaved={(date) => { setDelayDate(date); setStep('delayDone') }}
+              onSaved={(date, saving) => { setDelayDate(date); setDelayMonthlySaving(saving); setStep('delayDone') }}
             />
           )}
-          {step === 'delayDone' && wish && <DelayDone wish={wish} date={delayDate} onClose={onClose} />}
+          {step === 'delayDone' && wish && <DelayDone wish={wish} date={delayDate} monthlySaving={delayMonthlySaving} onClose={onClose} />}
           {step === 'dest' && wish && <DestStep wish={wish} onClose={onClose} onDone={() => setStep('skipDone')} />}
           {step === 'skipDone' && wish && (
             <SkipDone
@@ -646,7 +648,7 @@ function SpendDone({ wish, onClose }: { wish: Wish; onClose: () => void }) {
   )
 }
 
-function DelayDone({ wish, date, onClose }: { wish: Wish; date: string; onClose: () => void }) {
+function DelayDone({ wish, date, monthlySaving, onClose }: { wish: Wish; date: string; monthlySaving: number; onClose: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
@@ -666,6 +668,7 @@ function DelayDone({ wish, date, onClose }: { wish: Wish; date: string; onClose:
           <div className="text-[12px] font-semibold text-[#7466B6]">구매 예정</div>
           <div className="mt-2 text-[16px] font-bold">{wish.title}</div>
           <div className="mt-1 text-[14px] text-sub">{won(wish.amount)}원 · {mdDot(parseISO(date))}</div>
+          {monthlySaving > 0 && <div className="mt-2 text-[12.5px] font-semibold text-[#6552D9]">매월 저축 {won(monthlySaving)}원을 지키는 조건으로 검토했어요.</div>}
         </div>
         <p className="mt-4 text-[12.5px] leading-relaxed text-sub">
           구매 계획만 저장했어요. 실제 돈이 빠져나가지 않고, 자동 결제나 알림도 발송되지 않아요.
