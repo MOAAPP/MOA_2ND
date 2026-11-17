@@ -1,0 +1,48 @@
+name: 임시 2차 UX 시안 반영
+on:
+  push:
+    branches: [feat/ux-journey-review-20261117]
+    paths:
+      - '.github/workflows/ux-apply-v2-temporary.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.ref_name == 'feat/ux-journey-review-20261117'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 2차 UX 파일 생성 및 기존 배포 빌드에만 연결
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,gzip
+          for src,dst in [
+            ('design/staging-ux-v2-script.b64','scripts/patch-ux-journey-v2.mjs'),
+            ('design/staging-ux-v2-style.b64','design/ux-journey-v2.css'),
+          ]:
+            data=base64.b64decode(Path(src).read_text().strip())
+            content=gzip.decompress(data)
+            Path(dst).write_bytes(content)
+            print('2차 UX 소스 복원:',dst,len(content))
+          p=Path('scripts/build-latest-ui.sh')
+          s=p.read_text()
+          a='node scripts/patch-ux-journey.mjs\n'
+          b=a+'# 별도 검토 브랜치: 2차 사용자 경험 리디자인 (기능 및 API 변경 없음)\nnode scripts/patch-ux-journey-v2.mjs\n'
+          assert s.count(a)==1
+          s=s.replace(a,b)
+          a='node ../scripts/patch-ux-journey.mjs --postbuild\n'
+          b=a+'node ../scripts/patch-ux-journey-v2.mjs --postbuild\n'
+          assert s.count(a)==1
+          s=s.replace(a,b)
+          p.write_text(s)
+          PY
+          node --check scripts/patch-ux-journey-v2.mjs
+          git add scripts/build-latest-ui.sh scripts/patch-ux-journey-v2.mjs design/ux-journey-v2.css
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
+          git commit -m "디자인: 소비 비교 중심으로 홈·평행세계·AI·실험실 UI 전면 재구성"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
