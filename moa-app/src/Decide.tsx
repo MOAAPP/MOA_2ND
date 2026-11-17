@@ -16,10 +16,12 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   const [step, setStep] = useState<Step>('input')
   const [wish, setWish] = useState<Wish | null>(null)
   const [delayDate, setDelayDate] = useState('')
+  const [reopenDate, setReopenDate] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setDelayDate('')
+      setReopenDate(null)
       if (preset) {
         setWish(preset)
         setStep('compare')
@@ -45,9 +47,10 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
           {step === 'input' && (
             <InputStep
               onClose={onClose}
-              onPick={(w) => {
+              onPick={(w, savedDate) => {
                 setWish(w)
-                setStep('compare')
+                setReopenDate(savedDate ?? null)
+                setStep(savedDate ? 'delay' : 'compare')
               }}
             />
           )}
@@ -59,6 +62,7 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
               wish={wish}
               onClose={onClose}
               onBack={() => setStep('compare')}
+              initialDate={reopenDate}
               onSaved={(date) => { setDelayDate(date); setStep('delayDone') }}
             />
           )}
@@ -81,7 +85,7 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   )
 }
 
-function InputStep({ onPick, onClose }: { onPick: (w: Wish) => void; onClose: () => void }) {
+function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string) => void; onClose: () => void }) {
   const { notify, state } = useStore()
   const [text, setText] = useState('')
   const submit = () => {
@@ -150,7 +154,7 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish) => void; onClose: ()
           {state.later.map((l) => (
             <button
               key={l.id}
-              onClick={() => onPick({ title: l.title, amount: l.amount, category: guessCategory(l.title) })}
+              onClick={() => onPick({ title: l.title, amount: l.amount, category: guessCategory(l.title) }, l.until)}
               className="mb-2 flex w-full items-center gap-3 rounded-2xl border border-line p-3 text-left"
             >
               <Clock size={18} className="text-blue" />
