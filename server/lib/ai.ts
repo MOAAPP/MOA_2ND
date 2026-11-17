@@ -70,6 +70,22 @@ export function politeOutput(task: AiTask, output: unknown): boolean {
   });
 }
 
+/** 금융 위험 수준은 계산된 숫자로 판정하며, LLM의 자유로운 tone 선택을 신뢰하지 않습니다. */
+export function coachRiskAligned(task: AiTask, input: unknown, output: unknown): boolean {
+  if (task !== 'coach') return true;
+  if (!input || typeof input !== 'object' || !output || typeof output !== 'object') return false;
+  const i = input as { usableNow: number; usableAfter: number; afterBills: number;
+    price: number; categoryCount30: number; frequency: string; yearGap: number };
+  const o = output as { tone?: string; message?: string };
+  const expected = i.usableAfter < 0 || i.afterBills < 0 ? 'warn' :
+    i.categoryCount30 >= 3 || i.price >= i.usableNow * 0.5 ||
+    (i.frequency !== 'once' && i.yearGap > Math.max(0, i.usableNow)) ? 'careful' : 'ok';
+  if (o.tone !== expected) return false;
+  // 계좌 자체가 부족하지 않은데 '마이너스'라는 표현을 쓰는 오해를 방지합니다.
+  if (i.afterBills >= 0 && /(?:계좌|통장).{0,8}(?:마이너스|잔액 부족)/u.test(o.message || '')) return false;
+  return true;
+}
+
 /* ── 운영 지표: 개인정보 원문 없이 작업별 성공·실패 사유·응답 시간만 센다 (인스턴스별 메모리) ── */
 interface TaskStat { ok: number; fail: Partial<Record<AiFailure, number>>; totalMs: number; recentMs: number[] }
 const stats = new Map<AiTask, TaskStat>();
@@ -148,16 +164,17 @@ export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fe
   const checked = checkAiOutput(task, raw);
   if (!checked.ok) return done({ ok: false, reason: 'invalid_output', ms: Date.now() - t0, issues: checked.issues });
   if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: 'ungrounded', ms: Date.now() - t0 });
-  if (!politeOutput(task, checked.data)) {
-    // 반말 응답은 사용자에게 전달하지 않습니다. 한 번만 재생성해 품질을 검증합니다.
+  if (!politeOutput(task, checked.data) || !coachRiskAligned(task, input, checked.data)) {
+    // 반말이나 계산된 위험 등급과 불일치하는 응답은 한 번 재생성합니다.
     const retry = await llmComplete({
-      system: p.system + '\n검증 실패: 사용자 대상 설명은 모든 문장 끝을 정중한 존댓말(예: ~해요, ~습니다, ~세요, ~까요)로 마무리하세요. 기존 스키마의 JSON 객체 한 개만 출력하세요.',
+      system: p.system + '\n품질 검증 실패: 모든 문장을 정중한 존댓말로 작성하고, 계산된 잔액·소비 안전선과 일치하는 위험 등급(tone)을 선택하세요. JSON 객체만 출력하세요.',
       user, maxTokens: p.maxTokens * 2,
     }, fetcher);
     const second = retry.ok ? extractJson(retry.text) : undefined;
     const valid = second === undefined ? null : checkAiOutput(task, second);
-    if (!valid || !valid.ok || !politeOutput(task, valid.data)) {
-      return done({ ok: false, reason: 'impolite', ms: Date.now() - t0 });
+    if (!valid || !valid.ok || !politeOutput(task, valid.data) || !coachRiskAligned(task, input, valid.data)) {
+      const reason: AiFailure = valid?.ok && politeOutput(task, valid.data) ? 'invalid_output' : 'impolite';
+      return done({ ok: false, reason, ms: Date.now() - t0 });
     }
     if (!numbersGrounded(task, input, valid.data) || !extractionGrounded(task, input, valid.data)) {
       return done({ ok: false, reason: 'ungrounded', ms: Date.now() - t0 });
