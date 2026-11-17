@@ -422,7 +422,7 @@ export function DelayStep({
                   <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#6B628C]">
                     {searchResult.recommended.nowSafe
                       ? '지금 구매해도 등록된 조건은 충족해요. 구매를 미루는 건 필수가 아닌 선택이에요.'
-                      : '지금 구매보다, 검증한 후보 날짜 중 이 시점부터 안전선을 지킬 수 있어요.'}
+                      : '지금 구매는 부담스럽지만, 확인한 후보 중 이 날짜에 구매하면 등록된 조건을 지킬 수 있어요.'}
                     {' '}이 날짜는 확인한 후보 중 가장 이른 날짜이며, 모든 날짜를 탐색한 결과는 아니에요.
                   </p>
                   <div className="mt-2 text-[12px] font-semibold text-[#54458A]">
