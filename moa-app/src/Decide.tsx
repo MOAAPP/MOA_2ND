@@ -18,12 +18,16 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   const [delayDate, setDelayDate] = useState('')
   const [reopenDate, setReopenDate] = useState<string | null>(null)
   const [reopenId, setReopenId] = useState<string | null>(null)
+  const [reopenMonthlySaving, setReopenMonthlySaving] = useState<number | undefined>()
+  const [reopenSavingsDay, setReopenSavingsDay] = useState<number | undefined>()
 
   useEffect(() => {
     if (open) {
       setDelayDate('')
       setReopenDate(null)
       setReopenId(null)
+      setReopenMonthlySaving(undefined)
+      setReopenSavingsDay(undefined)
       if (preset) {
         setWish(preset)
         setStep('compare')
@@ -49,10 +53,12 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
           {step === 'input' && (
             <InputStep
               onClose={onClose}
-              onPick={(w, savedDate, savedId) => {
+              onPick={(w, savedDate, savedId, savedMonthlySaving, savedSavingsDay) => {
                 setWish(w)
                 setReopenDate(savedDate ?? null)
                 setReopenId(savedId ?? null)
+                setReopenMonthlySaving(savedMonthlySaving)
+                setReopenSavingsDay(savedSavingsDay)
                 setStep(savedId ? 'delay' : 'compare')
               }}
             />
@@ -67,6 +73,8 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
               onBack={() => setStep('compare')}
               initialDate={reopenDate}
               initialPlanId={reopenId}
+              initialSavingsMonthly={reopenMonthlySaving}
+              initialSavingsDay={reopenSavingsDay}
               onSaved={(date) => { setDelayDate(date); setStep('delayDone') }}
             />
           )}
@@ -89,7 +97,7 @@ export function Decide({ open, onClose, preset, goParallel }: { open: boolean; o
   )
 }
 
-function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, savedId?: string) => void; onClose: () => void }) {
+function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, savedId?: string, savedMonthlySaving?: number, savedSavingsDay?: number) => void; onClose: () => void }) {
   const { notify, removeLater, state } = useStore()
   const [text, setText] = useState('')
   const submit = () => {
@@ -140,7 +148,7 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, 
           {state.later.map((l) => (
             <div key={l.id} className="mb-2 flex items-center gap-1 rounded-2xl border border-line bg-white p-2">
               <button
-                onClick={() => onPick({ title: l.title, amount: l.amount, category: guessCategory(l.title) }, l.until, l.id)}
+                onClick={() => onPick({ title: l.title, amount: l.amount, category: guessCategory(l.title) }, l.until, l.id, l.monthlySaving, l.savingsDay)}
                 className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1.5 text-left"
                 aria-label={l.title + ' 구매 계획 다시 비교하기'}
               >
@@ -148,6 +156,7 @@ function InputStep({ onPick, onClose }: { onPick: (w: Wish, savedDate?: string, 
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14px] font-semibold">{l.title}</div>
                   <div className="text-[12px] text-sub">{mdDot(parseISO(l.until))} 구매 예정 · {won(l.amount)}원</div>
+                  {!!l.monthlySaving && <div className="text-[11.5px] text-[#7466B6]">매월 저축 {won(l.monthlySaving)}원 보호</div>}
                 </div>
                 <ChevronRight size={17} className="shrink-0 text-mute" />
               </button>
