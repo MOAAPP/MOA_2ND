@@ -143,24 +143,27 @@ export function DelayStep({
     setLoading(true)
     setEngine(null)
     if (!goalValid) { setLoading(false); return () => { alive = false } }
-    api.personalCompare({
-      asOf: iso(today()),
-      balance: state.balance,
-      keep: state.profile.keep,
-      salary: state.profile.salary,
-      payday: state.profile.payday,
-      daily: state.profile.daily,
-      schedule: state.schedule,
-      amount: wish.amount,
-      horizon,
-      delay: delayDays,
-      plannedTransactions,
-    }).then((value) => {
-      if (!alive) return
-      setEngine(value)
-      setLoading(false)
-    })
-    return () => { alive = false }
+    // 사용자가 저축 금액·날짜를 입력하는 도중에는 매 키 입력마다 서버를 호출하지 않습니다.
+    const timer = window.setTimeout(() => {
+      api.personalCompare({
+        asOf,
+        balance: state.balance,
+        keep: state.profile.keep,
+        salary: state.profile.salary,
+        payday: state.profile.payday,
+        daily: state.profile.daily,
+        schedule: state.schedule,
+        amount: wish.amount,
+        horizon,
+        delay: delayDays,
+        plannedTransactions,
+      }).then((value) => {
+        if (!alive) return
+        setEngine(value)
+        setLoading(false)
+      })
+    }, 280)
+    return () => { alive = false; window.clearTimeout(timer) }
   }, [
     wish.amount, horizon, delayDays, retry, goalValid, monthlySaving, savingsDay,
     state.balance, state.profile.keep, state.profile.salary, state.profile.payday,
