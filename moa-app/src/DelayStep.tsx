@@ -204,14 +204,14 @@ export function DelayStep({
 
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-4">
         <div className="mt-3 flex items-center gap-2 text-[13px] font-bold text-[#6D5BEF]">
-          <CalendarClock size={17} /> 세 번째 선택 · 구매 연기
+          <CalendarClock size={17} /> 다른 선택 · 구매 연기
         </div>
         <h2 className="mt-2 text-[24px] font-bold leading-snug tracking-tight">
-          지금 말고,<br />언제 사는 게 나을까요?
+          지금이 아니라면,<br />언제 사는 게 나을까요?
         </h2>
         <p className="mt-2 text-[14px] leading-relaxed text-sub">
           {wish.title} · {won(wish.amount)}원
-          <br />날짜를 바꿔서 구매 이후의 생활비까지 확인해요.
+          <br />가격은 같아도 구매 시점에 따라 생활비 부담은 달라질 수 있어요.
         </p>
 
         <div className="mt-6 rounded-[24px] border border-[#DAD5FF] bg-[#F8F7FF] p-4">
@@ -243,7 +243,7 @@ export function DelayStep({
             className="mt-2 min-h-12 w-full rounded-xl border border-[#E0DDF5] bg-white px-3 text-[16px] font-semibold text-ink"
           />
           <p className="mt-2 text-[11.5px] leading-relaxed text-[#736A9A]">
-            최대 76일 뒤까지 선택할 수 있어요. 구매 후 14일을 포함해 같은 조건으로 비교해요.
+            날짜별로 90일간의 잔액을 같은 조건으로 비교해요. 구매 이후 최소 14일도 포함돼요.
           </p>
         </div>
 
@@ -265,23 +265,62 @@ export function DelayStep({
           </div>
         ) : (
           <>
-            <div className={'mt-4 rounded-[22px] border p-4 ' + (safe ? 'border-[#D6EDE3] bg-[#F0FAF5]' : 'border-[#F6D8DD] bg-[#FFF5F5]')}>
-              <div className="flex items-center gap-2">
-                {safe ? <CheckCircle2 size={19} className="text-[#15936B]" /> : <ShieldAlert size={19} className="text-[#D34A5D]" />}
-                <span className={'text-[15px] font-bold ' + (safe ? 'text-[#12694F]' : 'text-[#B83F52]')}>
-                  {safe ? '등록된 일정에서는 생활비 안전선을 지켜요' : '구매를 미뤄도 부족 위험이 있어요'}
-                </span>
+            <div className={'mt-4 rounded-[22px] border p-4 ' + (safe && noneSafe ? 'border-[#D6EDE3] bg-[#F0FAF5]' : 'border-[#F6D8DD] bg-[#FFF5F5]')}>
+              <div className="flex items-start gap-2.5">
+                {safe && noneSafe
+                  ? <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-[#15936B]" />
+                  : <ShieldAlert size={20} className="mt-0.5 shrink-0 text-[#D34A5D]" />}
+                <div className="min-w-0 flex-1">
+                  <p className={'text-[15px] font-bold leading-snug ' + (safe && noneSafe ? 'text-[#12694F]' : 'text-[#B83F52]')}>
+                    {verdict.title}
+                  </p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-sub">{verdict.body}</p>
+                </div>
               </div>
-              <p className="mt-2 text-[12.5px] leading-relaxed text-sub">
-                {difference > 0
-                  ? '지금 구매할 때보다 분석 기간의 최저 잔액이 ' + won(difference) + '원 높아요.'
-                  : difference < 0
-                    ? '지금 구매할 때보다 분석 기간의 최저 잔액이 ' + won(-difference) + '원 낮아요.'
-                    : '지금 구매할 때와 분석 기간의 최저 잔액이 같아요.'}
-              </p>
+              {breathingRoom !== null && breathingRoom > 0 && (
+                <div className="mt-3 rounded-xl bg-white/70 px-3 py-3">
+                  <div className="text-[12px] text-sub">구매 전날까지 현금 여유</div>
+                  <div className="mt-1 text-[20px] font-bold text-[#5546BC]">+{won(breathingRoom)}원</div>
+                  <p className="mt-1 text-[11.5px] leading-relaxed text-sub">
+                    지금 구매할 때보다 통장에 남는 금액이에요. 구매하는 날에는 이 금액도 지출돼요.
+                  </p>
+                </div>
+              )}
+              {breathingRoom === null && (
+                <p className="mt-2 text-[12px] text-sub">구매 전 현금 차이는 서버에서 확인할 수 없었어요.</p>
+              )}
               {!safe && delayed?.first_shortfall_date && (
-                <p className="mt-1 text-[12px] font-semibold text-[#B83F52]">
-                  안전선 아래로 내려갈 수 있는 날: {mdDot(parseISO(delayed.first_shortfall_date))}
+                <p className="mt-3 text-[12px] font-semibold text-[#B83F52]">
+                  부족 위험이 나타나는 첫날: {mdDot(parseISO(delayed.first_shortfall_date))}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <div className="mb-2 text-[14px] font-bold">같은 기간, 세 가지 선택</div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: '지금 구매', path: now!, active: false, tone: 'text-[#D34A5D]' },
+                  { label: '구매 안 함', path: none!, active: false, tone: 'text-[#3182F6]' },
+                  { label: '구매 연기', path: delayed!, active: true, tone: 'text-[#7663D9]' },
+                ].map((choice) => {
+                  const okay = choice.path.minimum_balance_met && choice.path.essential_payments_covered
+                  return (
+                    <div key={choice.label} className={'rounded-[17px] border p-3 ' + (choice.active ? 'border-[#D7D1FF] bg-[#F8F7FF]' : 'border-line bg-white')}>
+                      <div className={'text-[11.5px] font-bold ' + choice.tone}>{choice.label}</div>
+                      <div className="mt-1.5 text-[10.5px] text-sub">최저 잔액</div>
+                      <div className="mt-0.5 break-all text-[15px] font-bold tabular-nums tracking-tight">{won(choice.path.minimum_balance)}원</div>
+                      <div className={'mt-1.5 text-[10.5px] font-semibold ' + (okay ? 'text-[#16856A]' : 'text-[#D34A5D]')}>
+                        {okay ? '안전선 유지' : '부족 위험'}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              {difference !== 0 && (
+                <p className="mt-2 text-[12px] leading-relaxed text-sub">
+                  지금 구매 대비 연기했을 때 90일 최저 잔액이
+                  <b className="text-ink"> {difference > 0 ? '+' : '-'}{won(Math.abs(difference))}원</b> 달라져요.
                 </p>
               )}
             </div>
@@ -290,11 +329,11 @@ export function DelayStep({
               <div className="rounded-[20px] border border-line p-4">
                 <div className="text-[12px] text-sub">구매일 예상 마감 잔액</div>
                 <div className="mt-2 text-[20px] font-bold tabular-nums tracking-tight">
-                  {won(afterPurchase?.closing_balance ?? 0)}원
+                  {afterPurchase ? won(afterPurchase.closing_balance) + '원' : '계산 값 없음'}
                 </div>
               </div>
               <div className="rounded-[20px] border border-line p-4">
-                <div className="text-[12px] text-sub">분석 기간 최저 잔액</div>
+                <div className="text-[12px] text-sub">90일 동안 최저 잔액</div>
                 <div className={'mt-2 text-[20px] font-bold tabular-nums tracking-tight ' + (safe ? 'text-ink' : 'text-red')}>
                   {won(delayed!.minimum_balance)}원
                 </div>
@@ -302,7 +341,7 @@ export function DelayStep({
             </div>
 
             <div className="mt-3 rounded-[22px] bg-[#F7F8FA] p-4">
-              <div className="text-[14px] font-bold">구매 시점을 바꾸면 잔액은?</div>
+              <div className="text-[14px] font-bold">잔액이 달라지는 시점</div>
               <p className="mt-1 text-[11.5px] text-sub">같은 {horizon}일 · 예정 수입과 지출을 동일하게 반영</p>
               <div className="mt-3">
                 <DelayComparisonChart now={now!} none={none!} delayed={delayed!} purchaseDate={purchaseDate} keep={state.profile.keep} />
@@ -313,8 +352,30 @@ export function DelayStep({
                 <span><i className="mr-1 inline-block h-0.5 w-3 align-middle bg-[#8B69E8]" /> 구매 연기</span>
               </div>
             </div>
+            <div className="mt-3 overflow-hidden rounded-[19px] border border-line bg-white">
+              <button onClick={() => setShowReason((value) => !value)} aria-expanded={showReason}
+                className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left">
+                <BookOpenCheck size={18} className="shrink-0 text-[#7560D8]" />
+                <span className="flex-1 text-[13px] font-semibold">왜 이런 차이가 날까요?</span>
+                <ChevronDown size={16} className={'text-sub transition-transform ' + (showReason ? 'rotate-180' : '')} />
+              </button>
+              {showReason && (
+                <div className="border-t border-line px-4 py-3.5 text-[12.5px] leading-relaxed text-sub">
+                  구매를 미루면 구매일까지 돈을 보유할 수 있어요. 하지만 나중에 결국 같은 금액을 소비하므로
+                  <b className="text-ink"> 총지출을 줄이는 효과는 아니에요.</b>
+                  {nextBill ? (
+                    <p className="mt-2">
+                      구매 전 예정 결제: <b className="text-ink">{mdDot(nextBill.date)} {nextBill.title} {won(nextBill.amount)}원</b>.
+                      이런 지출을 먼저 감당할 수 있는지가 중요해요.
+                    </p>
+                  ) : (
+                    <p className="mt-2">구매 전까지 등록된 정기 결제는 없어요. 아직 입력하지 않은 지출은 계산에 포함되지 않을 수 있어요.</p>
+                  )}
+                </div>
+              )}
+            </div>
             <p className="mt-3 px-1 text-[12px] leading-relaxed text-sub">
-              입력된 월급·정기결제·하루 생활비를 기준으로 한 가상 계산이에요. 실제 은행 잔액이나 확정된 미래 지출은 아니며, 등록되지 않은 지출에 따라 결과가 달라질 수 있어요.
+              입력한 잔액·급여·예정 지출·하루 생활비를 기준으로 한 가상 예측이에요. 실제 미래 잔액을 보장하지 않아요.
             </p>
           </>
         )}
@@ -322,10 +383,10 @@ export function DelayStep({
 
       <div className="border-t border-line bg-white px-5 pt-3 pb-6">
         <Btn variant="glow" disabled={!ready || loading} onClick={() => {
-          s.later(wish.title, wish.amount, purchaseDate)
+          s.later(wish.title, wish.amount, purchaseDate, initialPlanId)
           onSaved(purchaseDate)
         }}>
-          {mdDot(parseISO(purchaseDate))} 구매 계획 저장하기
+          {mdDot(parseISO(purchaseDate))} 구매 계획 {initialPlanId ? '수정하기' : '저장하기'}
         </Btn>
         <p className="mt-2 text-center text-[11.5px] text-sub">계획만 저장돼요. 실제 잔액 차감이나 자동 결제·알림은 없어요.</p>
       </div>
