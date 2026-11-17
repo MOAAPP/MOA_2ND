@@ -318,6 +318,134 @@ export function DelayStep({
           </p>
         </div>
 
+
+        <div className="mt-4 rounded-[24px] border border-[#E3E5EE] bg-white p-4">
+          <div className="flex items-center gap-2 text-[14px] font-bold">
+            <Target size={18} className="text-[#7463E8]" /> 구매하면서 지키고 싶은 목표
+          </div>
+          <p className="mt-2 text-[12.5px] leading-relaxed text-sub">
+            매월 저축할 돈까지 미리 떼어놓는다고 가정하고, 구매 시점을 찾아볼 수 있어요.
+          </p>
+          <div className="mt-3 grid grid-cols-[1fr_105px] gap-2">
+            <label className="min-w-0 text-[12px] font-semibold text-sub">
+              매월 지킬 저축액
+              <div className="mt-1 flex items-center gap-1 rounded-xl border border-line px-3">
+                <input
+                  type="number" min={0} max={100000000} step={1000}
+                  value={savingsInput}
+                  onChange={(event) => setSavingsInput(event.target.value)}
+                  className="h-12 w-full min-w-0 bg-transparent text-[16px] font-semibold text-ink"
+                  aria-label="매월 지킬 저축액 (원)"
+                />
+                <span className="shrink-0 text-[13px] text-sub">원</span>
+              </div>
+            </label>
+            <label className="text-[12px] font-semibold text-sub">
+              매월 납입일
+              <div className="mt-1 flex items-center gap-1 rounded-xl border border-line px-2">
+                <input
+                  type="number" min={1} max={31} step={1}
+                  value={savingsDay}
+                  onChange={(event) => setSavingsDay(Number(event.target.value))}
+                  className="h-12 w-full min-w-0 bg-transparent text-center text-[16px] font-semibold text-ink"
+                  aria-label="매월 저축할 날짜"
+                />
+                <span className="shrink-0 text-[13px] text-sub">일</span>
+              </div>
+            </label>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {[
+              { amount: 0, label: '목표 없음' },
+              { amount: 50000, label: '5만 원' },
+              { amount: 100000, label: '10만 원' },
+              { amount: 200000, label: '20만 원' },
+            ].map((item) => (
+              <button
+                key={item.amount}
+                onClick={() => setSavingsInput(String(item.amount))}
+                className={'rounded-lg border px-2.5 py-1.5 text-[11.5px] font-semibold ' +
+                  (goalValid && monthlySaving === item.amount
+                    ? 'border-[#BDB3FF] bg-[#F2EFFF] text-[#6454C9]'
+                    : 'border-[#E6E8F0] text-sub')}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          {!goalValid && (
+            <p className="mt-2 text-[12px] font-semibold text-[#C54858]">
+              저축액은 0원 또는 1,000원~1억 원, 납입일은 1~31일로 입력해 주세요.
+            </p>
+          )}
+          <p className="mt-3 text-[11.5px] leading-relaxed text-sub">
+            {monthlySaving > 0 && goalValid
+              ? '향후 ' + horizon + '일 동안 가상의 정기 이체 ' + plannedTransactions.length + '건을 반영해요.'
+              : '저축 목표가 없으면 등록된 생활비와 필수 결제만 보호해요.'}
+            {' '}저축이 실제로 실행되거나 투자 수익이 발생하지는 않아요.
+          </p>
+
+          <button
+            onClick={findDates}
+            disabled={!goalValid || finding}
+            className={'mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[14px] font-bold ' +
+              (!goalValid || finding ? 'bg-[#E5E5F0] text-sub' : 'bg-[#27224F] text-white')}
+          >
+            {finding ? <Clock3 size={17} className="animate-pulse" /> : <SearchCheck size={18} />}
+            {finding ? '구매 날짜 후보를 확인하고 있어요' : '목표를 지키는 구매 시점 찾기'}
+          </button>
+          <p className="mt-2 text-center text-[11px] text-sub">
+            AI 예측이 아닌 기존 금융 엔진의 조건 검증 결과예요.
+          </p>
+
+          {searchResult && (
+            <div className="mt-3 rounded-[18px] bg-[#F5F4FE] p-3.5">
+              <div className="text-[11.5px] font-semibold text-[#7669A0]">
+                {searchResult.candidates.length}개 날짜 검증 완료
+                {searchResult.failed > 0 && (' · ' + searchResult.failed + '개 서버 검증 실패')}
+              </div>
+              {searchResult.recommended ? (
+                <>
+                  <div className="mt-1.5 text-[17px] font-bold text-[#42347F]">
+                    {mdDot(parseISO(searchResult.recommended.date))}에 구매하면 조건을 지킬 수 있어요
+                  </div>
+                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#6B628C]">
+                    {searchResult.recommended.nowSafe
+                      ? '지금 구매해도 등록된 조건은 충족해요. 구매를 미루는 건 필수가 아닌 선택이에요.'
+                      : '지금 구매보다, 검증한 후보 날짜 중 이 시점부터 안전선을 지킬 수 있어요.'}
+                    {' '}이 날짜는 확인한 후보 중 가장 이른 날짜이며, 모든 날짜를 탐색한 결과는 아니에요.
+                  </p>
+                  <div className="mt-2 text-[12px] font-semibold text-[#54458A]">
+                    90일 중 최저 예상 잔액 {won(searchResult.recommended.minimumBalance)}원
+                  </div>
+                  <button
+                    onClick={() => changeDate(searchResult.recommended!.date)}
+                    className="mt-3 w-full rounded-xl bg-white px-3 py-3 text-[13px] font-bold text-[#6552D9]"
+                  >
+                    이 날짜로 상세 비교하기
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="mt-1.5 text-[15px] font-bold text-[#42347F]">
+                    {searchResult.candidates.length === 0 ? '서버에서 후보 날짜를 확인하지 못했어요' : '검증한 후보 중 조건을 지키는 날짜가 없어요'}
+                  </div>
+                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#6B628C]">
+                    {searchResult.candidates.length === 0
+                      ? '연결 상태를 확인하고 다시 시도해 주세요. 임의의 날짜를 추천하지 않아요.'
+                      : '저축액이나 구매 금액을 조정하거나 다른 날짜를 직접 선택해 볼 수 있어요.'}
+                  </p>
+                </>
+              )}
+              {searchResult.candidates.length > 0 && (
+                <p className="mt-2 text-[11.5px] text-[#7A7196]">
+                  후보 {searchResult.checked}개를 같은 90일 동안 비교했으며, 등록된 급여·정기결제·생활비와 선택한 저축 계획을 기준으로 판정했어요.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
         {loading ? (
           <div className="mt-4 rounded-[22px] bg-[#F5F6F8] px-4 py-8 text-center" role="status">
             <Clock3 size={24} className="mx-auto animate-pulse text-[#8B69E8]" />
@@ -433,8 +561,8 @@ export function DelayStep({
       </div>
 
       <div className="border-t border-line bg-white px-5 pt-3 pb-6">
-        <Btn variant="glow" disabled={!ready || loading} onClick={() => {
-          s.later(wish.title, wish.amount, purchaseDate, initialPlanId)
+        <Btn variant="glow" disabled={!ready || loading || !goalValid} onClick={() => {
+          s.later(wish.title, wish.amount, purchaseDate, initialPlanId, { monthlySaving, savingsDay })
           onSaved(purchaseDate)
         }}>
           {mdDot(parseISO(purchaseDate))} 구매 계획 {initialPlanId ? '수정하기' : '저장하기'}
