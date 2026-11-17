@@ -138,6 +138,32 @@ export function extractJson(text: string): unknown {
   return undefined;
 }
 
+/** Claude's valid briefing may omit optional navigation or wrap the payload.
+ * Keep only explicit text and a validated navigation target; never add facts.
+ * Strict schema, financial-number and polite checks still run afterwards.
+ */
+export function normalizeBriefOutput(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
+  const root = raw as Record<string, unknown>;
+  const nested = root.brief ?? root.data ?? root.result;
+  const source = (typeof root.headline === 'string' && typeof root.body === 'string') ? root :
+    (nested && typeof nested === 'object' && !Array.isArray(nested) ? nested as Record<string, unknown> : root);
+  if (typeof source.headline !== 'string' || typeof source.body !== 'string') return raw;
+  const headline = source.headline.trim();
+  const body = source.body.trim();
+  const a = source.action;
+  let action: { label: string; to: 'choose' | 'ledger' | 'save' | 'forks' } | null = null;
+  if (a && typeof a === 'object' && !Array.isArray(a)) {
+    const next = a as Record<string, unknown>;
+    if (typeof next.label === 'string' && typeof next.to === 'string' &&
+        ['choose', 'ledger', 'save', 'forks'].includes(next.to) &&
+        next.label.trim().length >= 1 && next.label.trim().length <= 20) {
+      action = { label: next.label.trim(), to: next.to as 'choose' | 'ledger' | 'save' | 'forks' };
+    }
+  }
+  return { headline, body, action };
+}
+
 /**
  * 작업 하나를 실제 모델로 실행한다. 입력은 라우트에서 checkAiInput을 통과한 값이다.
  * 실패하면 사유를 돌려주고, 클라이언트는 예시 응답으로 바꿔 쓰되 '예시 응답'이라고 표시한다.
@@ -151,6 +177,40 @@ export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fe
   const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);
   const user = buildUserMessage(task, input as never);
+
+  // Home briefing must be live and factual rather than silently downgraded on
+  // Claude's occasional extra JSON keys or missing optional action field.
+  // Retry once only for format/grounding/politeness failures, not API outages.
+  if (task === 'brief') {
+    let reason: AiFailure = 'no_json';
+    let issues: string[] | undefined;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const system = attempt === 0 ? p.system :
+        p.system + '\n이전 브리핑은 출력 검증에 실패했습니다. 다음 필드 세 개만 포함한 JSON 객체로 다시 작성하세요: ' +
+        '{"headline":"25자 이내의 짧은 제목","body":"입력된 사실만 설명하는 70자 이내의 존댓말 완결 문장","action":null}. ' +
+        'action은 필요할 때만 {"label":"20자 이내","to":"choose|ledger|save|forks"}를 사용하세요. ' +
+        '새로운 금액·일정·원인을 만들지 말고 불확실하면 숫자를 생략하세요. JSON 밖의 텍스트는 쓰지 마세요.';
+      const response = await llmComplete({
+        system, user, maxTokens: attempt === 0 ? p.maxTokens : p.maxTokens * 3,
+      }, fetcher);
+      if (!response.ok) {
+        return done({ ok: false, reason: response.reason === 'network' ? 'network' :
+          response.reason === 'not_configured' ? 'not_configured' : 'http_error', ms: Date.now() - t0 });
+      }
+      if (response.truncated) { reason = 'no_json'; continue; }
+      const parsed = extractJson(response.text);
+      if (parsed === undefined) { reason = 'no_json'; continue; }
+      const checked = checkAiOutput(task, normalizeBriefOutput(parsed));
+      if (!checked.ok) { reason = 'invalid_output'; issues = checked.issues; continue; }
+      if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) {
+        reason = 'ungrounded'; issues = undefined; continue;
+      }
+      if (!politeOutput(task, checked.data)) { reason = 'impolite'; issues = undefined; continue; }
+      return done({ ok: true, data: checked.data, model: response.model, ms: Date.now() - t0 });
+    }
+    return done({ ok: false, reason, ms: Date.now() - t0, ...(issues ? { issues } : {}) });
+  }
+
   const r = await llmComplete({ system: p.system, user, maxTokens: p.maxTokens }, fetcher);
   if (!r.ok) return done({ ok: false, reason: r.reason === 'network' ? 'network' : 'http_error', ms: Date.now() - t0 });
   let model = r.model;
