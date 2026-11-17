@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, RefreshCw, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ChevronDown, Clock3, RefreshCw, ShieldAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import * as api from './api'
 import { addDays, daysBetween, iso, mdDot, parseISO, today, won } from './lib'
@@ -79,12 +79,14 @@ export function DelayStep({
   onBack,
   onSaved,
   initialDate,
+  initialPlanId,
 }: {
   wish: Wish
   onClose: () => void
   onBack: () => void
   onSaved: (date: string) => void
   initialDate?: string | null
+  initialPlanId?: string | null
 }) {
   const s = useStore()
   const { state, fc } = s
@@ -98,6 +100,7 @@ export function DelayStep({
   const [engine, setEngine] = useState<api.PersonalCompare | null>(null)
   const [loading, setLoading] = useState(true)
   const [retry, setRetry] = useState(0)
+  const [showReason, setShowReason] = useState(false)
 
   const changeDate = (value: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return
@@ -143,6 +146,34 @@ export function DelayStep({
   const afterPurchase = delayed?.daily_cashflow.find((d) => d.date === purchaseDate)
   const safe = !!delayed?.minimum_balance_met && !!delayed.essential_payments_covered
   const difference = delayed && now ? delayed.minimum_balance - now.minimum_balance : 0
+  const nowSafe = !!now?.minimum_balance_met && !!now?.essential_payments_covered
+  const baselineUnsafe = !!none && (!none.minimum_balance_met || !none.essential_payments_covered)
+  // 최저 잔액은 '구매 당일'이 아니라 전체 비교 기간의 가장 낮은 잔액입니다.
+  // 연기가 유리하더라도 모든 조건을 만족하지 못하면 안전하다고 표현하지 않습니다.
+  const verdict = baselineUnsafe
+    ? {
+        title: '구매하지 않아도 생활비 부족 위험이 있어요',
+        body: '구매 시점보다 먼저 월급·예정 결제·생활비 정보를 확인해 주세요. 구매를 미뤄도 기존 지출 부담은 없어지지 않아요.',
+      }
+    : safe && !nowSafe
+      ? {
+          title: '지금보다 구매를 미루는 편이 나아요',
+          body: '지금 구매할 때는 안전선에 닿지만, 선택한 날짜에 구매하면 등록된 금융 일정 안에서 생활비 안전선을 지켜요.',
+        }
+      : safe && nowSafe
+        ? {
+            title: '두 날짜 모두 생활비 안전선을 지켜요',
+            body: '꼭 미뤄야 하는 상황은 아니에요. 다른 목표에 쓸 여유가 필요한지까지 생각해 보고 선택해 보세요.',
+          }
+        : !safe && nowSafe
+          ? {
+              title: '이 날짜로 미루는 게 더 나은 선택은 아니에요',
+              body: '지금 구매하는 경우에는 안전선을 지키지만, 선택한 날짜에는 지출·입금 일정 때문에 부족 위험이 나타나요.',
+            }
+          : {
+              title: '아직은 구매 시점보다 생활비 보호가 먼저예요',
+              body: '지금 사도, 선택한 날짜에 사도 부족 위험이 있어요. 다른 날짜를 살펴보거나 구매 자체를 보류할 수 있어요.',
+            }
   const quickDates = [
     { label: '7일 뒤', date: iso(addDays(start, 7)) },
     { label: '월급 다음날', date: paydayNextDay },
@@ -167,7 +198,7 @@ export function DelayStep({
         </h2>
         <p className="mt-2 text-[14px] leading-relaxed text-sub">
           {wish.title} · {won(wish.amount)}원
-          <br />날짜를 바꿔서 구매 이후의 생활비까지 확인해요.
+          <br />미루는 게 실제로 도움이 되는지 비교해 볼게요.
         </p>
 
         <div className="mt-6 rounded-[24px] border border-[#DAD5FF] bg-[#F8F7FF] p-4">
@@ -199,7 +230,7 @@ export function DelayStep({
             className="mt-2 min-h-12 w-full rounded-xl border border-[#E0DDF5] bg-white px-3 text-[16px] font-semibold text-ink"
           />
           <p className="mt-2 text-[11.5px] leading-relaxed text-[#736A9A]">
-            최대 76일 뒤까지 선택할 수 있어요. 구매 후 14일을 포함해 같은 조건으로 비교해요.
+            최대 76일 뒤까지 선택할 수 있어요. 구매 후 최소 14일의 생활비 흐름도 함께 확인해요.
           </p>
         </div>
 
@@ -221,27 +252,54 @@ export function DelayStep({
           </div>
         ) : (
           <>
-            <div className={'mt-4 rounded-[22px] border p-4 ' + (safe ? 'border-[#D6EDE3] bg-[#F0FAF5]' : 'border-[#F6D8DD] bg-[#FFF5F5]')}>
-              <div className="flex items-center gap-2">
-                {safe ? <CheckCircle2 size={19} className="text-[#15936B]" /> : <ShieldAlert size={19} className="text-[#D34A5D]" />}
-                <span className={'text-[15px] font-bold ' + (safe ? 'text-[#12694F]' : 'text-[#B83F52]')}>
-                  {safe ? '등록된 일정에서는 생활비 안전선을 지켜요' : '구매를 미뤄도 부족 위험이 있어요'}
-                </span>
+            <div className={'mt-4 rounded-[22px] border p-4 ' + (safe && !baselineUnsafe ? 'border-[#D6EDE3] bg-[#F0FAF5]' : 'border-[#F6D8DD] bg-[#FFF5F5]')}>
+              <div className="flex items-start gap-2.5">
+                {safe && !baselineUnsafe
+                  ? <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-[#15936B]" />
+                  : <ShieldAlert size={20} className="mt-0.5 shrink-0 text-[#D34A5D]" />}
+                <div className="min-w-0 flex-1">
+                  <div className={'text-[15px] font-bold leading-snug ' + (safe && !baselineUnsafe ? 'text-[#12694F]' : 'text-[#B83F52]')}>
+                    {verdict.title}
+                  </div>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-sub">{verdict.body}</p>
+                </div>
               </div>
-              <p className="mt-2 text-[12.5px] leading-relaxed text-sub">
+              <div className="mt-3 border-t border-black/5 pt-3 text-[12px] text-sub">
                 {difference > 0
-                  ? '지금 구매할 때보다 분석 기간의 최저 잔액이 ' + won(difference) + '원 높아요.'
+                  ? <>지금 사는 경우보다 <b className="text-ink">최저 잔액 +{won(difference)}원</b></>
                   : difference < 0
-                    ? '지금 구매할 때보다 분석 기간의 최저 잔액이 ' + won(-difference) + '원 낮아요.'
-                    : '지금 구매할 때와 분석 기간의 최저 잔액이 같아요.'}
-              </p>
+                    ? <>지금 사는 경우보다 <b className="text-ink">최저 잔액 -{won(-difference)}원</b></>
+                    : <>두 선택의 <b className="text-ink">최저 잔액은 같아요.</b> 구매일까지의 흐름이 다를 수 있어요.</>}
+              </div>
               {!safe && delayed?.first_shortfall_date && (
-                <p className="mt-1 text-[12px] font-semibold text-[#B83F52]">
+                <p className="mt-2 text-[12px] font-semibold text-[#B83F52]">
                   안전선 아래로 내려갈 수 있는 날: {mdDot(parseISO(delayed.first_shortfall_date))}
                 </p>
               )}
             </div>
 
+            <div className="mt-4">
+              <div className="mb-2 text-[14px] font-bold">세 가지 선택을 같은 기준으로 비교해요</div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { title: '지금 구매', path: now!, emphasis: 'text-[#D34A5D]' },
+                  { title: '구매 안 함', path: none!, emphasis: 'text-[#3182F6]' },
+                  { title: '구매 연기', path: delayed!, emphasis: 'text-[#7560D8]' },
+                ].map((choice) => {
+                  const okay = choice.path.minimum_balance_met && choice.path.essential_payments_covered
+                  return (
+                    <div key={choice.title} className={'rounded-[17px] border p-3 ' + (choice.title === '구매 연기' ? 'border-[#DAD5FF] bg-[#F8F7FF]' : 'border-line bg-white')}>
+                      <div className={'text-[12px] font-bold ' + choice.emphasis}>{choice.title}</div>
+                      <div className="mt-1 text-[10.5px] text-sub">기간 중 최저 잔액</div>
+                      <div className="mt-2 break-all text-[15px] font-bold tabular-nums tracking-tight">{won(choice.path.minimum_balance)}원</div>
+                      <div className={'mt-1.5 text-[11px] font-semibold ' + (okay ? 'text-[#16856A]' : 'text-[#D34A5D]')}>
+                        {okay ? '안전선 유지' : '부족 위험'}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
             <div className="mt-3 grid grid-cols-2 gap-2.5">
               <div className="rounded-[20px] border border-line p-4">
                 <div className="text-[12px] text-sub">구매일 예상 마감 잔액</div>
@@ -258,7 +316,7 @@ export function DelayStep({
             </div>
 
             <div className="mt-3 rounded-[22px] bg-[#F7F8FA] p-4">
-              <div className="text-[14px] font-bold">구매 시점을 바꾸면 잔액은?</div>
+              <div className="text-[14px] font-bold">잔액 흐름은 어떻게 달라질까요?</div>
               <p className="mt-1 text-[11.5px] text-sub">같은 {horizon}일 · 예정 수입과 지출을 동일하게 반영</p>
               <div className="mt-3">
                 <DelayComparisonChart now={now!} none={none!} delayed={delayed!} purchaseDate={purchaseDate} keep={state.profile.keep} />
@@ -269,6 +327,20 @@ export function DelayStep({
                 <span><i className="mr-1 inline-block h-0.5 w-3 align-middle bg-[#8B69E8]" /> 구매 연기</span>
               </div>
             </div>
+            <div className="mt-3 overflow-hidden rounded-[20px] border border-[#E9E7F5] bg-white">
+              <button onClick={() => setShowReason((value) => !value)} aria-expanded={showReason} className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left">
+                <BookOpenCheck size={18} className="shrink-0 text-[#7560D8]" />
+                <span className="flex-1 text-[13.5px] font-semibold">왜 구매 날짜에 따라 결과가 달라질까요?</span>
+                <ChevronDown size={17} className={'text-sub transition-transform ' + (showReason ? 'rotate-180' : '')} />
+              </button>
+              {showReason && (
+                <div className="border-t border-[#F0EEF7] px-4 py-3.5 text-[12.5px] leading-relaxed text-sub">
+                  구매를 미루면 그전까지는 돈이 통장에 남아 있어요. 하지만 월급을 받아도 카드값·고정 지출·생활비가 뒤따르기 때문에
+                  <b className="text-ink"> 월급날 다음 날이 무조건 안전한 건 아니에요.</b>
+                  <p className="mt-2">그래프는 실제 계좌 거래가 아닌 입력한 조건으로 계산한 세 가지 미래예요. 투자 수익이나 물가 변동은 반영하지 않아요.</p>
+                </div>
+              )}
+            </div>
             <p className="mt-3 px-1 text-[12px] leading-relaxed text-sub">
               입력된 월급·정기결제·하루 생활비를 기준으로 한 가상 계산이에요. 실제 은행 잔액이나 확정된 미래 지출은 아니며, 등록되지 않은 지출에 따라 결과가 달라질 수 있어요.
             </p>
@@ -278,10 +350,10 @@ export function DelayStep({
 
       <div className="border-t border-line bg-white px-5 pt-3 pb-6">
         <Btn variant="glow" disabled={!ready || loading} onClick={() => {
-          s.later(wish.title, wish.amount, purchaseDate)
+          s.later(wish.title, wish.amount, purchaseDate, initialPlanId)
           onSaved(purchaseDate)
         }}>
-          {mdDot(parseISO(purchaseDate))} 구매 계획 저장하기
+          {mdDot(parseISO(purchaseDate))} 구매 계획 {initialPlanId ? '수정하기' : '저장하기'}
         </Btn>
         <p className="mt-2 text-center text-[11.5px] text-sub">계획만 저장돼요. 실제 잔액 차감이나 자동 결제·알림은 없어요.</p>
       </div>
