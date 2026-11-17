@@ -77,15 +77,6 @@ export type PersonalPath = {
 
 export type PersonalCompare = { paths: PersonalPath[]; horizon_days: number; forecast_source: string }
 
-// 기존 FastAPI PersonalSnapshot에 정의된 예정 거래를 그대로 사용합니다.
-// 사용자가 지정한 가상 저축 납입은 실제 거래나 서버 저장을 발생시키지 않습니다.
-export type PersonalPlannedTransaction = {
-  date: string
-  amount: number
-  kind: 'income' | 'expense' | 'transfer'
-  payment_method: 'debit' | 'transfer' | 'credit' | 'cash'
-}
-
 const BILL_KIND = (title: string) =>
   /카드/.test(title) ? 'card' : /통신|폰/.test(title) ? 'phone' : /구독/.test(title) ? 'subscription' : /월세|관리비/.test(title) ? 'rent' : 'etc'
 
@@ -100,7 +91,6 @@ export function personalCompare(input: {
   amount: number
   horizon: number
   delay: number
-  plannedTransactions?: PersonalPlannedTransaction[]
 }) {
   return post<PersonalCompare>(
     '/api/v4/personal/compare',
@@ -113,7 +103,6 @@ export function personalCompare(input: {
         payday: input.payday,
         monthly_variable_budget: input.daily * 30,
         bills: input.schedule.map((b) => ({ day: b.day, amount: b.amount, kind: BILL_KIND(b.title) })),
-        ...(input.plannedTransactions ? { planned_transactions: input.plannedTransactions } : {}),
       },
       purchase_amount: Math.max(1000, Math.round(input.amount)),
       horizon_days: Math.min(90, Math.max(7, input.horizon)),
