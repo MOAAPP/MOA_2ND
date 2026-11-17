@@ -119,7 +119,7 @@ export function DelayStep({
   const monthlySaving = Number(savingsInput || 0)
   const goalValid = Number.isSafeInteger(monthlySaving)
     && (monthlySaving === 0 || (monthlySaving >= 1000 && monthlySaving <= 100000000))
-    && Number.isInteger(savingsDay) && savingsDay >= 1 && savingsDay <= 31
+    && (monthlySaving === 0 || (Number.isInteger(savingsDay) && savingsDay >= 1 && savingsDay <= 31))
   const asOf = iso(start)
   const horizon = COMPARISON_HORIZON_DAYS
   const plannedTransactions = goalValid ? savingsPlans(asOf, monthlySaving, savingsDay) : []
@@ -222,7 +222,10 @@ export function DelayStep({
     setSearchResult(null)
     // 백엔드 개인 현금흐름 API를 각 날짜에 재사용합니다.
     // 모든 후보는 동일한 90일 기간과 동일한 저축/결제 가정에서만 비교합니다.
-    const outcomes = await Promise.all(dates.map(async (date): Promise<TimingCandidate | null> => {
+    const outcomes: (TimingCandidate | null)[] = []
+    // 빠른 후보부터 3개씩 검증하여 한꺼번에 서버 요청이 몰리는 일을 줄입니다.
+    for (let offset = 0; offset < dates.length; offset += 3) {
+      const batch = await Promise.all(dates.slice(offset, offset + 3).map(async (date): Promise<TimingCandidate | null> => {
       const result = await api.personalCompare({
         asOf,
         balance: state.balance,
@@ -246,14 +249,18 @@ export function DelayStep({
         firstShortfall: later.first_shortfall_date,
         nowSafe: pathIsSafe(nowPath),
       }
-    }))
+      }))
+      if (token !== searchToken.current) return
+      outcomes.push(...batch)
+      if (batch.some((candidate) => candidate?.safe)) break
+    }
     if (token !== searchToken.current) return
     const candidates = outcomes.filter((result): result is TimingCandidate => result !== null)
     setSearchResult({
-      checked: dates.length,
+      checked: outcomes.length,
       candidates,
       recommended: chooseTimingCandidate(candidates),
-      failed: dates.length - candidates.length,
+      failed: outcomes.length - candidates.length,
     })
     setFinding(false)
   }
@@ -375,7 +382,7 @@ export function DelayStep({
           </div>
           {!goalValid && (
             <p className="mt-2 text-[12px] font-semibold text-[#C54858]">
-              저축액은 0원 또는 1,000원~1억 원, 납입일은 1~31일로 입력해 주세요.
+              저축액은 0원 또는 1,000원~1억 원, 저축 목표를 설정했다면 납입일은 1~31일로 입력해 주세요.
             </p>
           )}
           <p className="mt-3 text-[11.5px] leading-relaxed text-sub">
