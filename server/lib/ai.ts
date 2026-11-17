@@ -33,7 +33,7 @@ export async function aiSummary(name: string, e: Explanation, level: 1 | 2 | 3):
 }
 
 /* ───────── 모아 AI 작업 (shared/aiPrompts.ts · docs/AI.md) ───────── */
-import { AI_PROMPTS, buildUserMessage, extractionGrounded, numbersGrounded, type AiTask } from '../../shared/aiPrompts';
+import { AI_PROMPTS, buildUserMessage, extractionGrounded, numbersGrounded, briefEvidenceAligned, type AiTask } from '../../shared/aiPrompts';
 import { maskText } from '../../shared/mask';
 import { checkAiOutput } from '../../shared/aiSchemas';
 
@@ -185,11 +185,17 @@ export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fe
     let reason: AiFailure = 'no_json';
     let issues: string[] | undefined;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const system = attempt === 0 ? p.system :
+      const factRules = '\n입력 숫자는 원 단위 정수입니다. 90000은 90,000원(9만 원), 300000은 300,000원(30만 원)입니다. ' +
+        '숫자 단위나 자리수를 절대로 바꾸지 마세요. 숫자를 재계산하거나 퍼센트를 만들지 마세요. ' +
+        'nextBill에는 결제 종류가 없으므로 월세·카드대금·보험료 같은 항목을 지어내지 마세요. ' +
+        'nextBill이 null이면 결제가 없다는 뜻이 아니라 확인된 정보가 없다는 뜻입니다. ' +
+        '상대 날짜(다음 달·내일) 대신 입력에 명시된 결제 날짜만 활용하세요. ' +
+        '불확실한 사실은 추측하지 말고 필요한 확인만 요청하세요.';
+      const system = (attempt === 0 ? p.system :
         p.system + '\n이전 브리핑은 출력 검증에 실패했습니다. 다음 필드 세 개만 포함한 JSON 객체로 다시 작성하세요: ' +
         '{"headline":"25자 이내의 짧은 제목","body":"입력된 사실만 설명하는 70자 이내의 존댓말 완결 문장","action":null}. ' +
         'action은 필요할 때만 {"label":"20자 이내","to":"choose|ledger|save|forks"}를 사용하세요. ' +
-        '새로운 금액·일정·원인을 만들지 말고 불확실하면 숫자를 생략하세요. JSON 밖의 텍스트는 쓰지 마세요.';
+        '새로운 금액·일정·원인을 만들지 말고 불확실하면 숫자를 생략하세요. JSON 밖의 텍스트는 쓰지 마세요.') + factRules;
       const response = await llmComplete({
         system, user, maxTokens: attempt === 0 ? p.maxTokens : p.maxTokens * 3,
       }, fetcher);
@@ -202,7 +208,9 @@ export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fe
       if (parsed === undefined) { reason = 'no_json'; continue; }
       const checked = checkAiOutput(task, normalizeBriefOutput(parsed));
       if (!checked.ok) { reason = 'invalid_output'; issues = checked.issues; continue; }
-      if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) {
+      if (!numbersGrounded(task, input, checked.data) ||
+          !briefEvidenceAligned(input, checked.data) ||
+          !extractionGrounded(task, input, checked.data)) {
         reason = 'ungrounded'; issues = undefined; continue;
       }
       if (!politeOutput(task, checked.data)) { reason = 'impolite'; issues = undefined; continue; }
