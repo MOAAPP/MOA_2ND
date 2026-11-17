@@ -87,7 +87,7 @@ export function DelayStep({
   wish: Wish
   onClose: () => void
   onBack: () => void
-  onSaved: (date: string) => void
+  onSaved: (date: string, monthlySaving: number) => void
   initialDate?: string | null
   initialPlanId?: string | null
   initialSavingsMonthly?: number
@@ -426,7 +426,7 @@ export function DelayStep({
                     90일 중 최저 예상 잔액 {won(searchResult.recommended.minimumBalance)}원
                   </div>
                   <button
-                    onClick={() => changeDate(searchResult.recommended!.date)}
+                    onClick={() => setPurchaseDate(searchResult.recommended!.date)}
                     className="mt-3 w-full rounded-xl bg-white px-3 py-3 text-[13px] font-bold text-[#6552D9]"
                   >
                     이 날짜로 상세 비교하기
@@ -497,6 +497,14 @@ export function DelayStep({
               )}
             </div>
 
+            <div className="mt-3 rounded-2xl bg-[#F8F8FC] px-4 py-3 text-[12.5px] leading-relaxed text-sub">
+              <span className="font-bold text-[#6552D9]">이 결과가 지키는 조건</span>
+              <p className="mt-1">
+                최소 보유금 {won(state.profile.keep)}원, 등록된 예정 결제
+                {monthlySaving > 0 && goalValid ? ', 매월 저축 ' + won(monthlySaving) + '원' : ''}
+                을 모두 반영했어요.
+              </p>
+            </div>
             <div className="mt-4">
               <div className="mb-2 text-[14px] font-bold">세 가지 선택을 같은 기준으로 비교해요</div>
               <div className="grid grid-cols-3 gap-2">
@@ -570,7 +578,7 @@ export function DelayStep({
       <div className="border-t border-line bg-white px-5 pt-3 pb-6">
         <Btn variant="glow" disabled={!ready || loading || !goalValid} onClick={() => {
           s.later(wish.title, wish.amount, purchaseDate, initialPlanId, { monthlySaving, savingsDay })
-          onSaved(purchaseDate)
+          onSaved(purchaseDate, monthlySaving)
         }}>
           {mdDot(parseISO(purchaseDate))} 구매 계획 {initialPlanId ? '수정하기' : '저장하기'}
         </Btn>
