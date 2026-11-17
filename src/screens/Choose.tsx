@@ -25,6 +25,7 @@ import { useStore, withEvent } from '../state/store';
 import { useMoa } from '../state/moa';
 import { assessRisk, billingDate, RISK_HORIZON, type Line, type ScenarioKey } from '../lib/moa';
 import { GradeBadge, md } from './moa/parts';
+import { josa } from '../lib/ai/example';
 
 type Phase = 'input' | 'preview' | 'done';
 type Pick = 'hold' | 'alt' | 'buy';
@@ -75,7 +76,7 @@ export function Choose() {
       price,
       altPrice: alt > 0 && alt < price ? alt : 0,
       frequency: freq,
-      wallet: { cash: w.cash, fixedBills: w.fixedBills ?? WORLD_FIXED_BILLS, safetyBuffer: WORLD_SAFETY_BUFFER },
+      wallet: { cash: w.cash, fixedBills: w.fixedBills ?? WORLD_FIXED_BILLS, safetyBuffer: w.safetyBuffer ?? WORLD_SAFETY_BUFFER },
       today: appDay(state),
       ctx: bank.ctx,
       history: bank.bank.contracts,
@@ -389,7 +390,7 @@ function Done({ o, yearNet, yearProduct, yearLabel }: { o: Outcome; yearNet: num
     <div className="page t-page has-cta c-done">
       <div className="c-done-icon" aria-hidden="true"><IconCheck /></div>
       <h1><span className="num">{fmt(shown)}</span><br />가상 비교 차이를 기록했어요</h1>
-      <p className="c-done-sub">{o.pick === 'alt' ? `${o.title}을 ${fmt(o.paid)}에 사고 남긴 돈이에요` : `${o.title} 대신 남긴 돈이에요`}</p>
+      <p className="c-done-sub">{o.pick === 'alt' ? `${o.title}${josa(o.title, '을', '를')} ${fmt(o.paid)}에 사고 남긴 돈이에요` : `${o.title} 대신 남긴 돈이에요`}</p>
 
       <Card className="c-done-card">
         {moved > 0 ? (

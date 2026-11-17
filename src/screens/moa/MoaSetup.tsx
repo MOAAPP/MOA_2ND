@@ -65,21 +65,30 @@ export function QuickStart({ onDone, onDemo }: { onDone?: () => void; onDemo: ()
   const { update } = useStore();
   const [mode, setMode] = useState<'demo' | 'manual'>('demo');
   const preview = useMemo(() => demoSetupPreview(), []);
-  const [step, setStep] = useState<0 | 1>(0);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
   const [balance, setBalance] = useState(0);
   const [name, setName] = useState('월세');
   const [amount, setAmount] = useState(0);
   const [day, setDay] = useState(() => Number(addDays(todayKST(), 5).slice(8)));
   const [warned, setWarned] = useState<string | null>(null);
+  // 월급·지켜둘 돈: 비워 두면 월급 일정은 만들지 않고 지켜둘 돈은 0원으로 계산한다(예시 기본값을 쓰지 않는다).
+  const [salary, setSalary] = useState(0);
+  const [salaryDay, setSalaryDay] = useState(25);
+  const [buffer, setBuffer] = useState(0);
   const warning = suspiciousSetup(balance, amount);
   const finish = () => {
     if (warning && warned !== warning) { setWarned(warning); return; }
     update((state) => {
-      const moa = quickStart(state.moa, balance, { name, amount, day });
+      const base = quickStart(state.moa, balance, { name, amount, day });
+      const moa = salary > 0
+        ? upsertSchedule(base, { name: '월급', amount: salary, day: salaryDay, recurrence: 'monthly', direction: 'in', essential: false, status: 'scheduled' })
+        : base;
+      // 가입 직후 홈으로 들어가도록 프로필까지 함께 만든다. 지켜둘 돈은 사용자가 입력한 값이다.
+      const profile = profileFromMoa(moa, state.profile);
       return {
         ...state,
         moa,
-        profile: state.profile ? profileFromMoa(moa, state.profile) : null,
+        profile: { ...profile, minBalance: buffer },
         // Initial personal setup starts one unified virtual wallet.
         // An existing user's world holdings are never reset by replaying setup.
         worldWallet: !state.profile && !state.demo
@@ -113,7 +122,7 @@ export function QuickStart({ onDone, onDemo }: { onDone?: () => void; onDemo: ()
         </>
       ) : step === 0 ? (
         <>
-          <span className="mo-qs-step">1/2 · 직접 입력하기</span>
+          <span className="mo-qs-step">1/3 · 직접 입력하기</span>
           <h1>필수결제가 빠져나가는<br />결제계좌에 지금 얼마 있어요?</h1>
           <p>월세·카드값이 실제로 빠지는 통장 하나만요. 계좌 연결 없이 숫자만 받아요.</p>
           <p className="mo-amount num">{fmt(balance)}</p>
@@ -121,19 +130,31 @@ export function QuickStart({ onDone, onDemo }: { onDone?: () => void; onDemo: ()
           <Button onClick={() => setStep(1)}>다음</Button>
           <button type="button" className="mo-link mo-demo-manual" onClick={() => setMode('demo')}>예시 데이터 자동으로 채우기</button>
         </>
-      ) : (
+      ) : step === 1 ? (
         <>
-          <span className="mo-qs-step">2/2</span>
-          <h1>가장 가까운 필수결제<br />하나만 알려주세요</h1>
+          <span className="mo-qs-step">2/3</span>
+          <h1>가장 가까운 예정 결제<br />(카드값 등) 하나만 알려주세요</h1>
           <Chips label="항목">
-            {['월세', '카드값', '통신비', '관리비', '학원비'].map((n) => <Chip key={n} on={name === n} onClick={() => setName(n)}>{n}</Chip>)}
+            {['카드값', '월세', '통신비', '관리비', '학원비'].map((n) => <Chip key={n} on={name === n} onClick={() => setName(n)}>{n}</Chip>)}
           </Chips>
           <label className="mo-field">매달 <input type="number" min={1} max={31} value={day} onChange={(e) => setDay(Math.max(1, Math.min(31, Number(e.target.value) || 1)))} />일 <small>다음 출금 {formatKDate(nextMonthly(day, todayKST()))}</small></label>
           <p className="mo-amount num">{fmt(amount)}</p>
           <NumberPad value={amount} onChange={setAmount} max={10_000_000} />
           {warning && warned === warning && <p className="mo-warn" role="alert">{warning} 맞으면 한 번 더 눌러 주세요.</p>}
-          <Button disabled={!amount} onClick={finish}>{warning && warned === warning ? '이대로 결과 보기' : '결과 보기'}</Button>
+          <Button disabled={!amount} onClick={() => { if (warning && warned !== warning) { setWarned(warning); return; } setStep(2); }}>{warning && warned === warning ? '이대로 다음' : '다음'}</Button>
           <button className="mo-link" onClick={() => setStep(0)}>잔액 다시 입력</button>
+        </>
+      ) : null}
+      {mode === 'manual' && step === 2 && (
+        <>
+          <span className="mo-qs-step">3/3</span>
+          <h1>월급일과 지켜둘 돈을<br />직접 알려주세요</h1>
+          <p>둘 다 비워 두어도 돼요. 비우면 월급은 계산에 넣지 않고, 지켜둘 돈은 0원으로 봐요.</p>
+          <label className="mo-field">월급 <input type="number" inputMode="numeric" min={0} aria-label="월급 금액" value={salary || ''} placeholder="0" onChange={(e) => setSalary(Math.max(0, Number(e.target.value) || 0))} style={{ width: 130 }} />원</label>
+          <label className="mo-field">매달 <input type="number" min={1} max={31} aria-label="월급일" value={salaryDay} onChange={(e) => setSalaryDay(Math.max(1, Math.min(31, Number(e.target.value) || 1)))} />일 입금</label>
+          <label className="mo-field">지켜둘 돈 <input type="number" inputMode="numeric" min={0} aria-label="지켜둘 돈" value={buffer || ''} placeholder="0" onChange={(e) => setBuffer(Math.max(0, Number(e.target.value) || 0))} style={{ width: 130 }} />원</label>
+          <Button onClick={finish}>시작하기</Button>
+          <button className="mo-link" onClick={() => setStep(1)}>이전</button>
         </>
       )}
     </div>

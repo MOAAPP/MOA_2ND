@@ -9,7 +9,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react';
 import { addDays, todayKST, type ISODate } from '../../shared/dates';
-import { exampleCoach } from '../lib/ai/example';
+import { exampleCoach, josa } from '../lib/ai/example';
 import { Won } from '../components/ds';
 import { FREQ_LABEL, futureCost, type Frequency } from '../lib/futureCost';
 import { WORLD_SAFETY_BUFFER, walletSummary } from '../lib/worldWallet';
@@ -242,7 +242,7 @@ function AiDecisionDemo({ itemId }: { itemId: string }) {
       </div>
       <div className="ob-card ob-insight-result">
         <span className="ob-insight-overline">선택에 도움을 주는 분석 예시</span>
-        <h2>지금 {item.name}을 사면 어떨까요?</h2>
+        <h2>지금 {item.name}{josa(item.name, '을', '를')} 사면 어떨까요?</h2>
         <p>{explanation.message}</p>
         {explanation.tip && <div className="ob-insight-tip"><b>고려할 대안</b><span>{explanation.tip}</span></div>}
       </div>

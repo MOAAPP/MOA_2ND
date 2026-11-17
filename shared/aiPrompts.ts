@@ -181,7 +181,7 @@ export const AI_PROMPTS: { [T in AiTask]: { system: string; schema: string; maxT
     maxTokens: 200,
   },
   coach: {
-    system: `${COMMON}\n사용자가 물건을 사기 전에 보는 화면이에요. 계산된 미래 비용을 보고 한두 문장으로 상황을 짚어 줘요. tone은 usableAfter가 0 미만이면 warn, 같은 카테고리를 자주 샀으면 careful, 아니면 ok. tip은 더 싸게 사거나 미루는 현실적인 방법 하나(없으면 null).`,
+    system: `${COMMON}\n사용자가 물건을 사기 전에 보는 화면이에요. 계산된 미래 비용을 보고 한두 문장으로 상황을 짚어 줘요. usableAfter는 '지켜둘 돈'까지 뺀 이번 달 쓸 수 있는 돈이고 afterBills는 필수지출을 낸 뒤 결제계좌에 남는 돈이에요. afterBills가 0 미만일 때만 통장이 모자라거나 마이너스라고 말하고, usableAfter만 0 미만이면 통장이 아니라 지켜둘 돈을 건드린다고 말해요. 부족한 금액은 입력값의 절댓값만 써요. tone은 usableAfter가 0 미만이면 warn, 같은 카테고리를 자주 샀으면 careful, 아니면 ok. tip은 더 싸게 사거나 미루는 현실적인 방법 하나(없으면 null).`,
     schema: '{"tone":"ok"|"careful"|"warn","message":string,"tip":string|null}',
     maxTokens: 220,
   },

@@ -15,6 +15,8 @@ export type WorldWallet = {
   cash:number; savings:number; deposit:number; installment:number;
   /** Optional origin for the synthetic S01 ledger; legacy/user worlds keep defaults. */
   openingCash?:number; fixedBills?:number;
+  /** 사용자가 직접 정한 '지켜둘 돈'. 없으면 예시 기본값(WORLD_SAFETY_BUFFER). */
+  safetyBuffer?:number;
   etfs:Record<string,EtfHolding>;
   /** @deprecated 예전 고정가 가상 ETF. migrateWorldWallet 이 현금으로 돌려놓는다. */
   shares?:number; priceRate?:number;
@@ -37,9 +39,10 @@ export function walletSummary(w:WorldWallet,prices?:PriceMap){
   const stockCost=holdings.reduce((s,[,h])=>s+h.cost,0);
   const savings=freeSavings+deposit+installment;
   const fixedBills=w.fixedBills??WORLD_FIXED_BILLS;
+  const buffer=w.safetyBuffer??WORLD_SAFETY_BUFFER;
   return {cash:w.cash,savings,freeSavings,deposit,installment,stockValue,stockCost,stockProfit:stockValue-stockCost,
-    totalAssets:w.cash+savings+stockValue,monthlyUsable:w.cash-fixedBills-WORLD_SAFETY_BUFFER,
-    afterBills:w.cash-fixedBills,protectedBills:fixedBills,protectedBuffer:WORLD_SAFETY_BUFFER};
+    totalAssets:w.cash+savings+stockValue,monthlyUsable:w.cash-fixedBills-buffer,
+    afterBills:w.cash-fixedBills,protectedBills:fixedBills,protectedBuffer:buffer};
 }
 
 export type WorldWalletAction=

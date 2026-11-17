@@ -14,8 +14,8 @@ const RANGES = [{ d: 7, label: '1주' }, { d: 30, label: '1개월' }, { d: 90, l
 export function WorldTimeline() {
   const { state } = useStore();
   const nav = useNav();
-  // 아직 남긴 선택이 없으면 예시 기록으로 바로 두 세계를 보여준다(로그인·입력 없이 로직 확인용)
-  const sample = isEmptyWorld(state.worldWallet);
+  // 예시 기록은 '예시 계정(state.demo)'에서만 보여준다. 직접 가입한 사용자에게는 절대 섞지 않는다.
+  const sample = state.demo && isEmptyWorld(state.worldWallet);
   const wallet = useMemo(() => (sample ? demoWorldWallet() : state.worldWallet), [sample, state.worldWallet]);
   const [days, setDays] = useState<7 | 30 | 90>(30);
   const [filter, setFilter] = useState<'all' | 'consumption' | 'saving' | 'investing'>('all');

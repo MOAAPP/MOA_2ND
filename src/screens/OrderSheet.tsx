@@ -11,6 +11,7 @@ import { fundedPortfolio, placeFundedOrder } from '../lib/fundedInvest';
 import { useMarket } from '../state/market';
 import { useNav } from '../state/nav';
 import { useStore } from '../state/store';
+import { josa } from '../lib/ai/example';
 
 export function OrderSheet({ code, side, quote, onClose }: { code: string; side: Side; quote: Quote | null; onClose: () => void }) {
   const { state, update } = useStore();
@@ -135,7 +136,7 @@ export function OrderSheet({ code, side, quote, onClose }: { code: string; side:
   return (
     <Sheet title={`${inst.name} 모의 ${verb}`} onClose={onClose} footer={<button className={`btn block ${side === 'buy' ? 'danger' : 'primary'}`} disabled={!formOk} onClick={() => setStep('confirm')}>다음</button>}>
       <Seg label="주문 방식" value={type} onChange={setType} options={[{ value: 'market', label: '시장가' }, { value: 'limit', label: '지정가' }]} />
-      {type === 'market' && !marketOpen && <div style={{ marginTop: 10 }}><Notice kind="warn">지금은 {m.status.label}이라 시장가로 주문할 수 없어요. 지정가로 예약하면 {formatKDate(m.status.orderDay)}에 유효해요.</Notice></div>}
+      {type === 'market' && !marketOpen && <div style={{ marginTop: 10 }}><Notice kind="warn">지금은 {m.status.label}{josa(m.status.label, '이라', '라')} 시장가로 주문할 수 없어요. 지정가로 예약하면 {formatKDate(m.status.orderDay)}에 유효해요.</Notice></div>}
       {type === 'market' && marketOpen && !quote && <div style={{ marginTop: 10 }}><Notice kind="warn">시세를 받지 못해 시장가 주문을 할 수 없어요.</Notice></div>}
 
       {type === 'limit' && (

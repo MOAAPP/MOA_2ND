@@ -218,9 +218,10 @@ function Shell() {
             nav.setTab('home');
           }}
           onDone={() => {
-            update((s) => ({ ...s, profile: profileFromMoa(s.moa, null), setupDraft: null }));
+            // 가입 직후에는 실험실·결과 화면이 아니라 홈으로 들어간다.
+            update((s) => ({ ...s, profile: s.profile ?? profileFromMoa(s.moa, null), setupDraft: null }));
+            nav.reset();
             nav.setTab('home');
-            nav.push({ name: 'shortfall' });
           }}
         />
       </div>
