@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, RefreshCw, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ChevronDown, Clock3, RefreshCw, ShieldAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import * as api from './api'
 import { addDays, daysBetween, iso, mdDot, parseISO, today, won } from './lib'
@@ -79,12 +79,14 @@ export function DelayStep({
   onBack,
   onSaved,
   initialDate,
+  initialPlanId,
 }: {
   wish: Wish
   onClose: () => void
   onBack: () => void
   onSaved: (date: string) => void
   initialDate?: string | null
+  initialPlanId?: string | null
 }) {
   const s = useStore()
   const { state, fc } = s
@@ -98,6 +100,7 @@ export function DelayStep({
   const [engine, setEngine] = useState<api.PersonalCompare | null>(null)
   const [loading, setLoading] = useState(true)
   const [retry, setRetry] = useState(0)
+  const [showReason, setShowReason] = useState(false)
 
   const changeDate = (value: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return
@@ -107,13 +110,14 @@ export function DelayStep({
     if (days >= 1 && days <= MAX_DELAY_DAYS) setPurchaseDate(value)
   }
   const delayDays = daysBetween(start, parseISO(purchaseDate))
-  const horizon = Math.max(21, Math.min(90, delayDays + 14))
+  // 비교하는 세 선택과 구매 날짜를 바꾼 결과까지 모두 같은 90일 범위로 비교합니다.
+  const horizon = 90
 
   useEffect(() => {
     let alive = true
     setLoading(true)
     setEngine(null)
-    api.personalCompare({
+    const timer = window.setTimeout(() => api.personalCompare({
       asOf: iso(today()),
       balance: state.balance,
       keep: state.profile.keep,
@@ -128,8 +132,8 @@ export function DelayStep({
       if (!alive) return
       setEngine(value)
       setLoading(false)
-    })
-    return () => { alive = false }
+    }), 240)
+    return () => { alive = false; clearTimeout(timer) }
   }, [
     wish.amount, horizon, delayDays, retry,
     state.balance, state.profile.keep, state.profile.salary, state.profile.payday,
@@ -139,10 +143,50 @@ export function DelayStep({
   const now = engine?.paths.find((p) => p.scenario_id === 'purchase_now')
   const none = engine?.paths.find((p) => p.scenario_id === 'no_purchase')
   const delayed = engine?.paths.find((p) => p.scenario_id === 'purchase_delay')
-  const ready = !!now && !!none && !!delayed && delayed.status === 'calculated'
+  const ready = !!now && !!none && !!delayed && [now, none, delayed].every((path) => path.status === 'calculated')
   const afterPurchase = delayed?.daily_cashflow.find((d) => d.date === purchaseDate)
   const safe = !!delayed?.minimum_balance_met && !!delayed.essential_payments_covered
   const difference = delayed && now ? delayed.minimum_balance - now.minimum_balance : 0
+  const nowSafe = !!now?.minimum_balance_met && !!now?.essential_payments_covered
+  const noneSafe = !!none?.minimum_balance_met && !!none?.essential_payments_covered
+  const prePurchaseDate = iso(addDays(parseISO(purchaseDate), -1))
+  const preNowBalance = now?.daily_cashflow.find((p) => p.date === prePurchaseDate)?.closing_balance
+  const preDelayBalance = delayed?.daily_cashflow.find((p) => p.date === prePurchaseDate)?.closing_balance
+  const breathingRoom = preNowBalance !== undefined && preDelayBalance !== undefined ? preDelayBalance - preNowBalance : null
+
+  // 예정된 결제 중 구매 전까지 실제 달력에 걸리는 첫 번째 항목을 보여줍니다.
+  const nextBill = (() => {
+    for (let offset = 1; offset <= delayDays; offset++) {
+      const date = addDays(start, offset)
+      const bill = state.schedule.find((item) => item.day === date.getDate())
+      if (bill) return { ...bill, date }
+    }
+    return null
+  })()
+  const verdict = !noneSafe
+    ? {
+        title: '구매하지 않아도 잔액 부족 위험이 있어요',
+        body: '이미 등록된 결제와 생활비 때문에 생기는 위험일 수 있어요. 구매 날짜보다 예정 지출을 먼저 살펴보세요.',
+      }
+    : safe && !nowSafe
+      ? {
+          title: '이 날짜로 미루면 부담을 줄일 수 있어요',
+          body: '지금 사는 경우에는 생활비 안전선이 흔들리지만, 선택한 날짜에 구매하면 등록된 일정에서는 안전선을 지켜요.',
+        }
+      : safe && nowSafe
+        ? {
+            title: '지금 사도, 미뤄도 등록된 기준에서는 괜찮아요',
+            body: '두 경우 모두 생활비 안전선을 지켜요. 다만 미루는 동안 다른 지출에 쓸 현금 여유가 생겨요.',
+          }
+        : nowSafe
+          ? {
+              title: '오히려 이 날짜에는 부담이 생길 수 있어요',
+              body: '지금 구매하는 경우에는 안전선을 지키지만, 선택한 날짜에는 예정된 수입·지출 시점이 겹칠 수 있어요.',
+            }
+          : {
+              title: '이 날짜까지 미뤄도 부족 위험이 있어요',
+              body: '당장 구매하는 것과 선택한 날짜 모두 안전선을 지키기 어려워요. 다른 날짜를 검토하거나 구매를 보류해 보세요.',
+            }
   const quickDates = [
     { label: '7일 뒤', date: iso(addDays(start, 7)) },
     { label: '월급 다음날', date: paydayNextDay },
