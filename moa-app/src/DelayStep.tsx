@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ChevronDown, Clock3, RefreshCw, ShieldAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowLeft, BookOpenCheck, CalendarClock, CheckCircle2, ChevronDown, Clock3, RefreshCw, SearchCheck, ShieldAlert, Target } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import * as api from './api'
 import { addDays, daysBetween, iso, mdDot, parseISO, today, won } from './lib'
+import { candidateDates, chooseTimingCandidate, COMPARISON_HORIZON_DAYS, MAX_RECOMMEND_DAYS, pathIsSafe, savingsPlans, type TimingCandidate } from './purchaseTiming'
 import { useStore } from './store'
 import { Btn, CloseBtn } from './ui'
 
-const MAX_DELAY_DAYS = 76 // 구매 후 14일을 포함하되 API의 90일 최대 기간을 넘지 않음
+const MAX_DELAY_DAYS = MAX_RECOMMEND_DAYS // 공통 90일 분석에서 구매 후 14일 이상 검증
 
 type Wish = { title: string; amount: number }
 
@@ -80,6 +81,8 @@ export function DelayStep({
   onSaved,
   initialDate,
   initialPlanId,
+  initialSavingsMonthly,
+  initialSavingsDay,
 }: {
   wish: Wish
   onClose: () => void
@@ -87,6 +90,8 @@ export function DelayStep({
   onSaved: (date: string) => void
   initialDate?: string | null
   initialPlanId?: string | null
+  initialSavingsMonthly?: number
+  initialSavingsDay?: number
 }) {
   const s = useStore()
   const { state, fc } = s
@@ -101,21 +106,43 @@ export function DelayStep({
   const [loading, setLoading] = useState(true)
   const [retry, setRetry] = useState(0)
   const [showReason, setShowReason] = useState(false)
+  const [savingsInput, setSavingsInput] = useState(String(initialSavingsMonthly ?? 0))
+  const [savingsDay, setSavingsDay] = useState(initialSavingsDay ?? Math.min(28, state.profile.payday + 1))
+  const [finding, setFinding] = useState(false)
+  const [searchResult, setSearchResult] = useState<{
+    checked: number
+    candidates: TimingCandidate[]
+    recommended: TimingCandidate | null
+    failed: number
+  } | null>(null)
+  const searchToken = useRef(0)
+  const monthlySaving = Number(savingsInput || 0)
+  const goalValid = Number.isSafeInteger(monthlySaving)
+    && (monthlySaving === 0 || (monthlySaving >= 1000 && monthlySaving <= 100000000))
+    && Number.isInteger(savingsDay) && savingsDay >= 1 && savingsDay <= 31
+  const asOf = iso(start)
+  const horizon = COMPARISON_HORIZON_DAYS
+  const plannedTransactions = goalValid ? savingsPlans(asOf, monthlySaving, savingsDay) : []
 
   const changeDate = (value: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return
     const parsed = parseISO(value)
     if (iso(parsed) !== value) return
     const days = daysBetween(start, parsed)
-    if (days >= 1 && days <= MAX_DELAY_DAYS) setPurchaseDate(value)
+    if (days >= 1 && days <= MAX_DELAY_DAYS && value !== purchaseDate) {
+      searchToken.current += 1
+      setFinding(false)
+      setSearchResult(null)
+      setPurchaseDate(value)
+    }
   }
   const delayDays = daysBetween(start, parseISO(purchaseDate))
-  const horizon = Math.max(21, Math.min(90, delayDays + 14))
 
   useEffect(() => {
     let alive = true
     setLoading(true)
     setEngine(null)
+    if (!goalValid) { setLoading(false); return () => { alive = false } }
     api.personalCompare({
       asOf: iso(today()),
       balance: state.balance,
@@ -127,6 +154,7 @@ export function DelayStep({
       amount: wish.amount,
       horizon,
       delay: delayDays,
+      plannedTransactions,
     }).then((value) => {
       if (!alive) return
       setEngine(value)
@@ -134,7 +162,7 @@ export function DelayStep({
     })
     return () => { alive = false }
   }, [
-    wish.amount, horizon, delayDays, retry,
+    wish.amount, horizon, delayDays, retry, goalValid, monthlySaving, savingsDay,
     state.balance, state.profile.keep, state.profile.salary, state.profile.payday,
     state.profile.daily, state.schedule,
   ])
@@ -144,10 +172,10 @@ export function DelayStep({
   const delayed = engine?.paths.find((p) => p.scenario_id === 'purchase_delay')
   const ready = !!now && !!none && !!delayed && delayed.status === 'calculated'
   const afterPurchase = delayed?.daily_cashflow.find((d) => d.date === purchaseDate)
-  const safe = !!delayed?.minimum_balance_met && !!delayed.essential_payments_covered
+  const safe = pathIsSafe(delayed)
   const difference = delayed && now ? delayed.minimum_balance - now.minimum_balance : 0
-  const nowSafe = !!now?.minimum_balance_met && !!now?.essential_payments_covered
-  const baselineUnsafe = !!none && (!none.minimum_balance_met || !none.essential_payments_covered)
+  const nowSafe = pathIsSafe(now)
+  const baselineUnsafe = !!none && !pathIsSafe(none)
   // 최저 잔액은 '구매 당일'이 아니라 전체 비교 기간의 가장 낮은 잔액입니다.
   // 연기가 유리하더라도 모든 조건을 만족하지 못하면 안전하다고 표현하지 않습니다.
   const verdict = baselineUnsafe
@@ -174,6 +202,62 @@ export function DelayStep({
               title: '아직은 구매 시점보다 생활비 보호가 먼저예요',
               body: '지금 사도, 선택한 날짜에 사도 부족 위험이 있어요. 다른 날짜를 살펴보거나 구매 자체를 보류할 수 있어요.',
             }
+
+  // 검색이 진행 중 금융 입력이 바뀌면 오래된 후보 결과를 화면에 적용하지 않습니다.
+  useEffect(() => {
+    searchToken.current += 1
+    setFinding(false)
+    setSearchResult(null)
+    return () => { searchToken.current += 1 }
+  }, [
+    wish.amount, monthlySaving, savingsDay, state.balance, state.profile.keep,
+    state.profile.salary, state.profile.payday, state.profile.daily, state.schedule,
+  ])
+
+  const findDates = async () => {
+    if (!goalValid || finding) return
+    const token = ++searchToken.current
+    const dates = candidateDates(start, paydayNextDay, purchaseDate)
+    setFinding(true)
+    setSearchResult(null)
+    // 백엔드 개인 현금흐름 API를 각 날짜에 재사용합니다.
+    // 모든 후보는 동일한 90일 기간과 동일한 저축/결제 가정에서만 비교합니다.
+    const outcomes = await Promise.all(dates.map(async (date): Promise<TimingCandidate | null> => {
+      const result = await api.personalCompare({
+        asOf,
+        balance: state.balance,
+        keep: state.profile.keep,
+        salary: state.profile.salary,
+        payday: state.profile.payday,
+        daily: state.profile.daily,
+        schedule: state.schedule,
+        amount: wish.amount,
+        horizon,
+        delay: daysBetween(start, parseISO(date)),
+        plannedTransactions,
+      })
+      const later = result?.paths.find((path) => path.scenario_id === 'purchase_delay')
+      const nowPath = result?.paths.find((path) => path.scenario_id === 'purchase_now')
+      if (!later || later.status !== 'calculated' || !nowPath) return null
+      return {
+        date,
+        safe: pathIsSafe(later),
+        minimumBalance: later.minimum_balance,
+        firstShortfall: later.first_shortfall_date,
+        nowSafe: pathIsSafe(nowPath),
+      }
+    }))
+    if (token !== searchToken.current) return
+    const candidates = outcomes.filter((result): result is TimingCandidate => result !== null)
+    setSearchResult({
+      checked: dates.length,
+      candidates,
+      recommended: chooseTimingCandidate(candidates),
+      failed: dates.length - candidates.length,
+    })
+    setFinding(false)
+  }
+
   const quickDates = [
     { label: '7일 뒤', date: iso(addDays(start, 7)) },
     { label: '월급 다음날', date: paydayNextDay },
