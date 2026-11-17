@@ -48,23 +48,48 @@ export function sanitizeInput(task: AiTask, input: unknown): unknown {
 
 export const AI_TASKS = Object.keys(AI_PROMPTS) as AiTask[];
 
-export type AiFailure = 'not_configured' | 'http_error' | 'no_json' | 'invalid_output' | 'ungrounded' | 'network' | 'rules_only';
+export type AiFailure = 'not_configured' | 'http_error' | 'no_json' | 'invalid_output' | 'ungrounded' | 'impolite' | 'network' | 'rules_only';
 export type AiRun = { ok: true; data: unknown; model: string; ms: number } | { ok: false; reason: AiFailure; ms: number; issues?: string[] };
 
+/** 금융 AI 텍스트 품질 게이트: 사용자 대상 설명 문장의 존댓말을 확인합니다. */
+export function politeOutput(task: AiTask, output: unknown): boolean {
+  if (task === 'parseSpend' || task === 'parseSchedule' || task === 'categorize') return true;
+  if (!output || typeof output !== 'object') return false;
+  const v = output as Record<string, unknown>;
+  const sentences: unknown[] = task === 'brief' ? [v.body] :
+    task === 'coach' ? [v.message, ...(v.tip == null ? [] : [v.tip])] :
+    task === 'ledgerSummary' ? (Array.isArray(v.points) ? v.points : []) :
+    [v.answer, ...(Array.isArray(v.followUps) ? v.followUps : [])];
+  if (!sentences.length || sentences.some(x => typeof x !== 'string' || !x.trim())) return false;
+  return sentences.every(x => {
+    const parts = (x as string).trim().split(/[.!?。]\s*/u).map(y => y.trim()).filter(Boolean);
+    return parts.length > 0 && parts.every(y =>
+      !/(?:^|\s)(?:너는|네가|니가)(?:\s|$)/u.test(y) &&
+      /(?:요|니다|니까|세요|십시오|죠|까요)$/u.test(y),
+    );
+  });
+}
+
 /* ── 운영 지표: 개인정보 원문 없이 작업별 성공·실패 사유·응답 시간만 센다 (인스턴스별 메모리) ── */
-interface TaskStat { ok: number; fail: Partial<Record<AiFailure, number>>; totalMs: number }
+interface TaskStat { ok: number; fail: Partial<Record<AiFailure, number>>; totalMs: number; recentMs: number[] }
 const stats = new Map<AiTask, TaskStat>();
 function record(task: AiTask, r: AiRun) {
-  const s = stats.get(task) ?? { ok: 0, fail: {}, totalMs: 0 };
+  const s = stats.get(task) ?? { ok: 0, fail: {}, totalMs: 0, recentMs: [] };
   if (r.ok) s.ok += 1; else s.fail[r.reason] = (s.fail[r.reason] ?? 0) + 1;
   s.totalMs += r.ms;
+  s.recentMs.push(r.ms);
+  if (s.recentMs.length > 200) s.recentMs.shift();
   stats.set(task, s);
+  // Vercel 함수는 재시작될 수 있으므로, 개인정보 없는 구조화 로그도 남깁니다.
+  console.info(JSON.stringify({ event: 'moa_ai_request', task, ok: r.ok, reason: r.ok ? null : r.reason, elapsed_ms: r.ms }));
 }
 export function aiStats() {
-  const out: Record<string, { ok: number; fail: Partial<Record<AiFailure, number>>; avgMs: number | null }> = {};
+  const out: Record<string, { ok: number; fail: Partial<Record<AiFailure, number>>; avgMs: number | null; p95Ms: number | null; sampleCount: number }> = {};
   for (const [task, s] of stats) {
     const n = s.ok + Object.values(s.fail).reduce((a, b) => a + (b ?? 0), 0);
-    out[task] = { ok: s.ok, fail: s.fail, avgMs: n ? Math.round(s.totalMs / n) : null };
+    const sorted = [...s.recentMs].sort((a, b) => a - b);
+    out[task] = { ok: s.ok, fail: s.fail, avgMs: n ? Math.round(s.totalMs / n) : null,
+      p95Ms: sorted.length ? sorted[Math.ceil(sorted.length * 0.95) - 1] : null, sampleCount: sorted.length };
   }
   return out;
 }
@@ -123,5 +148,21 @@ export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fe
   const checked = checkAiOutput(task, raw);
   if (!checked.ok) return done({ ok: false, reason: 'invalid_output', ms: Date.now() - t0, issues: checked.issues });
   if (!numbersGrounded(task, input, checked.data) || !extractionGrounded(task, input, checked.data)) return done({ ok: false, reason: 'ungrounded', ms: Date.now() - t0 });
+  if (!politeOutput(task, checked.data)) {
+    // 반말 응답은 사용자에게 전달하지 않습니다. 한 번만 재생성해 품질을 검증합니다.
+    const retry = await llmComplete({
+      system: p.system + '\n검증 실패: 사용자 대상 설명은 모든 문장 끝을 정중한 존댓말(예: ~해요, ~습니다, ~세요, ~까요)로 마무리하세요. 기존 스키마의 JSON 객체 한 개만 출력하세요.',
+      user, maxTokens: p.maxTokens * 2,
+    }, fetcher);
+    const second = retry.ok ? extractJson(retry.text) : undefined;
+    const valid = second === undefined ? null : checkAiOutput(task, second);
+    if (!valid || !valid.ok || !politeOutput(task, valid.data)) {
+      return done({ ok: false, reason: 'impolite', ms: Date.now() - t0 });
+    }
+    if (!numbersGrounded(task, input, valid.data) || !extractionGrounded(task, input, valid.data)) {
+      return done({ ok: false, reason: 'ungrounded', ms: Date.now() - t0 });
+    }
+    return done({ ok: true, data: valid.data, model: retry.ok ? retry.model : model, ms: Date.now() - t0 });
+  }
   return done({ ok: true, data: checked.data, model, ms: Date.now() - t0 });
 }
