@@ -253,11 +253,21 @@ function useProvideStore() {
   const skip = (title: string, amount: number, category: Category, dest: Dest) =>
     addTx({ title, amount, category, kind: 'skip', dest })
 
-  const later = (title: string, amount: number) =>
-    setState((s) => ({
-      ...s,
-      later: [{ id: Math.random().toString(36).slice(2), title, amount, until: iso(addDays(derived.fc.end, 1)) }, ...s.later],
-    }))
+  // 구매 연기는 실제 지출이나 잔액을 변경하지 않고 구매 예정일만 보관합니다.
+  // 저장한 계획을 다시 열어 날짜를 바꿀 때는 새 항목을 만들지 않습니다.
+  const later = (title: string, amount: number, until?: string, existingId?: string | null) =>
+    setState((s) => {
+      const date = until ?? iso(addDays(derived.fc.end, 1))
+      if (existingId && s.later.some((item) => item.id === existingId)) {
+        return { ...s, later: s.later.map((item) =>
+          item.id === existingId ? { ...item, title, amount, until: date } : item,
+        ) }
+      }
+      return {
+        ...s,
+        later: [{ id: Math.random().toString(36).slice(2), title, amount, until: date }, ...s.later],
+      }
+    })
 
   const removeLater = (id: string) => setState((s) => ({ ...s, later: s.later.filter((l) => l.id !== id) }))
 
