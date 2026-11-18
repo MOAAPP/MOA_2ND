@@ -21,6 +21,8 @@ node scripts/patch-savings-backend.mjs
 node scripts/patch-portfolio-backend.mjs
 # USER mode: stateless personal-input finance and rules-goal endpoints (no S01/S08 data).
 node scripts/patch-personal-input.mjs
+node scripts/patch-finance-learning.mjs
+npm run bundle:api
 sed -i 's/ES2020/ES2022/g' moa-web/tsconfig.json
 
 cd moa-web

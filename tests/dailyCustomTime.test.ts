@@ -35,4 +35,8 @@ describe('데일리 카드뉴스 사용자 지정 시각 (KST)', () => {
     expect(isDue(due, at)).toBe(false);
     expect(nextRunAt(due, at)).toBe(Date.parse('2026-11-04T04:17:00.000Z'));
   });
+  it('한국 시간 오전 8시에 전송 대상이 된다', () => {
+    expect(isDue(sub('08:00'), new Date('2026-11-02T22:59:00.000Z'))).toBe(false);
+    expect(isDue(sub('08:00'), new Date('2026-11-02T23:00:00.000Z'))).toBe(true);
+  });
 });

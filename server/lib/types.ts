@@ -19,6 +19,7 @@ export interface TradeInput {
 
 /** 데일리 카드뉴스 구독: 생활비 정보는 받지 않는다 (모의 보유 종목·학습 진행만) */
 export interface Subscription {
+  learningUserId?: string;
   deviceHash: string;
   enabled: boolean;
   /** 'HH:MM' 한국 시간 */
@@ -61,6 +62,7 @@ export interface SendAttempt {
 }
 
 export interface CardJob {
+  dailyInput?: Subscription;
   id: string;
   kind: 'trade' | 'daily';
   token: string;
@@ -87,6 +89,11 @@ export interface CardJob {
   titles: string[];
   summary: string;
   headline?: string;
+  aiStatus?: 'live' | 'not_generated' | 'not_configured';
+  aiModel?: string | null;
+  learningUserId?: string | null;
+  learningQuizId?: string | null;
+  learningDate?: string | null;
   notice?: string;
   sends: SendAttempt[];
 }
@@ -112,13 +119,18 @@ export function publicJob(j: CardJob) {
     level: j.level,
     autoSend: j.autoSend,
     noPhoto: j.noPhoto,
-    images: j.images.map((_, i) => `/api/cardnews/${j.id}/images/${i + 1}.png?t=${j.token}&v=${j.updatedAt}`),
+    images: j.images.map((_, i) => `/api/cardnews/${j.id}/images/${i + 1}.png?t=${j.token}&v=${j.updatedAt}&dh=${j.deviceHash}`),
     titles: j.titles,
     photos: j.photos,
     news: j.news,
     quoteMeta: j.quoteMeta ?? null,
     summary: j.summary,
     headline: j.headline ?? null,
+    aiStatus: j.aiStatus ?? 'not_generated',
+    aiModel: j.aiModel ?? null,
+    learningUserId: j.learningUserId ?? null,
+    learningQuizId: j.learningQuizId ?? null,
+    learningDate: j.learningDate ?? j.dailyDate ?? null,
     notice: j.notice ?? null,
     sends: j.sends,
   };
