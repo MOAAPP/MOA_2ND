@@ -1,0 +1,144 @@
+name: Validate isolated UI journey preview
+on:
+  push:
+    branches: [feat/ux-journey-review-20261117]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-ui-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm design-only files and build script syntax
+        run: |
+          node --check scripts/patch-ux-journey.mjs
+          node --check scripts/patch-ux-journey-v2.mjs
+          python3 - <<'PY'
+          import subprocess
+          before='251a592ae4d4f68d0ffcec24f9807d87f1497569'
+          subprocess.run(['git','fetch','--depth=1','origin',before],check=True)
+          allowed={'.github/workflows/inspect-ux-review.yml','design/ux-journey-20261117.css',
+                   'scripts/patch-ux-journey.mjs','scripts/patch-ux-journey-v2.mjs',
+                   'design/ux-journey-v2.css','scripts/build-latest-ui.sh'}
+          files=set(subprocess.check_output(['git','diff','--name-only',before,'HEAD'],text=True).splitlines())
+          print('Review branch changed files:', sorted(files))
+          assert files<=allowed, 'Non-UI code changed: '+str(sorted(files-allowed))
+          PY
+      - name: Existing finance integrations unchanged (unit tests)
+        run: |
+          node --experimental-strip-types --test \
+            tests/world-comparison.test.mjs \
+            tests/world-six-safety.test.mjs \
+            tests/savings-plan.test.mjs \
+            tests/portfolio-simulation.test.mjs \
+            tests/personal-finance.test.mjs
+      - name: Build actual ZIP with design-only overlay
+        run: bash scripts/build-latest-ui.sh
+      - name: Verify original CSS and feature logic are preserved
+        run: |
+          python3 - <<'PY'
+          import zipfile,pathlib
+          z=zipfile.ZipFile('releases/MOA_home_dashboard_ai_20261115.zip')
+          # All original CSS stays byte-for-byte the same; new override is separate.
+          for item in z.namelist():
+            if item.endswith('.css'):
+              assert pathlib.Path(item).read_bytes()==z.read(item),item+' changed'
+          base=pathlib.Path('moa-web')
+          home=(base/'src/screens/Home.jsx').read_text()
+          world=(base/'src/pages/WorldChoice.tsx').read_text()
+          idx=(base/'dist/index.html').read_text()
+          assert home.index('{/* 4. 같은 돈')<home.index('{/* 2. 결제일 안전')
+          assert home.index('{/* 2. 결제일 안전')<home.index('{/* 5. AI에게 묻기')
+          assert home.index('{/* 5. AI에게 묻기')<home.index('{/* 1. AI 브리핑')
+          assert 'ux-v2-hero' in home and 'ux-v2-result' in world
+          assert 'ux-v2-agent-intro' in (base/'src/pages/Agent.tsx').read_text()
+          assert 'ux-v2-lab-hero' in (base/'src/pages/Lab.tsx').read_text()
+          assert 'href="/ux-journey-20261117.css"' in idx
+          assert (base/'dist/ux-journey-20261117.css').is_file()
+          assert 'href="/ux-journey-v2.css"' in idx
+          assert (base/'dist/ux-journey-v2.css').is_file()
+          for file in ['src/lib/api.ts','src/lib/bridge.js','src/lib/store.ts']:
+            assert (base/file).is_file()
+          print('PASS: original CSS untouched, UX markup inserted, CSS in dist, existing API files exist.')
+          PY
+          cd moa-web
+          npm run qa:routes
+      - name: Capture mobile UX snapshots (visual review only)
+        continue-on-error: true
+        run: |
+          cd moa-web
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --with-deps chromium
+          nohup npx vite preview --host 127.0.0.1 --port 5173 > /tmp/moa-ux-preview-vite.log 2>&1 &
+          sleep 6
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          import { mkdirSync } from 'node:fs';
+          const origin='http://127.0.0.1:5173';
+          const browser=await chromium.launch({headless:true});
+          const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+          mkdirSync('../e2e-evidence',{recursive:true});
+          try {
+            await page.goto(origin+'/demo',{waitUntil:'domcontentloaded',timeout:30000});
+            await page.waitForTimeout(1800);
+            if (await page.locator('.mh').count()===0) {
+              await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
+              const go=page.getByRole('button',{name:'시작하기'}).first();
+              if(await go.count()) {
+                await go.click();
+                const next=page.getByRole('button',{name:'다음',exact:true});
+                for(let i=0;i<4;i++){
+                  if(await next.count()) await next.click().catch(()=>{});
+                  else break;
+                }
+                const fresh=page.getByRole('button',{name:/처음이에요/});
+                if(await fresh.count()) await fresh.click();
+                if(await next.count()) await next.click().catch(()=>{});
+                const start=page.getByRole('button',{name:'시작하기',exact:true});
+                if(await start.count()) await start.last().click().catch(()=>{});
+              }
+            }
+            const screens=[
+              {path:'/',name:'home',selector:'.mh'},
+              {path:'/world/compare',name:'world',selector:'section[aria-label="비교할 소비 선택"]'},
+              {path:'/agent',name:'agent',selector:'.ag'},
+              {path:'/lab',name:'lab',selector:'.lb'},
+            ];
+            for(const item of screens){
+              if(item.name==='world' && await page.locator('.mh-world').count()){
+                await page.locator('.mh-world').click();
+              } else {
+                await page.goto(origin+item.path,{waitUntil:'domcontentloaded'});
+              }
+              await page.waitForTimeout(3000);
+              const ok=await page.locator(item.selector).count();
+              console.log(item.name, 'screen selector found:',ok,'route:',page.url());
+              if(!ok){
+                console.log('Screen preview diagnosis:',(await page.locator('body').innerText()).slice(0,400));
+                await page.screenshot({path:'../e2e-evidence/ux-'+item.name+'-unmatched.png',fullPage:false});
+                continue;
+              }
+              await page.screenshot({path:'../e2e-evidence/ux-'+item.name+'.png',fullPage:false});
+              if(item.name==='world'){
+                await page.locator('.moa-scroller').evaluate(el=>{el.scrollTop=el.scrollHeight}).catch(()=>{});
+                await page.waitForTimeout(250);
+                await page.screenshot({path:'../e2e-evidence/ux-world-bottom.png',fullPage:false});
+              }
+            }
+          } finally {await browser.close()}
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ux-journey-mobile-preview
+          path: |
+            e2e-evidence/
+            /tmp/moa-ux-preview-vite.log
+          if-no-files-found: warn
