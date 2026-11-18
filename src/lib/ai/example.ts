@@ -54,7 +54,7 @@ const TIPS: Record<string, string> = {
   카페: '텀블러 할인이나 앱 쿠폰이 있는 곳으로 바꾸면 한 잔에 300~500원 아낄 수 있어요.',
   식비: '배달 대신 포장하면 배달비만큼 바로 아껴요.',
   쇼핑: '장바구니에 넣고 24시간 뒤에도 갖고 싶은지 확인해 봐요.',
-  패션: '같은 제품을 리셀·중고 앱에서 먼저 찾아보면 30% 넘게 싼 경우가 많아요.',
+  패션: '같은 제품을 리셀·중고 앱에서 먼저 찾아보고 가격을 비교해 봐요.',
   교통: '막차 전이라면 대중교통, 같은 방향 친구와 합승도 방법이에요.',
   '문화·여가': '학생 할인이나 평일 할인 회차가 있는지 먼저 봐요.',
   구독: '연간 결제보다 한 달만 결제하고 정말 쓰는지 확인해 봐요.',
@@ -67,7 +67,7 @@ export function exampleCoach(i: CoachIn): CoachOut {
     const message = i.afterBills < 0
       ? `사면 필수지출을 낸 뒤 결제계좌가 ${won(-i.afterBills)} 모자라요. 통장이 마이너스가 돼요.`
       : `사도 통장은 마이너스가 아니에요. 다만 지켜둘 돈을 ${won(-i.usableAfter)} 건드려요.`;
-    return { tone: 'warn', message, tip: tip ?? '다음 달 1일 월급 뒤로 미루면 안전선을 지킬 수 있어요.' };
+    return { tone: 'warn', message, tip: tip ?? '월급이 들어온 뒤로 구매를 미루면 안전선을 지킬 수 있는지 비교해 봐요.' };
   }
   if (i.categoryCount30 >= 3 && i.categorySpentThisMonth > 0) {
     return { tone: 'careful', message: `최근 30일 동안 ${i.category}에 ${i.categoryCount30}번 결제했어요. 이번 달만 ${won(i.categorySpentThisMonth)}이에요.`, tip };

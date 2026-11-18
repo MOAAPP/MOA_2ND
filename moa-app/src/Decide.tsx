@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUp, CalendarClock, Check, ChevronRight, Clock, PiggyBank, Sparkles, Trash2, TrendingUp } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as api from './api'
 import { ForecastChart } from './charts'
 import { DelayStep } from './DelayStep'
@@ -8,6 +8,13 @@ import { CATS, QUICK, guessCategory, levelOf, type Category, type Dest } from '.
 import { addDays, afterTax, forecast, iso, mdDot, parseISO, parseWish, today, won, wonShort, type ForecastPoint } from './lib'
 import { useStore } from './store'
 import { AIBadge, Btn, CatIcon, CloseBtn, Num, Planet, Sheet, Stars } from './ui'
+
+/** 상태 배지 색: 배경 대비 4.5:1 이상(WCAG AA)이고, 색만으로 구분하지 않도록 글자를 함께 쓴다. */
+const STATUS_STYLE = {
+  short: 'bg-[#FDECEE] text-[#B4232F]',
+  tight: 'bg-[#FEF3C7] text-[#92400E]',
+  ok: 'bg-[#ECFDF5] text-[#047857]',
+} as const
 
 type Step = 'input' | 'compare' | 'delay' | 'delayDone' | 'dest' | 'skipDone' | 'spendDone'
 type Wish = { title: string; amount: number; category: Category }
@@ -270,9 +277,13 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
 
   // ── AI 코치(Node /api/ai/coach): 엔진 결과를 받아 문장만 다듬음 ──
   const [coach, setCoach] = useState<api.CoachOut | null>(null)
+  const [coachPhase, setCoachPhase] = useState<'loading' | 'ready' | 'fallback'>('loading')
   useEffect(() => {
     if (!engineDone) return
     let alive = true
+    setCoachPhase('loading')
+    // AI 문장은 늦게 올 수 있어요. 계산 결과와 버튼은 먼저 보여주고, 15초가 지나면 계산 기반 문장으로 마무리해요.
+    const limit = setTimeout(() => alive && setCoachPhase((p) => (p === 'loading' ? 'fallback' : p)), 15000)
     const since = iso(addDays(today(), -30))
     const monthKey = iso(today()).slice(0, 7)
     const same = state.txs.filter((x) => x.kind === 'spend' && x.category === wish.category)
@@ -288,13 +299,29 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
       categorySpentThisMonth: same.filter((x) => x.date.startsWith(monthKey)).reduce((a, x) => a + x.amount, 0),
       categoryCount30: same.filter((x) => x.date >= since).length,
     }
-    api.cached('coach.' + api.hashKey(input), () => api.aiCoach(input).then((r) => r?.data ?? null)).then((r) => alive && setCoach(r))
+    api.cached('coach.' + api.hashKey(input), () => api.aiCoach(input).then((r) => r?.data ?? null))
+      .then((r) => {
+        if (!alive) return
+        setCoach(r)
+        setCoachPhase(r ? 'ready' : 'fallback')
+      })
+      .catch(() => alive && setCoachPhase('fallback'))
     return () => {
       alive = false
+      clearTimeout(limit)
     }
   }, [engineDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const ai = coach?.message ?? fallbackAi
+  const ai = coachPhase === 'ready' && coach ? coach.message : fallbackAi
+  // 같은 비교 화면에서 결정은 한 번만 기록해요(빠른 두 번 탭·화면 전환 중 탭으로 중복 기록되지 않게).
+  const decided = useRef(false)
+  const [deciding, setDeciding] = useState(false)
+  const decideOnce = (run: () => void) => {
+    if (decided.current) return
+    decided.current = true
+    setDeciding(true)
+    run()
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -328,7 +355,7 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
               <span
                 className={
                   'rounded-full px-2 py-0.5 text-[11px] font-bold ' +
-                  (status === 'short' ? 'bg-red/10 text-red' : status === 'tight' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-50 text-emerald-600')
+                  STATUS_STYLE[status]
                 }
               >
                 {status === 'short' ? '부족' : status === 'tight' ? '빠듯' : '여유'}
@@ -371,6 +398,7 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
                   </>
                 )}
               </div>
+              <div className="mt-1.5 text-[10.5px] leading-snug text-white/70">가상 적금 연 3.5%·세후 가정이에요. 실제 수익이 아니에요.</div>
             </div>
           </motion.div>
         </div>
@@ -414,11 +442,14 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
         <div className="mt-3 flex gap-3 rounded-[22px] bg-[#F1F0FF] p-4">
           <Sparkles size={18} className="mt-0.5 shrink-0 text-[#6A5CF5]" />
           <div className="flex-1">
-            <div className="mb-1 text-[12px] font-bold text-[#6A5CF5]">{coach ? 'AI 코치' : '모아 분석'}</div>
-            <motion.p key={ai} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[14px] leading-relaxed text-[#2E2A5A]">
-              {ai}
-            </motion.p>
-            {coach?.tip && <p className="mt-2 text-[13px] leading-relaxed text-[#514A87]">확인하면 좋은 점: {coach.tip}</p>}
+            <div className="mb-1 text-[12px] font-bold text-[#5B4FE0]">{coachPhase === 'ready' ? 'AI 코치' : '모아 분석'}</div>
+            <div aria-live="polite" aria-busy={coachPhase === 'loading'}>
+              <motion.p key={ai} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[14px] leading-relaxed text-[#2E2A5A]">
+                {ai}
+              </motion.p>
+              {coachPhase === 'loading' && <p className="mt-2 text-[12.5px] text-[#514A87]">AI 코치가 판단 근거를 정리하고 있어요</p>}
+              {coachPhase === 'ready' && coach?.tip && <p className="mt-2 text-[13px] leading-relaxed text-[#514A87]">확인하면 좋은 점: {coach.tip}</p>}
+            </div>
             {serverNow && (
               <p className="mt-2 text-[11.5px] text-[#6B6A8E]">
                 예정 결제·지켜둘 돈·하루 지출 {won(state.profile.daily)}원을 넣어 {engine?.horizon_days}일 동안 날마다 계산했어요
@@ -435,13 +466,13 @@ function CompareStep({ wish, onClose, onSkip, onSpend, onDelay }: { wish: Wish; 
 
       <div className="border-t border-line bg-white px-5 pt-3 pb-6">
         <div className="flex gap-2">
-          <Btn variant="gray" className="!w-[38%]" onClick={() => {
+          <Btn variant="gray" className="!w-[38%]" disabled={deciding} onClick={() => decideOnce(() => {
             s.spend(wish.title, wish.amount, wish.category)
             onSpend()
-          }}>
+          })}>
             살래요
           </Btn>
-          <Btn variant="glow" onClick={onSkip}>
+          <Btn variant="glow" disabled={deciding} onClick={() => decideOnce(onSkip)}>
             참고 평행세계로
           </Btn>
         </div>
@@ -455,6 +486,8 @@ function DestStep({ wish, onClose, onDone }: { wish: Wish; onClose: () => void; 
   const s = useStore()
   const rec: Dest = s.state.invest.cash < 20000 && s.state.lessonsDone.length >= 2 ? 'invest' : 'saving'
   const [dest, setDest] = useState<Dest>(rec)
+  const sentRef = useRef(false)
+  const [sent, setSent] = useState(false)
   const yearInterest = Math.round(afterTax(wish.amount * 0.035))
   const etfQty = wish.amount / (s.prices['360750']?.price ?? 22000)
   const opts: { v: Dest; icon: typeof PiggyBank; title: string; desc: string; meta: string }[] = [
@@ -517,14 +550,23 @@ function DestStep({ wish, onClose, onDone }: { wish: Wish; onClose: () => void; 
             )
           })}
         </div>
-        <p className="mt-4 px-1 text-[12.5px] leading-relaxed text-mute">
+        <p className="mt-4 px-1 text-[12.5px] leading-relaxed text-sub">
           실제 돈은 그대로 통장에 있어요. 평행세계에서는 참은 금액만큼 가상으로 쌓여요.
         </p>
+        {dest === 'invest' && (
+          <p role="note" className="mt-2 px-1 text-[12.5px] leading-relaxed text-[#92400E]">
+            가상 투자는 실제 시세를 따라 움직여서, 가격이 내려가면 넣은 금액보다 줄어들 수 있어요. 수익이 보장되지 않아요.
+          </p>
+        )}
       </div>
       <div className="px-5 pt-3 pb-6">
         <Btn
           variant="glow"
+          disabled={sent}
           onClick={() => {
+            if (sentRef.current) return
+            sentRef.current = true
+            setSent(true)
             s.skip(wish.title, wish.amount, wish.category, dest)
             onDone()
           }}

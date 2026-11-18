@@ -198,9 +198,9 @@ export const AI_PROMPTS: { [T in AiTask]: { system: string; schema: string; maxT
     maxTokens: 280,
   },
   coach: {
-    system: `${COMMON}\n${FINANCIAL_REVIEW_V10}\n구매 전 결정 코치: usableAfter는 구매 이후 지켜둘 돈을 고려한 사용 가능 금액이며, afterBills는 필수지출 반영 후 결제계좌 예상 잔액입니다. usableAfter가 0 미만이고 afterBills는 0 이상이면 '통장 마이너스'가 아니라 생활비 안전선 침범입니다. afterBills가 0 미만일 때만 계좌 부족을 언급하세요. tone은 두 값 중 하나라도 0 미만이면 warn, 아니고 동일 카테고리 최근 30일 3회 이상 구매 또는 price가 usableNow의 절반 이상이거나 반복 구매의 yearGap이 usableNow보다 크면 careful, 나머지는 ok입니다. one-time 구매에 yearGap을 연간 반복 지출처럼 설명하지 마세요. message는 근거를 포함한 존댓말 1~2문장, tip은 확인 가능한 대안 한 개 또는 null입니다. 입력에 없는 월급날, 할인, 미래 안전성을 보장하지 마세요.`,
-    schema: '{"tone":"ok"|"careful"|"warn","message":string,"tip":string|null}',
-    maxTokens: 360,
+    system: `${COMMON}\n${FINANCIAL_REVIEW_V10}\n구매 전 결정 코치: 금액·날짜가 들어간 요약 문장은 앱이 계산값으로 따로 씁니다. 입력에는 숫자가 없고, 앱이 판정한 tone과 범주형 신호(signals)만 있습니다. 당신은 그 신호를 근거로 판단 이유와 바로 할 수 있는 다음 행동만 존댓말로 씁니다. signals.accountShort가 true일 때만 결제계좌 부족을 언급하고, safetyLineBreached만 true이면 '통장 마이너스'가 아니라 생활비 안전선(지켜둘 돈)을 건드린다고 설명하세요. message는 숫자 없는 존댓말 한 문장(80자 이내), tip은 확인 가능한 대안 한 문장 또는 null입니다. 아라비아 숫자, 한글로 쓴 금액·비율, 날짜, 퍼센트, 통화 기호를 쓰지 마세요. 입력에 없는 월급날, 할인, 미래 안전성을 보장하지 마세요.`,
+    schema: '{"message":string,"tip":string|null}',
+    maxTokens: 300,
   },
   ledgerSummary: {
     system: `${COMMON}\n${FINANCIAL_REVIEW_V10}\n월간 가계부 분석: 같은 기간 비교가 가능할 때만 지난달과 비교하세요. 가장 많이 지출한 카테고리, 거래 건수, 큰 지출, 반복 패턴 중 확인된 특징을 이용하세요. 데이터가 적으면 판단을 유보하세요. 한 달의 총액과 하루 평균을 혼동하지 않고, 큰 지출이 '낭비'라고 단정하지 마세요. title 20자 이내, points 존댓말 완결 문장 2~3개(각 60자 이내)로 관찰된 근거와 사용자가 확인할 행동을 제공합니다.`,
@@ -344,4 +344,67 @@ export function numbersGrounded(task: AiTask, input: unknown, output: unknown): 
     const ks = [...known];
     return ks.some((a) => ks.some((b) => Math.abs(a - b) === n || a + b === n));
   });
+}
+
+
+/* ───────── 구매 전 코치: 숫자는 코드가, 말은 AI가 ───────── */
+
+const wonText = (n: number) => `${Math.round(n).toLocaleString('ko-KR')}원`;
+
+/** 위험 등급은 계산된 숫자로 코드가 정한다. 모델에게 고르게 하지 않는다. */
+export function coachTone(i: CoachIn): CoachOut['tone'] {
+  if (i.usableAfter < 0 || i.afterBills < 0) return 'warn';
+  if (i.categoryCount30 >= 3 || i.price >= i.usableNow * 0.5 ||
+      (i.frequency !== 'once' && i.yearGap > Math.max(0, i.usableNow))) return 'careful';
+  return 'ok';
+}
+
+/** 금액이 들어가는 요약 문장. 숫자와 지표 이름은 전부 코드가 넣는다. */
+export function coachSummary(i: CoachIn): string {
+  if (i.afterBills < 0) return `사면 필수지출을 낸 뒤 결제계좌가 ${wonText(-i.afterBills)} 모자라요.`;
+  if (i.usableAfter < 0) return `통장이 마이너스가 되진 않지만, 지켜둘 돈을 ${wonText(-i.usableAfter)} 건드려요.`;
+  if (i.categoryCount30 >= 3) return `최근 30일 동안 ${i.category}에 ${i.categoryCount30}번 결제했어요.`;
+  if (i.frequency !== 'once' && i.yearGap > Math.max(0, i.usableNow)) {
+    return `${i.frequency === 'daily' ? '매일' : '매주'} 사면 1년에 ${wonText(i.yearGap)}이 나가요.`;
+  }
+  if (i.price >= i.usableNow * 0.5) return `${wonText(i.price)}은 지금 쓸 수 있는 돈 ${wonText(i.usableNow)}의 절반이 넘어요.`;
+  return `사도 월급날까지 쓸 수 있는 돈이 ${wonText(i.usableAfter)} 남아요.`;
+}
+
+/** 모델에 보내는 입력. 금액·날짜 없이 판정과 범주형 신호만 넘긴다. */
+export function coachSignals(i: CoachIn) {
+  return {
+    item: i.item.replace(/[0-9０-９]/g, '').trim().slice(0, 40) || i.category,
+    category: i.category,
+    frequency: i.frequency,
+    tone: coachTone(i),
+    signals: {
+      accountShort: i.afterBills < 0,
+      safetyLineBreached: i.usableAfter < 0 && i.afterBills >= 0,
+      largeShareOfUsable: i.price >= i.usableNow * 0.5,
+      frequentCategory: i.categoryCount30 >= 3,
+      recurringCostHigh: i.frequency !== 'once' && i.yearGap > Math.max(0, i.usableNow),
+    },
+  };
+}
+
+const KOREAN_NUMERAL = '[영공일이삼사오육칠팔구십백천만억조]';
+/** 숫자·한글 수사+단위·비율·통화 기호가 하나라도 있으면 true. 걸리면 그 조언은 버린다. */
+export function hasNumericContent(text: string): boolean {
+  return /[0-9０-９%％₩$]/u.test(text) ||
+    new RegExp(`${KOREAN_NUMERAL}+\\s*(?:원|퍼센트|프로)`, 'u').test(text) ||
+    new RegExp(`${KOREAN_NUMERAL}+\\s*(?:만|천|억)\\s*원`, 'u').test(text);
+}
+
+/** 조언이 없을 때 쓰는 규칙 문장(숫자 없음). */
+export const COACH_RULE_ADVICE: Record<CoachOut['tone'], string> = {
+  warn: '필수 결제 일정을 먼저 확인하고, 구매 날짜를 미뤘을 때와 비교해 보세요.',
+  careful: '꼭 지금 필요한지 한 번 더 생각하고, 미뤘을 때의 여유와 비교해 보세요.',
+  ok: '필요한 물건이라면 계획 안에서 고르셔도 괜찮아요.',
+};
+
+/** 최종 코치 응답: 요약(코드) + 조언(모델 또는 규칙). */
+export function composeCoach(i: CoachIn, advice: { message: string; tip: string | null } | null): CoachOut {
+  const tone = coachTone(i);
+  return { tone, message: `${coachSummary(i)} ${advice?.message ?? COACH_RULE_ADVICE[tone]}`, tip: advice?.tip ?? null };
 }
