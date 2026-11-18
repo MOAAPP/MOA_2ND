@@ -33,7 +33,7 @@ export async function aiSummary(name: string, e: Explanation, level: 1 | 2 | 3):
 }
 
 /* ───────── 모아 AI 작업 (shared/aiPrompts.ts · docs/AI.md) ───────── */
-import { AI_PROMPTS, buildUserMessage, extractionGrounded, numbersGrounded, briefEvidenceAligned, type AiTask } from '../../shared/aiPrompts';
+import { AI_PROMPTS, buildUserMessage, extractionGrounded, numbersGrounded, briefEvidenceAligned, coachSignals, composeCoach, hasNumericContent, type AiTask, type CoachIn } from '../../shared/aiPrompts';
 import { maskText } from '../../shared/mask';
 import { checkAiOutput } from '../../shared/aiSchemas';
 
@@ -48,7 +48,7 @@ export function sanitizeInput(task: AiTask, input: unknown): unknown {
 
 export const AI_TASKS = Object.keys(AI_PROMPTS) as AiTask[];
 
-export type AiFailure = 'not_configured' | 'http_error' | 'no_json' | 'invalid_output' | 'ungrounded' | 'impolite' | 'network' | 'rules_only';
+export type AiFailure = 'not_configured' | 'http_error' | 'no_json' | 'invalid_output' | 'ungrounded' | 'impolite' | 'numeric_content' | 'network' | 'rules_only';
 export type AiRun = { ok: true; data: unknown; model: string; ms: number } | { ok: false; reason: AiFailure; ms: number; issues?: string[] };
 
 /** 금융 AI 텍스트 품질 게이트: 사용자 대상 설명 문장의 존댓말을 확인합니다. */
@@ -164,6 +164,44 @@ export function normalizeBriefOutput(raw: unknown): unknown {
   return { headline, body, action };
 }
 
+
+/** 코치 조언(모델 출력) 검사: 숫자가 없고, 짧고, 존댓말이어야 한다. 통과하면 null, 아니면 사유. */
+export function checkCoachAdvice(raw: unknown): { ok: true; advice: { message: string; tip: string | null } } | { ok: false; reason: AiFailure } {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { ok: false, reason: 'invalid_output' };
+  const r = raw as Record<string, unknown>;
+  const message = typeof r.message === 'string' ? r.message.trim() : '';
+  const tip = r.tip == null ? null : typeof r.tip === 'string' ? r.tip.trim() || null : undefined;
+  if (!message || message.length > 120 || tip === undefined || (tip && tip.length > 120)) return { ok: false, reason: 'invalid_output' };
+  if (hasNumericContent(message) || (tip && hasNumericContent(tip))) return { ok: false, reason: 'numeric_content' };
+  if (!politeOutput('coach', { message, tip })) return { ok: false, reason: 'impolite' };
+  return { ok: true, advice: { message, tip } };
+}
+
+/**
+ * 구매 전 코치. 모델에는 금액을 하나도 넘기지 않고(판정 + 범주형 신호만), 숫자 없는 조언만 받는다.
+ * 금액이 들어간 요약 문장은 코드가 쓰므로, 모델이 금액을 지어내거나 엉뚱한 지표에 붙일 수 없다.
+ */
+async function runCoach(input: CoachIn, fetcher: typeof fetchWithTimeout, t0: number): Promise<AiRun> {
+  const p = AI_PROMPTS.coach;
+  const user = buildUserMessage('coach', coachSignals(input) as never);
+  let reason: AiFailure = 'no_json';
+  let model = llmModel();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const system = attempt === 0 ? p.system : `${p.system}\n이전 응답이 검증에 실패했습니다(${reason}). 숫자 없이 존댓말로, JSON 객체 하나만 출력하세요.`;
+    const r = await llmComplete({ system, user, maxTokens: attempt === 0 ? p.maxTokens : p.maxTokens * 2 }, fetcher);
+    if (!r.ok) return { ok: false, reason: r.reason === 'network' ? 'network' : 'http_error', ms: Date.now() - t0 };
+    model = r.model;
+    const raw = extractJson(r.text);
+    if (raw === undefined) { reason = 'no_json'; continue; }
+    const checked = checkCoachAdvice(raw);
+    if (!checked.ok) { reason = checked.reason; continue; }
+    const out = checkAiOutput('coach', composeCoach(input, checked.advice));
+    if (!out.ok) { reason = 'invalid_output'; continue; }
+    return { ok: true, data: out.data, model, ms: Date.now() - t0 };
+  }
+  return { ok: false, reason, ms: Date.now() - t0 };
+}
+
 /**
  * 작업 하나를 실제 모델로 실행한다. 입력은 라우트에서 checkAiInput을 통과한 값이다.
  * 실패하면 사유를 돌려주고, 클라이언트는 예시 응답으로 바꿔 쓰되 '예시 응답'이라고 표시한다.
@@ -174,8 +212,9 @@ export async function runAiTask(task: AiTask, input: unknown, fetcher: typeof fe
   const done = (r: AiRun) => { record(task, r); return r; };
   if (task === 'parseSpend' || task === 'parseSchedule') return done({ ok: false, reason: 'rules_only', ms: 0 });
   if (!aiConfigured()) return done({ ok: false, reason: 'not_configured', ms: 0 });
-  const p = AI_PROMPTS[task];
   input = sanitizeInput(task, input);
+  if (task === 'coach') return done(await runCoach(input as CoachIn, fetcher, t0));
+  const p = AI_PROMPTS[task];
   const user = buildUserMessage(task, input as never);
 
   // Home briefing must be live and factual rather than silently downgraded on
